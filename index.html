@@ -36,24 +36,17 @@
             scene.add(windowMesh);
 
             // Add lighting
-            //const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Bright ambient light
-            //scene.add(ambientLight);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Ambient light
+            scene.add(ambientLight);
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // Bright directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Directional light
             directionalLight.position.set(5, 5, 5);
             scene.add(directionalLight);
 
-            // Human (replace with 3D model)
+            // Load the 3D model and keep its original materials
             const loader = new THREE.GLTFLoader();
-            loader.load('BOYLAY2.glb', function (gltf) {
-                human = gltf.scene;
-                
-                human.traverse(function (node) {
-                    if (node.isMesh) {
-                        // Apply a bright standard material to the model
-                        node.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-                    }
-                });
+            loader.load('`BOYLAY2.glb', function (gltf) {
+                human = gltf.scene; // Keep original materials
 
                 human.scale.set(0.5, 0.5, 0.5); // Scale the model if needed
                 human.position.y = -2.25; // Position it on the floor
