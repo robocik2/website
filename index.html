@@ -64,7 +64,7 @@
 
             // Load the custom GLB model
             const loader = new THREE.GLTFLoader();
-            loader.load('path/to/your/model.glb', function(gltf) {
+            loader.load('person.glb', function(gltf) {
                 model = gltf.scene;
                 model.position.set(0, -1.75, 0); // Adjust model position if necessary
                 scene.add(model);
