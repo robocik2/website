@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Room with Rolling Figure and Window</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script> <!-- Add GLTFLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -35,10 +35,26 @@
             windowMesh.position.set(0, 0, 5); // Place on the back wall
             scene.add(windowMesh);
 
+            // Add lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Bright ambient light
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Bright directional light
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
             // Human (replace with 3D model)
             const loader = new THREE.GLTFLoader();
-            loader.load('BOYLAY2.glb', function (gltf) { // Add your model file path here
+            loader.load('BOYLAY2.glb', function (gltf) {
                 human = gltf.scene;
+                
+                human.traverse(function (node) {
+                    if (node.isMesh) {
+                        // Apply a bright standard material to the model
+                        node.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+                    }
+                });
+
                 human.scale.set(0.5, 0.5, 0.5); // Scale the model if needed
                 human.position.y = -2.25; // Position it on the floor
                 scene.add(human);
@@ -77,7 +93,6 @@
                 if (direction.length() > 0.01) {
                     const angle = Math.atan2(direction.x, direction.z);
                     const rotationAxis = new THREE.Vector3(direction.z, 0, 0).normalize();
-                   // const rotationAxis = new THREE.Vector3(direction.z, 0, -direction.x).normalize();
                     human.quaternion.setFromAxisAngle(rotationAxis, angle);
                 }
             }
