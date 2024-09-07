@@ -61,12 +61,14 @@
             directionalLight.position.set(5, 5, 5);
             scene.add(directionalLight);
 
-            // Create a cuboid
-            const cuboidGeometry = new THREE.BoxGeometry(1, 1.5, 0.5); // Width, Height, Depth
-            const cuboidMaterial = new THREE.MeshPhongMaterial({color: 0x00ff00}); // Green color
-            cuboid = new THREE.Mesh(cuboidGeometry, cuboidMaterial);
-            cuboid.position.y = -1.75; // Position it on the floor
-            scene.add(cuboid);
+              // Load the custom GLB model
+            const loader = new THREE.GLTFLoader();
+            loader.load('person.glb', function(gltf) {
+                model = gltf.scene;
+                model.position.set(0, -1.75, 0); // Adjust model position if necessary
+                scene.add(model);
+            }, undefined, function(error) {
+                console.error('An error happened while loading the model:', error);
 
             camera.position.z = 5;
             camera.position.y = 1;
