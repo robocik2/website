@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Flipping Cuboid and Text Overlays</title>
+    <title>3D Room with Model and Text Overlays</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -30,9 +30,9 @@
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
     <script>
-        let scene, camera, renderer, room, cuboid, targetPosition;
-        const GRID_SIZE = 8; // Number of positions in each direction
-        const STEP_SIZE = 1; // Size of each step
+        let scene, camera, renderer, room, model, targetPosition;
+        const GRID_SIZE = 8;
+        const STEP_SIZE = 1;
 
         function init() {
             scene = new THREE.Scene();
@@ -41,46 +41,40 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // Room
             const roomGeometry = new THREE.BoxGeometry(10, 5, 10);
             const roomMaterial = new THREE.MeshBasicMaterial({color: 0x8B4513, side: THREE.BackSide});
             room = new THREE.Mesh(roomGeometry, roomMaterial);
             scene.add(room);
 
-            // Window
             const windowGeometry = new THREE.PlaneGeometry(2, 2);
-            const windowMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB}); // Sky blue color
+            const windowMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
             const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
-            windowMesh.position.set(0, 0, 5); // Place on the back wall
+            windowMesh.position.set(0, 0, 5);
             scene.add(windowMesh);
 
-            // Add lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 3); // Ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 3);
             scene.add(ambientLight);
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
             directionalLight.position.set(5, 5, 5);
             scene.add(directionalLight);
 
-           // const loader = new THREE.GLTFLoader();
-            //loader.load(
-              //  'person.glb', // Replace with the path to your GLB file
-              //  function (gltf) {
-                 //   cuboid = gltf.scene;
-             //       cuboid.position.y = -1.75; // Position it on the floor
-                    //Scale the model if needed
-             //       cuboid.scale.set(0.5, 0.5, 0.5); // Adjust these values as needed
-        
-             //       cuboid.add(model);
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'person.glb', // Make sure this path is correct
+                function (gltf) {
+                    model = gltf.scene;
+                    model.position.y = -1.75;
+                    model.scale.set(0.5, 0.5, 0.5);
+                    scene.add(model);
                 },
-    // ... error handling
-           // );
-            // Create a cuboid
-            const cuboidGeometry = new THREE.BoxGeometry(1, 1.5, 0.5); // Width, Height, Depth
-            const cuboidMaterial = new THREE.MeshPhongMaterial({color: 0x00ff00}); // Green color
-            cuboid = new THREE.Mesh(cuboidGeometry, cuboidMaterial);
-            cuboid.position.y = -1.75; // Position it on the floor
-            scene.add(cuboid);
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('An error happened', error);
+                }
+            );
 
             camera.position.z = 5;
             camera.position.y = 1;
@@ -96,34 +90,31 @@
             const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
             const mouseY = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
 
-            // Update target position (stepped)
             targetPosition.x = mouseX * STEP_SIZE;
-            targetPosition.z = mouseY * STEP_SIZE; // Now moving the cursor up (lower Y) results in positive Z
+            targetPosition.z = mouseY * STEP_SIZE;
         }
 
         function animate() {
             requestAnimationFrame(animate);
 
-            if (cuboid) {
-                // Stepped movement
-                cuboid.position.x = targetPosition.x;
-                cuboid.position.z = targetPosition.z;
+            if (model) {
+                model.position.x = targetPosition.x;
+                model.position.z = targetPosition.z;
 
-                // Flip animation
-                if (cuboid.position.x > 0) {
-                    cuboid.rotation.z = Math.PI / 2;
-                } else if (cuboid.position.x < 0) {
-                    cuboid.rotation.z = -Math.PI / 2;
+                if (model.position.x > 0) {
+                    model.rotation.y = Math.PI / 2;
+                } else if (model.position.x < 0) {
+                    model.rotation.y = -Math.PI / 2;
                 } else {
-                    cuboid.rotation.z = 0;
+                    model.rotation.y = 0;
                 }
 
-                if (cuboid.position.z > 0) {
-                    cuboid.rotation.x = Math.PI / 2; // Flipped this direction
-                } else if (cuboid.position.z < 0) {
-                    cuboid.rotation.x = -Math.PI / 2; // Flipped this direction
+                if (model.position.z > 0) {
+                    model.rotation.x = -Math.PI / 8;
+                } else if (model.position.z < 0) {
+                    model.rotation.x = Math.PI / 8;
                 } else {
-                    cuboid.rotation.x = 0;
+                    model.rotation.x = 0;
                 }
             }
 
