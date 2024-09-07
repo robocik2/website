@@ -62,19 +62,19 @@
             directionalLight.position.set(5, 5, 5);
             scene.add(directionalLight);
 
-            const loader2 = new THREE.GLTFLoader();
-            loader.load(
-                'BOYLAY2.glb', // Replace with the path to your GLB file
-                function (gltf) {
-                    cuboid = gltf.scene;
+            const loader = new THREE.GLTFLoader();
+           // loader.load(
+              //  'BOYLAY2.glb', // Replace with the path to your GLB file
+              //  function (gltf) {
+                 //   cuboid = gltf.scene;
              //       cuboid.position.y = -1.75; // Position it on the floor
                     //Scale the model if needed
              //       cuboid.scale.set(0.5, 0.5, 0.5); // Adjust these values as needed
         
              //       cuboid.add(model);
-                },
+               // },
     // ... error handling
-            );
+           // );
             // Create a cuboid
             const cuboidGeometry = new THREE.BoxGeometry(1, 1.5, 0.5); // Width, Height, Depth
             const cuboidMaterial = new THREE.MeshPhongMaterial({color: 0x00ff00}); // Green color
