@@ -37,7 +37,7 @@
 
             // Human (replace with 3D model)
             const loader = new THREE.GLTFLoader();
-            loader.load('BOYLAY.obj', function (gltf) { // Add your model file path here
+            loader.load('BOYLAY2.glb', function (gltf) { // Add your model file path here
                 human = gltf.scene;
                 human.scale.set(0.5, 0.5, 0.5); // Scale the model if needed
                 human.position.y = -2.25; // Position it on the floor
