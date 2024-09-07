@@ -76,11 +76,11 @@
     // ... error handling
             );
             // Create a cuboid
-            //const cuboidGeometry = new THREE.BoxGeometry(1, 1.5, 0.5); // Width, Height, Depth
-            //const cuboidMaterial = new THREE.MeshPhongMaterial({color: 0x00ff00}); // Green color
-            //cuboid = new THREE.Mesh(cuboidGeometry, cuboidMaterial);
-            //cuboid.position.y = -1.75; // Position it on the floor
-            //scene.add(cuboid);
+            const cuboidGeometry = new THREE.BoxGeometry(1, 1.5, 0.5); // Width, Height, Depth
+            const cuboidMaterial = new THREE.MeshPhongMaterial({color: 0x00ff00}); // Green color
+            cuboid = new THREE.Mesh(cuboidGeometry, cuboidMaterial);
+            cuboid.position.y = -1.75; // Position it on the floor
+            scene.add(cuboid);
 
             camera.position.z = 5;
             camera.position.y = 1;
