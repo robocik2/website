@@ -76,7 +76,8 @@
                 // If there's significant movement, apply rotation
                 if (direction.length() > 0.01) {
                     const angle = Math.atan2(direction.x, direction.z);
-                    const rotationAxis = new THREE.Vector3(direction.z, 0, -direction.x).normalize();
+                    const rotationAxis = new THREE.Vector3(direction.z, 0, 0).normalize();
+                   // const rotationAxis = new THREE.Vector3(direction.z, 0, -direction.x).normalize();
                     human.quaternion.setFromAxisAngle(rotationAxis, angle);
                 }
             }
