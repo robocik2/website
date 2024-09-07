@@ -1,3 +1,5 @@
+working website
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,22 +38,21 @@
 
         function init() {
             scene = new THREE.Scene();
-            
-            // Adjust the field of view and aspect ratio
-            const fov = 90;
-            const aspect = window.innerWidth / window.innerHeight;
-            const near = 0.1;
-            const far = 1000;
-            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer();
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            const roomGeometry = new THREE.BoxGeometry(20, 10, 20);
+             const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
             const roomMaterial = new THREE.MeshBasicMaterial({color: 0x8B4513, side: THREE.BackSide});
             room = new THREE.Mesh(roomGeometry, roomMaterial);
             scene.add(room);
+
+            const windowGeometry = new THREE.PlaneGeometry(2, 2);
+            const windowMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
+            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+            windowMesh.position.set(0, 0, 5);
+            scene.add(windowMesh);
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 3);
             scene.add(ambientLight);
@@ -65,7 +66,7 @@
                 'person.glb', // Make sure this path is correct
                 function (gltf) {
                     model = gltf.scene;
-                    model.position.y = -3;
+                    model.position.y = -1.75;
                     model.scale.set(0.5, 0.5, 0.5);
                     scene.add(model);
                 },
@@ -77,11 +78,11 @@
                 }
             );
 
-            // Adjust camera position and look-at point
-            camera.position.set(0, 0, 0.1); // Moved camera to the center of the room
-            camera.lookAt(0, 0, 1); // Look slightly forward
+            camera.position.z = 5;
+            camera.position.y = 1;
+            camera.lookAt(0, -1, 0);
 
-            targetPosition = new THREE.Vector3(0, -3, 0);
+            targetPosition = new THREE.Vector3(0, -1.75, 0);
 
             document.addEventListener('mousemove', onMouseMove);
             animate();
@@ -92,7 +93,7 @@
             const mouseY = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
 
             targetPosition.x = mouseX * STEP_SIZE;
-            targetPosition.z = mouseY * STEP_SIZE + 5; // Offset to keep model in front of camera
+            targetPosition.z = mouseY * STEP_SIZE;
         }
 
         function animate() {
@@ -102,46 +103,31 @@
                 model.position.x = targetPosition.x;
                 model.position.z = targetPosition.z;
 
-                // Calculate the number of steps from the origin
-                const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
-                const stepsZ = Math.abs(Math.round((model.position.z - 5) / STEP_SIZE));
-                const totalSteps = stepsX + stepsZ;
-
-                // Calculate the additional rotation based on the total steps
-                const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
-
-                // Rotation around Y-axis (horizontal rotation)
                 if (model.position.x > 0) {
-                    model.rotation.y = Math.PI / 2 + additionalRotation;
+                    model.rotation.y = Math.PI / 2;
                 } else if (model.position.x < 0) {
-                    model.rotation.y = -Math.PI / 2 + additionalRotation;
+                    model.rotation.y = -Math.PI / 2;
                 } else {
-                    model.rotation.y = additionalRotation;
+                    model.rotation.y = 0;
                 }
 
-                // Rotation around X-axis (tilt forward/backward)
-                if (model.position.z > 5) {
+                if (model.position.z > 0) {
                     model.rotation.x = -Math.PI / 8;
-                } else if (model.position.z < 5) {
+                } else if (model.position.z < 0) {
                     model.rotation.x = Math.PI / 8;
                 } else {
                     model.rotation.x = 0;
                 }
-
-                // Rotation around Z-axis (vertical axis) - 90 degrees per step
-                model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
             }
 
             renderer.render(scene, camera);
         }
 
-        function onWindowResize() {
+        window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        window.addEventListener('resize', onWindowResize);
+        });
 
         init();
     </script>
