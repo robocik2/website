@@ -30,10 +30,9 @@
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
     <script>
-        let scene, camera, renderer, room, model, targetPosition, currentPosition, currentRotation;
+        let scene, camera, renderer, room, model, targetPosition;
         const GRID_SIZE = 8;
         const STEP_SIZE = 1;
-        const LERP_FACTOR = 0.1; // Adjust this value to change the smoothness of the animation
 
         function init() {
             scene = new THREE.Scene();
@@ -68,8 +67,6 @@
                     model.position.y = -1.75;
                     model.scale.set(0.5, 0.5, 0.5);
                     scene.add(model);
-                    currentPosition = new THREE.Vector3(0, -1.75, 0);
-                    currentRotation = new THREE.Euler(0, 0, 0);
                 },
                 function (xhr) {
                     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -97,45 +94,41 @@
             targetPosition.z = mouseY * STEP_SIZE;
         }
 
-        function lerp(start, end, factor) {
-            return start + (end - start) * factor;
-        }
-
         function animate() {
             requestAnimationFrame(animate);
 
-            if (model && currentPosition && currentRotation) {
-                // Interpolate position
-                currentPosition.x = lerp(currentPosition.x, targetPosition.x, LERP_FACTOR);
-                currentPosition.z = lerp(currentPosition.z, targetPosition.z, LERP_FACTOR);
-                model.position.copy(currentPosition);
+            if (model) {
+                model.position.x = targetPosition.x;
+                model.position.z = targetPosition.z;
 
                 // Calculate the number of steps from the origin
-                const stepsX = Math.abs(Math.round(targetPosition.x / STEP_SIZE));
-                const stepsZ = Math.abs(Math.round(targetPosition.z / STEP_SIZE));
+                const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
+                const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
                 const totalSteps = stepsX + stepsZ;
 
-                // Calculate the target rotation
-                let targetRotationY = (totalSteps * Math.PI / 2) % (2 * Math.PI);
-                if (targetPosition.x > 0) {
-                    targetRotationY += Math.PI / 2;
-                } else if (targetPosition.x < 0) {
-                    targetRotationY -= Math.PI / 2;
+                // Calculate the additional rotation based on the total steps
+                const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+
+                // Rotation around Y-axis (horizontal rotation)
+                if (model.position.x > 0) {
+                    model.rotation.y = Math.PI / 2 + additionalRotation;
+                } else if (model.position.x < 0) {
+                    model.rotation.y = -Math.PI / 2 + additionalRotation;
+                } else {
+                    model.rotation.y = additionalRotation;
                 }
 
-                // Interpolate rotation
-                currentRotation.y = lerp(currentRotation.y, targetRotationY, LERP_FACTOR);
-                model.rotation.y = currentRotation.y;
-
-                // Handle X rotation
-                let targetRotationX = 0;
-                if (targetPosition.z > 0) {
-                    targetRotationX = -Math.PI / 8;
-                } else if (targetPosition.z < 0) {
-                    targetRotationX = Math.PI / 8;
+                // Rotation around X-axis (tilt forward/backward)
+                if (model.position.z > 0) {
+                    model.rotation.x = -Math.PI / 8;
+                } else if (model.position.z < 0) {
+                    model.rotation.x = Math.PI / 8;
+                } else {
+                    model.rotation.x = 0;
                 }
-                currentRotation.x = lerp(currentRotation.x, targetRotationX, LERP_FACTOR);
-                model.rotation.x = currentRotation.x;
+
+                // New rotation around Z-axis (vertical axis)
+                model.rotation.z = (totalSteps * Math.PI / 4) % (2 * Math.PI);
             }
 
             renderer.render(scene, camera);
