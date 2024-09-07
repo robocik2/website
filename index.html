@@ -95,11 +95,6 @@ working website
             targetPosition.x = mouseX * STEP_SIZE;
             targetPosition.z = mouseY * STEP_SIZE;
         }
-        //
-           if (Math.random() < 0.1) { // 10% chance to rotate
-                targetRotation = Math.round(Math.random() * 4) * Math.PI / 2; // Random 90 degree increment
-            }
-        }
 
         function animate() {
             requestAnimationFrame(animate);
