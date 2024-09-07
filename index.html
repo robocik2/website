@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Fully Draggable Model</title>
+    <title>3D Room with Fully Draggable Model and Custom Cursors</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
-            cursor: grab;
+            cursor: url('cursor1.png'), auto;
+        }
+        body.dragging {
+            cursor: url('cursor2.png'), auto !important;
         }
         canvas { display: block; }
         .overlay {
@@ -125,7 +128,7 @@
                 
                 if (intersects.length > 0) {
                     isDragging = true;
-                    document.body.style.cursor = 'grabbing';
+                    document.body.classList.add('dragging');
                     dragStart.copy(model.position);
                     const intersectPoint = intersects[0].point;
                     dragOffset.copy(intersectPoint).sub(model.position);
@@ -135,7 +138,7 @@
 
         function onMouseUp() {
             isDragging = false;
-            document.body.style.cursor = 'grab';
+            document.body.classList.remove('dragging');
         }
 
         function animate() {
