@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Custom Model and Text Overlays</title>
+    <title>3D Room with Flipping Cuboid and Text Overlays</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/GLTFLoader.js"></script>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -30,7 +29,7 @@
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
     <script>
-        let scene, camera, renderer, room, person, targetPosition;
+        let scene, camera, renderer, room, cuboid, targetPosition;
         const GRID_SIZE = 8; // Number of positions in each direction
         const STEP_SIZE = 1; // Size of each step
 
@@ -62,22 +61,12 @@
             directionalLight.position.set(5, 5, 5);
             scene.add(directionalLight);
 
-            // Load the custom 3D model
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                'person.glb', // Path to your .glb file
-                function (gltf) {
-                    person = gltf.scene;
-                    person.position.y = -1.75; // Position it on the floor
-                    scene.add(person);
-                },
-                function (xhr) {
-                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-                },
-                function (error) {
-                    console.error('An error happened', error);
-                }
-            );
+            // Create a cuboid
+            const cuboidGeometry = new THREE.BoxGeometry(1, 1.5, 0.5); // Width, Height, Depth
+            const cuboidMaterial = new THREE.MeshPhongMaterial({color: 0x00ff00}); // Green color
+            cuboid = new THREE.Mesh(cuboidGeometry, cuboidMaterial);
+            cuboid.position.y = -1.75; // Position it on the floor
+            scene.add(cuboid);
 
             camera.position.z = 5;
             camera.position.y = 1;
@@ -101,20 +90,26 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            if (person) {
+            if (cuboid) {
                 // Stepped movement
-                person.position.x = targetPosition.x;
-                person.position.z = targetPosition.z;
+                cuboid.position.x = targetPosition.x;
+                cuboid.position.z = targetPosition.z;
 
-                // Rotation animation
-                if (person.position.x > 0) {
-                    person.rotation.y = Math.PI / 2;
-                } else if (person.position.x < 0) {
-                    person.rotation.y = -Math.PI / 2;
-                } else if (person.position.z > 0) {
-                    person.rotation.y = Math.PI;
-                } else if (person.position.z < 0) {
-                    person.rotation.y = 0;
+                // Flip animation
+                if (cuboid.position.x > 0) {
+                    cuboid.rotation.z = Math.PI / 2;
+                } else if (cuboid.position.x < 0) {
+                    cuboid.rotation.z = -Math.PI / 2;
+                } else {
+                    cuboid.rotation.z = 0;
+                }
+
+                if (cuboid.position.z > 0) {
+                    cuboid.rotation.x = Math.PI / 2; // Flipped this direction
+                } else if (cuboid.position.z < 0) {
+                    cuboid.rotation.x = -Math.PI / 2; // Flipped this direction
+                } else {
+                    cuboid.rotation.x = 0;
                 }
             }
 
