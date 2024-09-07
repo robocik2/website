@@ -127,8 +127,8 @@
                     model.rotation.x = 0;
                 }
 
-                // New rotation around Z-axis (vertical axis)
-                model.rotation.z = (totalSteps * Math.PI / 4) % (2 * Math.PI);
+                // New rotation around Z-axis (vertical axis) - now 90 degrees per step
+                model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
             }
 
             renderer.render(scene, camera);
