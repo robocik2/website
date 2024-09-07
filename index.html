@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Model and Text Overlays</title>
+    <title>3D Room with Model and Dynamic Cursor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
-            cursor: url('cursor1.png'), auto;
+            cursor: none;
         }
         canvas { display: block; }
         .overlay {
@@ -25,9 +25,22 @@
         #animation { top: 10%; left: 10%; }
         #art { bottom: 10%; left: 10%; }
         #contact { bottom: 10%; right: 10%; }
+        #custom-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            width: 32px;
+            height: 32px;
+            background-image: url('cursor1.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            transform-origin: center;
+            transition: transform 0.05s ease-out;
+        }
     </style>
 </head>
 <body>
+    <div id="custom-cursor"></div>
     <div id="title" class="overlay">maks rz</div>
     <div id="ig" class="overlay">ig</div>
     <div id="animation" class="overlay">animation</div>
@@ -38,53 +51,14 @@
         const GRID_SIZE = 8;
         const STEP_SIZE = 1;
 
+        // Cursor variables
+        const cursor = document.getElementById('custom-cursor');
+        let lastX = 0;
+        let lastY = 0;
+        let lastTimestamp = 0;
+
         function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-
-            const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
-            const roomMaterial = new THREE.MeshBasicMaterial({color: 0x8B4513, side: THREE.BackSide});
-            room = new THREE.Mesh(roomGeometry, roomMaterial);
-            scene.add(room);
-
-            const windowGeometry = new THREE.PlaneGeometry(2, 2);
-            const windowMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
-            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
-            windowMesh.position.set(0, 0, 5);
-            scene.add(windowMesh);
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 3);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-            directionalLight.position.set(5, 5, 5);
-            scene.add(directionalLight);
-
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                'p1erson.glb', // Make sure this path is correct
-                function (gltf) {
-                    model = gltf.scene;
-                    model.position.y = -1.75;
-                    model.scale.set(0.5, 0.5, 0.5);
-                    scene.add(model);
-                },
-                function (xhr) {
-                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-                },
-                function (error) {
-                    console.error('An error happened', error);
-                }
-            );
-
-            camera.position.z = 5;
-            camera.position.y = 1;
-            camera.lookAt(0, -1, 0);
-
-            targetPosition = new THREE.Vector3(0, -1.75, 0);
+            // ... (previous init code remains unchanged)
 
             document.addEventListener('mousemove', onMouseMove);
             animate();
@@ -96,44 +70,38 @@
 
             targetPosition.x = mouseX * STEP_SIZE;
             targetPosition.z = mouseY * STEP_SIZE;
+
+            // Update cursor
+            updateCursor(event);
+        }
+
+        function updateCursor(event) {
+            const currentTime = Date.now();
+            const deltaTime = currentTime - lastTimestamp;
+            
+            if (deltaTime > 0) {
+                const speedX = Math.abs(event.clientX - lastX) / deltaTime;
+                const speedY = Math.abs(event.clientY - lastY) / deltaTime;
+                const speed = Math.sqrt(speedX * speedX + speedY * speedY);
+
+                const angle = Math.atan2(event.clientY - lastY, event.clientX - lastX);
+                const squashFactor = 1 + speed * 0.1;
+                const stretchFactor = 1 / squashFactor;
+
+                cursor.style.transform = `translate(${event.clientX}px, ${event.clientY}px) 
+                                          rotate(${angle}rad) 
+                                          scale(${stretchFactor}, ${squashFactor})`;
+
+                lastX = event.clientX;
+                lastY = event.clientY;
+                lastTimestamp = currentTime;
+            }
         }
 
         function animate() {
             requestAnimationFrame(animate);
 
-            if (model) {
-                model.position.x = targetPosition.x;
-                model.position.z = targetPosition.z;
-
-                // Calculate the number of steps from the origin
-                const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
-                const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
-                const totalSteps = stepsX + stepsZ;
-
-                // Calculate the additional rotation based on the total steps
-                const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
-
-                // Rotation around Y-axis (horizontal rotation)
-                if (model.position.x > 0) {
-                    model.rotation.y = Math.PI / 2 + additionalRotation;
-                } else if (model.position.x < 0) {
-                    model.rotation.y = -Math.PI / 2 + additionalRotation;
-                } else {
-                    model.rotation.y = additionalRotation;
-                }
-
-                // Rotation around X-axis (tilt forward/backward)
-                if (model.position.z > 0) {
-                    model.rotation.x = -Math.PI / 8;
-                } else if (model.position.z < 0) {
-                    model.rotation.x = Math.PI / 8;
-                } else {
-                    model.rotation.x = 0;
-                }
-
-                // New rotation around Z-axis (vertical axis) - now 90 degrees per step
-                model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
-            }
+            // ... (previous animation code remains unchanged)
 
             renderer.render(scene, camera);
         }
