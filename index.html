@@ -3,15 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Model and Dynamic Cursor</title>
+    <title>Simplified 3D Room</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            cursor: none;
-        }
+        body { margin: 0; overflow: hidden; }
         canvas { display: block; }
         .overlay {
             position: fixed;
@@ -25,84 +20,44 @@
         #animation { top: 10%; left: 10%; }
         #art { bottom: 10%; left: 10%; }
         #contact { bottom: 10%; right: 10%; }
-        #custom-cursor {
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            width: 32px;
-            height: 32px;
-            background-image: url('cursor1.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            transform-origin: center;
-            transition: transform 0.05s ease-out;
-        }
     </style>
 </head>
 <body>
-    <div id="custom-cursor"></div>
     <div id="title" class="overlay">maks rz</div>
     <div id="ig" class="overlay">ig</div>
     <div id="animation" class="overlay">animation</div>
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
     <script>
-        let scene, camera, renderer, room, model, targetPosition;
-        const GRID_SIZE = 8;
-        const STEP_SIZE = 1;
-
-        // Cursor variables
-        const cursor = document.getElementById('custom-cursor');
-        let lastX = 0;
-        let lastY = 0;
-        let lastTimestamp = 0;
+        let scene, camera, renderer, room;
 
         function init() {
-            // ... (previous init code remains unchanged)
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
-            document.addEventListener('mousemove', onMouseMove);
+            const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
+            const roomMaterial = new THREE.MeshBasicMaterial({color: 0x8B4513, side: THREE.BackSide});
+            room = new THREE.Mesh(roomGeometry, roomMaterial);
+            scene.add(room);
+
+            const windowGeometry = new THREE.PlaneGeometry(2, 2);
+            const windowMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
+            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+            windowMesh.position.set(0, 0, 5);
+            scene.add(windowMesh);
+
+            camera.position.z = 5;
+            camera.position.y = 1;
+            camera.lookAt(0, -1, 0);
+
             animate();
-        }
-
-        function onMouseMove(event) {
-            const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
-            const mouseY = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
-
-            targetPosition.x = mouseX * STEP_SIZE;
-            targetPosition.z = mouseY * STEP_SIZE;
-
-            // Update cursor
-            updateCursor(event);
-        }
-
-        function updateCursor(event) {
-            const currentTime = Date.now();
-            const deltaTime = currentTime - lastTimestamp;
-            
-            if (deltaTime > 0) {
-                const speedX = Math.abs(event.clientX - lastX) / deltaTime;
-                const speedY = Math.abs(event.clientY - lastY) / deltaTime;
-                const speed = Math.sqrt(speedX * speedX + speedY * speedY);
-
-                const angle = Math.atan2(event.clientY - lastY, event.clientX - lastX);
-                const squashFactor = 1 + speed * 0.1;
-                const stretchFactor = 1 / squashFactor;
-
-                cursor.style.transform = `translate(${event.clientX}px, ${event.clientY}px) 
-                                          rotate(${angle}rad) 
-                                          scale(${stretchFactor}, ${squashFactor})`;
-
-                lastX = event.clientX;
-                lastY = event.clientY;
-                lastTimestamp = currentTime;
-            }
         }
 
         function animate() {
             requestAnimationFrame(animate);
-
-            // ... (previous animation code remains unchanged)
-
             renderer.render(scene, camera);
         }
 
