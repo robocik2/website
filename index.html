@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Draggable Model</title>
+    <title>3D Room with Fully Draggable Model</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -41,7 +41,8 @@
         const STEP_SIZE = 1;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1.75);
+        const dragStart = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
 
         function init() {
             scene = new THREE.Scene();
@@ -101,9 +102,11 @@
 
             if (isDragging && model) {
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = new THREE.Vector3();
-                raycaster.ray.intersectPlane(floorPlane, intersects);
-                model.position.copy(intersects);
+                const intersectPoint = new THREE.Vector3();
+                const planeNormal = camera.getWorldDirection(new THREE.Vector3());
+                const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+                model.position.copy(intersectPoint.sub(dragOffset));
             } else {
                 const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
                 const mouseY = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
@@ -114,8 +117,20 @@
         }
 
         function onMouseDown(event) {
-            isDragging = true;
-            document.body.style.cursor = 'grabbing';
+            if (model) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(model, true);
+                
+                if (intersects.length > 0) {
+                    isDragging = true;
+                    document.body.style.cursor = 'grabbing';
+                    dragStart.copy(model.position);
+                    const intersectPoint = intersects[0].point;
+                    dragOffset.copy(intersectPoint).sub(model.position);
+                }
+            }
         }
 
         function onMouseUp() {
