@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Custom GLB Model and Text Overlays</title>
+    <title>3D Room with Custom Model and Text Overlays</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/GLTFLoader.js"></script>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -30,7 +30,7 @@
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
     <script>
-        let scene, camera, renderer, room, model, targetPosition;
+        let scene, camera, renderer, room, person, targetPosition;
         const GRID_SIZE = 8; // Number of positions in each direction
         const STEP_SIZE = 1; // Size of each step
 
@@ -62,15 +62,22 @@
             directionalLight.position.set(5, 5, 5);
             scene.add(directionalLight);
 
-            // Load the custom GLB model
+            // Load the custom 3D model
             const loader = new THREE.GLTFLoader();
-            loader.load('person.glb', function(gltf) {
-                model = gltf.scene;
-                model.position.set(0, -1.75, 0); // Adjust model position if necessary
-                scene.add(model);
-            }, undefined, function(error) {
-                console.error('An error happened while loading the model:', error);
-            });
+            loader.load(
+                'person.glb', // Path to your .glb file
+                function (gltf) {
+                    person = gltf.scene;
+                    person.position.y = -1.75; // Position it on the floor
+                    scene.add(person);
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('An error happened', error);
+                }
+            );
 
             camera.position.z = 5;
             camera.position.y = 1;
@@ -88,32 +95,26 @@
 
             // Update target position (stepped)
             targetPosition.x = mouseX * STEP_SIZE;
-            targetPosition.z = mouseY * STEP_SIZE;
+            targetPosition.z = mouseY * STEP_SIZE; // Now moving the cursor up (lower Y) results in positive Z
         }
 
         function animate() {
             requestAnimationFrame(animate);
 
-            if (model) {
+            if (person) {
                 // Stepped movement
-                model.position.x = targetPosition.x;
-                model.position.z = targetPosition.z;
+                person.position.x = targetPosition.x;
+                person.position.z = targetPosition.z;
 
-                // Flip animation
-                if (model.position.x > 0) {
-                    model.rotation.z = Math.PI / 2;
-                } else if (model.position.x < 0) {
-                    model.rotation.z = -Math.PI / 2;
-                } else {
-                    model.rotation.z = 0;
-                }
-
-                if (model.position.z > 0) {
-                    model.rotation.x = Math.PI / 2;
-                } else if (model.position.z < 0) {
-                    model.rotation.x = -Math.PI / 2;
-                } else {
-                    model.rotation.x = 0;
+                // Rotation animation
+                if (person.position.x > 0) {
+                    person.rotation.y = Math.PI / 2;
+                } else if (person.position.x < 0) {
+                    person.rotation.y = -Math.PI / 2;
+                } else if (person.position.z > 0) {
+                    person.rotation.y = Math.PI;
+                } else if (person.position.z < 0) {
+                    person.rotation.y = 0;
                 }
             }
 
