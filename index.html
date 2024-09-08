@@ -7,92 +7,204 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
-        /* ... (previous styles remain unchanged) ... */
-
-        #popup {
-            display: none;
+        body {
+            margin: 0;
+            overflow: hidden;
+            cursor: url('cursor1.png') 16 16, auto;
+        }
+        body.clicking {
+            cursor: url('cursor2.png') 16 16, auto !important;
+        }
+        canvas {
+            display: block;
+        }
+        .overlay {
             position: fixed;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            padding: 10px;
+            cursor: url('cursorhover.png') 16 16, auto;
+            z-index: 10;
+        }
+        #title { top: 10%; left: 50%; transform: translateX(-50%); }
+        #ig { top: 10%; right: 10%; }
+        #animation { top: 10%; left: 10%; }
+        #art { bottom: 10%; left: 10%; }
+        #contact { bottom: 10%; right: 10%; }
+        .overlay a {
+            color: white;
+            text-decoration: none;
+            cursor: url('cursorhover.png') 16 16, auto;
+        }
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            z-index: 1000;
+        }
+        #black-ellipse {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background-color: black;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: transform 1s ease;
+            z-index: 999;
+        }
+        #clicked-title {
+            position: fixed;
+            color: white;
+            font-size: 48px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
             z-index: 1001;
-            max-width: 80%;
-            text-align: center;
-            font-family: Arial, sans-serif;
         }
-
-        #popup-content {
-            margin-bottom: 20px;
-        }
-
-        #popup-close {
-            cursor: pointer;
+        #close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 36px;
             color: white;
-            background-color: transparent;
-            border: 1px solid white;
-            padding: 5px 10px;
-            border-radius: 5px;
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+            z-index: 1001;
         }
     </style>
 </head>
 <body>
     <div id="title" class="overlay">maks rz</div>
     <div id="ig" class="overlay"><a href="https://instagram.com/your_instagram" target="_blank">ig</a></div>
-    <div id="animation" class="overlay"><a href="animation.html" target="_blank">animation</a></div>
-    <div id="art" class="overlay"><a href="art.html" target="_blank">art</a></div>
-    <div id="contact" class="overlay"><a href="contact.html" target="_blank">contact</a></div>
-    <div id="transition-overlay"></div>
+    <div id="animation" class="overlay"><a href="#" data-title="Animation">animation</a></div>
+    <div id="art" class="overlay"><a href="#" data-title="Art">art</a></div>
+    <div id="contact" class="overlay"><a href="#" data-title="Contact">contact</a></div>
 
-    <!-- Add the popup div -->
-    <div id="popup">
-        <div id="popup-content">
-            maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness.
-        </div>
-        <button id="popup-close">Close</button>
-    </div>
+    <div id="black-ellipse"></div>
+    <div id="clicked-title"></div>
+    <div id="close-btn">✕</div>
 
     <script>
-        // ... (previous JavaScript code remains unchanged) ...
+        let scene, camera, renderer, room, model;
+        let isDragging = false;
+        let targetPosition = new THREE.Vector3(0, -1.75, 0);
+        const GRID_SIZE = 8;
+        const STEP_SIZE = 1;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragStart = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        let velocity = new THREE.Vector3();
+        let angularVelocity = new THREE.Vector3();
+        let lastMousePosition = new THREE.Vector2();
+        let isFlying = false;
+        const DAMPING = 0.99;
+        const ANGULAR_DAMPING = 0.98;
+        const BOUNCE = 0.8;
+        const GRAVITY = -0.05;
+        const GROUND_Y = -1.75;
+        const FORCE_MULTIPLIER = 15;
+        const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
-        // Add popup functionality
-        const titleElement = document.getElementById('title');
-        const popupElement = document.getElementById('popup');
-        const popupCloseButton = document.getElementById('popup-close');
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
-        titleElement.addEventListener('click', () => {
-            popupElement.style.display = 'block';
-            transitionOverlay.style.opacity = '0.5';
-            transitionOverlay.style.pointerEvents = 'auto';
-        });
+            const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
+            const roomMaterial = new THREE.MeshBasicMaterial({color: 0x382a14, side: THREE.BackSide});
+            room = new THREE.Mesh(roomGeometry, roomMaterial);
+            scene.add(room);
 
-        popupCloseButton.addEventListener('click', () => {
-            popupElement.style.display = 'none';
-            transitionOverlay.style.opacity = '0';
-            transitionOverlay.style.pointerEvents = 'none';
-        });
+            const windowGeometry = new THREE.PlaneGeometry(2, 2);
+            const windowMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
+            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+            windowMesh.position.set(0, 0, 5);
+            scene.add(windowMesh);
 
-        // Modify the transition overlay event listeners
-        document.querySelectorAll('.overlay a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (this.parentElement.id === 'title') {
-                    return; // Don't apply transition effect to the title
+            const ambientLight = new THREE.AmbientLight(0xffffff, 3);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'kid2.glb',
+                function (gltf) {
+                    model = gltf.scene;
+                    model.position.y = GROUND_Y;
+                    model.scale.set(2, 2, 2);
+                    scene.add(model);
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('An error happened', error);
                 }
+            );
+
+            camera.position.z = 5;
+            camera.position.y = 1;
+            camera.lookAt(0, -1, 0);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+
+        // Transition handling
+        const blackEllipse = document.getElementById('black-ellipse');
+        const clickedTitle = document.getElementById('clicked-title');
+        const closeButton = document.getElementById('close-btn');
+
+        document.querySelectorAll('.overlay a').forEach(link => {
+            link.addEventListener('click', function (e) {
                 e.preventDefault();
-                const href = this.getAttribute('href');
-                
-                transitionOverlay.style.opacity = '1';
-                transitionOverlay.style.pointerEvents = 'auto';
-                
+                const title = this.getAttribute('data-title');
+                clickedTitle.innerHTML = title;
+                blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
+                blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
+
+                // Start the ellipse transition
+                blackEllipse.style.transform = 'scale(15)';
                 setTimeout(() => {
-                    window.open(href, '_blank');
-                    transitionOverlay.style.opacity = '0';
-                    transitionOverlay.style.pointerEvents = 'none';
+                    clickedTitle.style.opacity = '1';
+                    closeButton.style.opacity = '1';
                 }, 1000);
             });
+        });
+
+        closeButton.addEventListener('click', () => {
+            // Reverse the transition
+            blackEllipse.style.transform = 'scale(0)';
+            clickedTitle.style.opacity = '0';
+            closeButton.style.opacity = '0';
         });
     </script>
 </body>
