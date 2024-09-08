@@ -46,6 +46,21 @@
             transition: opacity 1s ease;
             z-index: 1000;
         }
+        #ellipse-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+        #ellipse-overlay ellipse {
+            fill: black;
+            transform-origin: center;
+            transform: scale(0);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
     </style>
 </head>
 <body>
@@ -55,262 +70,57 @@
     <div id="art" class="overlay"><a href="art.html" target="_blank">art</a></div>
     <div id="contact" class="overlay"><a href="contact.html" target="_blank">contact</a></div>
     <div id="transition-overlay"></div>
+    <svg id="ellipse-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <ellipse cx="50" cy="50" rx="25" ry="15"/>
+    </svg>
     <script>
-        let scene, camera, renderer, room, model;
-        let isDragging = false;
-        let targetPosition = new THREE.Vector3(0, -1.75, 0);
-        const GRID_SIZE = 8;
-        const STEP_SIZE = 1;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const dragStart = new THREE.Vector3();
-        const dragOffset = new THREE.Vector3();
-        let velocity = new THREE.Vector3();
-        let angularVelocity = new THREE.Vector3();
-        let lastMousePosition = new THREE.Vector2();
-        let isFlying = false;
-        const DAMPING = 0.99;
-        const ANGULAR_DAMPING = 0.98;
-        const BOUNCE = 0.8;
-        const GRAVITY = -0.05;
-        const GROUND_Y = -1.75;
-        const FORCE_MULTIPLIER = 15;
-        const ANGULAR_FORCE_MULTIPLIER = 0.1;
-
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-
-            const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
-            const roomMaterial = new THREE.MeshBasicMaterial({color: 0x382a14, side: THREE.BackSide});
-            room = new THREE.Mesh(roomGeometry, roomMaterial);
-            scene.add(room);
-
-            const windowGeometry = new THREE.PlaneGeometry(2, 2);
-            const windowMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
-            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
-            windowMesh.position.set(0, 0, 5);
-            scene.add(windowMesh);
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 3);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-            directionalLight.position.set(5, 5, 5);
-            scene.add(directionalLight);
-
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                'kid2.glb',
-                function (gltf) {
-                    model = gltf.scene;
-                    model.position.y = GROUND_Y;
-                    model.scale.set(2, 2, 2);
-                    model.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material = new THREE.MeshBasicMaterial({
-                                color: child.material.color
-                            });
-                        }
-                    });
-                    scene.add(model);
-                },
-                function (xhr) {
-                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-                },
-                function (error) {
-                    console.error('An error happened', error);
-                }
-            );
-
-            camera.position.z = 5;
-            camera.position.y = 1;
-            camera.lookAt(0, -1, 0);
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mousedown', onMouseDown);
-            document.addEventListener('mouseup', onMouseUp);
-            animate();
-        }
-
-        function onMouseMove(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            if (isDragging && model) {
-                raycaster.setFromCamera(mouse, camera);
-                const intersectPoint = new THREE.Vector3();
-                const planeNormal = camera.getWorldDirection(new THREE.Vector3());
-                const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
-                raycaster.ray.intersectPlane(plane, intersectPoint);
-                model.position.copy(intersectPoint.sub(dragOffset));
-
-                // Calculate velocity
-                velocity.set(
-                    mouse.x - lastMousePosition.x,
-                    mouse.y - lastMousePosition.y,
-                    0
-                ).multiplyScalar(FORCE_MULTIPLIER);
-
-                // Calculate angular velocity
-                angularVelocity.set(
-                    velocity.y,
-                    -velocity.x,
-                    velocity.x + velocity.y
-                ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
-            } else if (!isFlying) {
-                const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
-                const mouseZ = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
-
-                targetPosition.x = mouseX * STEP_SIZE;
-                targetPosition.z = mouseZ * STEP_SIZE;
-            }
-
-            lastMousePosition.set(mouse.x, mouse.y);
-        }
-
-        function onMouseDown(event) {
-            document.body.classList.add('clicking');
-            if (model) {
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObject(model, true);
-                
-                if (intersects.length > 0) {
-                    isDragging = true;
-                    isFlying = false;
-                    dragStart.copy(model.position);
-                    const intersectPoint = intersects[0].point;
-                    dragOffset.copy(intersectPoint).sub(model.position);
-                }
-            }
-        }
-
-        function onMouseUp() {
-            if (isDragging) {
-                isFlying = true;
-            }
-            isDragging = false;
-            document.body.classList.remove('clicking');
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            if (model) {
-                if (isFlying) {
-                    // Apply gravity
-                    velocity.y += GRAVITY;
-
-                    model.position.add(velocity);
-                    velocity.multiplyScalar(DAMPING);
-
-                    // Apply rotation
-                    model.rotation.x += angularVelocity.x;
-                    model.rotation.y += angularVelocity.y;
-                    model.rotation.z += angularVelocity.z;
-                    angularVelocity.multiplyScalar(ANGULAR_DAMPING);
-
-                    // Check boundaries and bounce
-                    if (model.position.x < -7.5 || model.position.x > 7.5) {
-                        velocity.x *= -BOUNCE;
-                        model.position.x = Math.sign(model.position.x) * 7.5;
-                        angularVelocity.z *= -BOUNCE;
-                    }
-                    if (model.position.z < -7.5 || model.position.z > 7.5) {
-                        velocity.z *= -BOUNCE;
-                        model.position.z = Math.sign(model.position.z) * 7.5;
-                        angularVelocity.x *= -BOUNCE;
-                    }
-                    if (model.position.y > 3.75) {
-                        velocity.y *= -BOUNCE;
-                        model.position.y = 3.75;
-                        angularVelocity.x *= -BOUNCE;
-                        angularVelocity.z *= -BOUNCE;
-                    }
-
-                    // Check ground collision
-                    if (model.position.y < GROUND_Y) {
-                        velocity.y *= -BOUNCE;
-                        model.position.y = GROUND_Y;
-                        
-                        // Apply friction when on the ground
-                        velocity.x *= 0.9;
-                        velocity.z *= 0.9;
-                        angularVelocity.multiplyScalar(0.9);
-                    }
-
-                    // Check if the model has stopped moving
-                    if (velocity.length() < 0.01 && angularVelocity.length() < 0.01 && Math.abs(model.position.y - GROUND_Y) < 0.01) {
-                        isFlying = false;
-                        model.position.y = GROUND_Y;
-                        model.rotation.set(0, 0, 0);
-                    }
-                } else if (!isDragging) {
-                    // Stepped movement
-                    model.position.x = targetPosition.x;
-                    model.position.z = targetPosition.z;
-                    model.position.y = GROUND_Y;
-
-                    const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
-                    const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
-                    const totalSteps = stepsX + stepsZ;
-
-                    const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
-
-                    if (model.position.x > 0) {
-                        model.rotation.y = Math.PI / 2 + additionalRotation;
-                    } else if (model.position.x < 0) {
-                        model.rotation.y = -Math.PI / 2 + additionalRotation;
-                    } else {
-                        model.rotation.y = additionalRotation;
-                    }
-
-                    if (model.position.z > 0) {
-                        model.rotation.x = -Math.PI / 8;
-                    } else if (model.position.z < 0) {
-                        model.rotation.x = Math.PI / 8;
-                    } else {
-                        model.rotation.x = 0;
-                    }
-
-                    model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
-                }
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        init();
+        // ... (keep all the existing Three.js code here)
 
         // Add transition functionality
         const transitionOverlay = document.getElementById('transition-overlay');
+        const ellipseOverlay = document.getElementById('ellipse-overlay');
+        const ellipse = ellipseOverlay.querySelector('ellipse');
 
         document.querySelectorAll('.overlay a').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const href = this.getAttribute('href');
                 
-                transitionOverlay.style.opacity = '1';
-                transitionOverlay.style.pointerEvents = 'auto';
+                // Position and scale the ellipse
+                const rect = this.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
                 
+                ellipse.setAttribute('cx', centerX);
+                ellipse.setAttribute('cy', centerY);
+                ellipseOverlay.style.display = 'block';
+                
+                // Trigger reflow
+                ellipse.getBoundingClientRect();
+                
+                // Scale up the ellipse
+                ellipse.style.transform = 'scale(50)';
+                
+                // Start the full-screen transition after the ellipse animation
+                setTimeout(() => {
+                    transitionOverlay.style.opacity = '1';
+                    transitionOverlay.style.pointerEvents = 'auto';
+                }, 300);
+                
+                // Open the link and reset the overlays
                 setTimeout(() => {
                     window.open(href, '_blank');
                     transitionOverlay.style.opacity = '0';
                     transitionOverlay.style.pointerEvents = 'none';
-                }, 1000);
+                    ellipse.style.transform = 'scale(0)';
+                    setTimeout(() => {
+                        ellipseOverlay.style.display = 'none';
+                    }, 300);
+                }, 1300);
             });
         });
+
+        init();
     </script>
 </body>
 </html>
