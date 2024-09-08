@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>White 3D Room with Rotating, Fast-Moving, Bouncing Model and Simple Fade Transition</title>
+    <title>White 3D Room with Interactive, Rotating, Fast-Moving, Bouncing Model and Simple Fade Transition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
+            background-color: white;
             cursor: url('cursor1.png') 16 16, auto;
         }
         body.clicking {
@@ -24,6 +25,7 @@
             padding: 10px;
             cursor: url('cursorhover.png') 16 16, auto;
             z-index: 10;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
         #ig { top: 10%; right: 10%; }
@@ -77,11 +79,8 @@
     <div id="transition-content"></div>
     <div id="close-button">✕</div>
     <script>
-        let scene, camera, renderer, room, model;
+        let scene, camera, renderer, model;
         let isDragging = false;
-        let targetPosition = new THREE.Vector3(0, -1.75, 0);
-        const GRID_SIZE = 8;
-        const STEP_SIZE = 1;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const dragStart = new THREE.Vector3();
@@ -101,14 +100,10 @@
         function init() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setClearColor(0xffffff, 1);
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
-
-            const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
-            const roomMaterial = new THREE.MeshBasicMaterial({color: 0xFFFFFF, side: THREE.BackSide});
-            room = new THREE.Mesh(roomGeometry, roomMaterial);
-            scene.add(room);
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 3);
             scene.add(ambientLight);
@@ -126,8 +121,10 @@
                     model.scale.set(2, 2, 2);
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            child.material = new THREE.MeshBasicMaterial({
-                                color: child.material.color
+                            child.material = new THREE.MeshStandardMaterial({
+                                color: child.material.color,
+                                metalness: 0.5,
+                                roughness: 0.5
                             });
                         }
                     });
@@ -159,15 +156,57 @@
         }
 
         function onMouseMove(event) {
-            // ... (previous onMouseMove code remains the same)
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            if (isDragging && model) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                const planeNormal = camera.getWorldDirection(new THREE.Vector3());
+                const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+                model.position.copy(intersectPoint.sub(dragOffset));
+
+                velocity.set(
+                    mouse.x - lastMousePosition.x,
+                    mouse.y - lastMousePosition.y,
+                    0
+                ).multiplyScalar(FORCE_MULTIPLIER);
+
+                angularVelocity.set(
+                    velocity.y,
+                    -velocity.x,
+                    velocity.x + velocity.y
+                ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
+            }
+
+            lastMousePosition.set(mouse.x, mouse.y);
         }
 
         function onMouseDown(event) {
-            // ... (previous onMouseDown code remains the same)
+            document.body.classList.add('clicking');
+            if (model) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(model, true);
+                
+                if (intersects.length > 0) {
+                    isDragging = true;
+                    isFlying = false;
+                    dragStart.copy(model.position);
+                    const intersectPoint = intersects[0].point;
+                    dragOffset.copy(intersectPoint).sub(model.position);
+                }
+            }
         }
 
         function onMouseUp() {
-            // ... (previous onMouseUp code remains the same)
+            if (isDragging) {
+                isFlying = true;
+            }
+            isDragging = false;
+            document.body.classList.remove('clicking');
         }
 
         function handleOverlayClick(event) {
@@ -187,7 +226,6 @@
             content.style.opacity = '1';
             closeButton.style.display = 'block';
 
-            // Pause the 3D animation
             cancelAnimationFrame(animationFrameId);
         }
 
@@ -200,7 +238,6 @@
             content.style.opacity = '0';
             closeButton.style.display = 'none';
 
-            // Resume the 3D animation
             animate();
         }
 
@@ -211,9 +248,47 @@
 
             if (model) {
                 if (isFlying) {
-                    // ... (previous flying animation code remains the same)
-                } else if (!isDragging) {
-                    // ... (previous stepped movement code remains the same)
+                    velocity.y += GRAVITY;
+
+                    model.position.add(velocity);
+                    velocity.multiplyScalar(DAMPING);
+
+                    model.rotation.x += angularVelocity.x;
+                    model.rotation.y += angularVelocity.y;
+                    model.rotation.z += angularVelocity.z;
+                    angularVelocity.multiplyScalar(ANGULAR_DAMPING);
+
+                    if (model.position.x < -7.5 || model.position.x > 7.5) {
+                        velocity.x *= -BOUNCE;
+                        model.position.x = Math.sign(model.position.x) * 7.5;
+                        angularVelocity.z *= -BOUNCE;
+                    }
+                    if (model.position.z < -7.5 || model.position.z > 7.5) {
+                        velocity.z *= -BOUNCE;
+                        model.position.z = Math.sign(model.position.z) * 7.5;
+                        angularVelocity.x *= -BOUNCE;
+                    }
+                    if (model.position.y > 3.75) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = 3.75;
+                        angularVelocity.x *= -BOUNCE;
+                        angularVelocity.z *= -BOUNCE;
+                    }
+
+                    if (model.position.y < GROUND_Y) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = GROUND_Y;
+                        
+                        velocity.x *= 0.9;
+                        velocity.z *= 0.9;
+                        angularVelocity.multiplyScalar(0.9);
+                    }
+
+                    if (velocity.length() < 0.01 && angularVelocity.length() < 0.01 && Math.abs(model.position.y - GROUND_Y) < 0.01) {
+                        isFlying = false;
+                        model.position.y = GROUND_Y;
+                        model.rotation.set(0, 0, 0);
+                    }
                 }
             }
 
