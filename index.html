@@ -23,23 +23,25 @@
             font-size: 24px;
             padding: 10px;
             cursor: url('cursorhover.png') 16 16, auto;
+            z-index: 10;
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
         #ig { top: 10%; right: 10%; }
         #animation { top: 10%; left: 10%; }
         #art { bottom: 10%; left: 10%; }
         #contact { bottom: 10%; right: 10%; }
-        #cursor2-overlay {
+        #cursor-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('cursor2.png') no-repeat center center;
+            background: url('cursorhover.png') no-repeat center center;
             background-size: 0%;
             pointer-events: none;
             z-index: 1000;
-            transition: background-size 1s ease-in-out;
+            transition: background-size 1s ease-in-out, opacity 1s ease-in-out;
+            opacity: 0;
         }
         #vimeo-container {
             position: fixed;
@@ -47,7 +49,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: black;
+            background: rgba(0, 0, 0, 0.8);
             display: none;
             z-index: 2000;
         }
@@ -68,42 +70,85 @@
     <div id="animation" class="overlay">animation</div>
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
-    <div id="cursor2-overlay"></div>
+    <div id="cursor-overlay"></div>
     <div id="vimeo-container">
-        <iframe src="https://player.vimeo.com/video/user186983007" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+        <iframe src="https://player.vimeo.com/video/maksrz" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
         <div id="close-button">×</div>
     </div>
     <script>
-        // ... (previous JavaScript code remains the same)
+        let scene, camera, renderer, room, model;
+        let isDragging = false;
+        let targetPosition = new THREE.Vector3(0, -1.75, 0);
+        const GRID_SIZE = 8;
+        const STEP_SIZE = 1;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragStart = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        let velocity = new THREE.Vector3();
+        let angularVelocity = new THREE.Vector3();
+        let lastMousePosition = new THREE.Vector2();
+        let isFlying = false;
+        const DAMPING = 0.99;
+        const ANGULAR_DAMPING = 0.98;
+        const BOUNCE = 0.8;
+        const GRAVITY = -0.05;
+        const GROUND_Y = -1.75;
+        const FORCE_MULTIPLIER = 15;
+        const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
         function init() {
-            // ... (previous init code remains the same)
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
+            // ... (rest of the 3D scene setup code remains the same)
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
             document.getElementById('animation').addEventListener('click', showAnimation);
             document.getElementById('ig').addEventListener('click', goToInstagram);
             document.getElementById('close-button').addEventListener('click', closeVimeo);
+            animate();
         }
 
         function showAnimation() {
-            const overlay = document.getElementById('cursor2-overlay');
+            const overlay = document.getElementById('cursor-overlay');
+            overlay.style.opacity = '1';
             overlay.style.backgroundSize = '300%';
             setTimeout(() => {
-                overlay.style.display = 'none';
-                document.getElementById('vimeo-container').style.display = 'block';
+                overlay.style.opacity = '0';
+                document.getElementById('vimeo-container').style.display = 'flex';
             }, 1000);
         }
 
         function goToInstagram() {
-            window.location.href = 'https://www.instagram.com/robocik.2';
+            window.open('https://www.instagram.com/robocik.2', '_blank');
         }
 
         function closeVimeo() {
             document.getElementById('vimeo-container').style.display = 'none';
-            document.getElementById('cursor2-overlay').style.backgroundSize = '0%';
-            document.getElementById('cursor2-overlay').style.display = 'block';
+            const overlay = document.getElementById('cursor-overlay');
+            overlay.style.backgroundSize = '0%';
+            overlay.style.opacity = '0';
         }
 
-        // ... (rest of the JavaScript code remains the same)
+        // ... (rest of the JavaScript code for 3D scene interaction remains the same)
+
+        function animate() {
+            requestAnimationFrame(animate);
+            // ... (rest of the animation code remains the same)
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
         init();
     </script>
