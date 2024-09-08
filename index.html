@@ -36,7 +36,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: black;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -64,31 +64,12 @@
         <h1 id="transition-title"></h1>
     </div>
     <script>
-        let scene, camera, renderer, room, model;
-        let isDragging = false;
-        let targetPosition = new THREE.Vector3(0, -1.75, 0);
-        const GRID_SIZE = 8;
-        const STEP_SIZE = 1;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const dragStart = new THREE.Vector3();
-        const dragOffset = new THREE.Vector3();
-        let velocity = new THREE.Vector3();
-        let angularVelocity = new THREE.Vector3();
-        let lastMousePosition = new THREE.Vector2();
-        let isFlying = false;
-        const DAMPING = 0.99;
-        const ANGULAR_DAMPING = 0.98;
-        const BOUNCE = 0.8;
-        const GRAVITY = -0.05;
-        const GROUND_Y = -1.75;
-        const FORCE_MULTIPLIER = 15;
-        const ANGULAR_FORCE_MULTIPLIER = 0.1;
+        // ... (keep all the existing JavaScript code here)
 
         function init() {
-            // ... (keep the existing init function as is)
-            
-            // Add event listeners for corner text transitions
+            // ... (keep all the existing init function code)
+
+            // Add this at the end of the init function:
             document.querySelectorAll('.overlay').forEach(element => {
                 if (element.id !== 'title') {
                     element.addEventListener('click', handleCornerTextClick);
@@ -96,6 +77,7 @@
             });
         }
 
+        // Add this new function after the init function:
         function handleCornerTextClick(event) {
             const transitionOverlay = document.getElementById('transition-overlay');
             const transitionTitle = document.getElementById('transition-title');
@@ -118,27 +100,8 @@
             }, 3000);
         }
 
-        function onMouseMove(event) {
-            // ... (keep the existing onMouseMove function as is)
-        }
+        // ... (keep all the remaining JavaScript code)
 
-        function onMouseDown(event) {
-            // ... (keep the existing onMouseDown function as is)
-        }
-
-        function onMouseUp() {
-            // ... (keep the existing onMouseUp function as is)
-        }
-
-        function animate() {
-            // ... (keep the existing animate function as is)
-        }
-
-        window.addEventListener('resize', () => {
-            // ... (keep the existing resize event listener as is)
-        });
-
-        init();
     </script>
 </body>
 </html>
