@@ -7,11 +7,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
+        
         body {
             margin: 0;
             overflow: hidden;
             cursor: url('cursor1.png') 16 16, auto;
-            font-family: Arial, sans-serif;
         }
         body.clicking {
             cursor: url('cursor2.png') 16 16, auto !important;
@@ -48,18 +48,16 @@
             transition: transform 1s ease;
             z-index: 999;
         }
-        #clicked-content {
+        #clicked-title {
             position: fixed;
+            color: white;
+            font-size: 48px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
             opacity: 0;
             transition: opacity 0.5s ease;
             z-index: 1001;
-            text-align: center;
-            max-width: 80%;
         }
         #close-btn {
             position: fixed;
@@ -72,32 +70,38 @@
             transition: opacity 0.5s ease;
             z-index: 1001;
         }
-        #profile-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #profile-image {
-            width: 200px;
-            height: 200px;
-            object-fit: cover;
-            margin-right: 20px;
-        }
-        #profile-text {
-            text-align: left;
-            max-width: 500px;
-        }
-    </style>
+    #clicked-content {
+        position: fixed;
+        color: white;
+        font-size: 24px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        z-index: 1001;
+        text-align: center;
+        max-width: 80%;
+    }
+    #photo {
+        max-width: 300px;
+        max-height: 300px;
+        margin-bottom: 20px;
+    }
+</style>
+   
 </head>
 <body>
-    <div id="title" class="overlay"><a href="#" data-title="profile">maks rz</a></div>
+   <div id="title" class="overlay"><a href="#" data-title="maks-info">maks rz</a></div>
+<div id="animation" class="overlay"><a href="#" data-title="Animation">animation</a></div>
+   <div id="clicked-content"></div>
     <div id="ig" class="overlay"><a href="https://instagram.com/your_instagram" target="_blank">ig</a></div>
-    <div id="animation" class="overlay"><a href="#" data-title="animation">animation</a></div>
+   
     <div id="art" class="overlay"><a href="#" data-title="Art">art</a></div>
     <div id="contact" class="overlay"><a href="#" data-title="Contact">contact</a></div>
 
     <div id="black-ellipse"></div>
-    <div id="clicked-content"></div>
+    <div id="clicked-title"></div>
     <div id="close-btn">✕</div>
 
     <script>
@@ -326,25 +330,40 @@
 
         init();
 
-        // Transition handling
-        const blackEllipse = document.getElementById('black-ellipse');
-        const clickedContent = document.getElementById('clicked-content');
-        const closeButton = document.getElementById('close-btn');
+       // Transition handling
+const blackEllipse = document.getElementById('black-ellipse');
+const clickedContent = document.getElementById('clicked-content');
+const closeButton = document.getElementById('close-btn');
 
-        document.querySelectorAll('.overlay a').forEach(link => {
-            link.addEventListener('click', function (e) {
-                e.preventDefault();
-                const title = this.getAttribute('data-title');
-                blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
-                blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
+document.querySelectorAll('.overlay a').forEach(link => {
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const title = this.getAttribute('data-title');
+        blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
+        blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
 
-                // Start the ellipse transition
-                blackEllipse.style.transform = 'scale(15)';
-                setTimeout(() => {
-                    if (title === 'animation') {
-                        clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
-                    } else if (title === 'profile') {
-                        clickedContent.innerHTML = `
-                            <div id="profile-content">
-                                <img id="profile-image" src="photo.png" alt="Maks Rzontkowski">
-                                <div id="profile-text">
+        // Start the ellipse transition
+        blackEllipse.style.transform = 'scale(15)';
+        setTimeout(() => {
+            if (title === 'animation') {
+                clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+            } else if (title === 'maks-info') {
+                clickedContent.innerHTML = '<img id="photo" src="photo.png" alt="Maks Rzontkowski"><br>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).';
+            } else {
+                clickedContent.innerHTML = title;
+            }
+            clickedContent.style.opacity = '1';
+            closeButton.style.opacity = '1';
+        }, 1000);
+    });
+});
+
+closeButton.addEventListener('click', () => {
+    // Reverse the transition
+    blackEllipse.style.transform = 'scale(0)';
+    clickedContent.style.opacity = '0';
+    closeButton.style.opacity = '0';
+});
+    </script>
+</body>
+</html>
