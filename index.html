@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Larger Toon-Shaded Model and Custom Cursors</title>
+    <title>3D Room with Larger Flat-Colored Model and Custom Cursors</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -72,32 +72,22 @@
             directionalLight.position.set(5, 5, 5);
             scene.add(directionalLight);
 
-            // Create toon shader material
-            const toonMaterial = new THREE.ShaderMaterial({
+            // Create flat color shader material
+            const flatColorMaterial = new THREE.ShaderMaterial({
                 uniforms: {
-                    lightDirection: { value: new THREE.Vector3(5, 5, 5).normalize() }
+                    color: { value: new THREE.Color(1, 1, 1) }
                 },
                 vertexShader: `
-                    varying vec3 vNormal;
+                    varying vec3 vColor;
                     void main() {
-                        vNormal = normalize(normalMatrix * normal);
+                        vColor = color;
                         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                     }
                 `,
                 fragmentShader: `
-                    uniform vec3 lightDirection;
-                    varying vec3 vNormal;
+                    uniform vec3 color;
                     void main() {
-                        float intensity = dot(vNormal, lightDirection);
-                        if (intensity > 0.95) {
-                            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                        } else if (intensity > 0.5) {
-                            gl_FragColor = vec4(0.8, 0.8, 0.8, 1.0);
-                        } else if (intensity > 0.25) {
-                            gl_FragColor = vec4(0.6, 0.6, 0.6, 1.0);
-                        } else {
-                            gl_FragColor = vec4(0.4, 0.4, 0.4, 1.0);
-                        }
+                        gl_FragColor = vec4(color, 1.0);
                     }
                 `
             });
@@ -111,7 +101,13 @@
                     model.scale.set(1, 1, 1); // Increased scale from 0.5 to 1
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            child.material = toonMaterial;
+                            // Create a new instance of the flat color material for each mesh
+                            const materialInstance = flatColorMaterial.clone();
+                            // Set the color uniform to the base color of the original material
+                            if (child.material.color) {
+                                materialInstance.uniforms.color.value.copy(child.material.color);
+                            }
+                            child.material = materialInstance;
                         }
                     });
                     scene.add(model);
