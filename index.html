@@ -136,6 +136,18 @@
                     model = gltf.scene;
                     model.position.y = GROUND_Y;
                     model.scale.set(2, 2, 2);
+                    
+                    // Apply flat shading to the model
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshPhongMaterial({
+                                color: child.material.color,
+                                flatShading: true,
+                                shininess: 0
+                            });
+                        }
+                    });
+                    
                     scene.add(model);
                 },
                 function (xhr) {
