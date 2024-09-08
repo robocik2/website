@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Larger Flat-Colored Model and Custom Cursors</title>
+    <title>3D Room with Even Larger Flat-Colored Model and Updated Cursor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
-            cursor: url('cursor1.png'), auto;
+            cursor: url('cursor1.png') 16 16, auto;
         }
-        body.dragging {
-            cursor: url('cursor2.png'), auto !important;
+        body.clicking {
+            cursor: url('cursor2.png') 16 16, auto !important;
         }
         canvas { display: block; }
         .overlay {
@@ -78,10 +78,9 @@
                 function (gltf) {
                     model = gltf.scene;
                     model.position.y = -1.75;
-                    model.scale.set(1, 1, 1); // Increased scale from 0.5 to 1
+                    model.scale.set(2, 2, 2); // Increased scale to 2x
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            // Create a new MeshBasicMaterial with the original color
                             child.material = new THREE.MeshBasicMaterial({
                                 color: child.material.color
                             });
@@ -128,6 +127,7 @@
         }
 
         function onMouseDown(event) {
+            document.body.classList.add('clicking');
             if (model) {
                 mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -136,7 +136,6 @@
                 
                 if (intersects.length > 0) {
                     isDragging = true;
-                    document.body.classList.add('dragging');
                     dragStart.copy(model.position);
                     const intersectPoint = intersects[0].point;
                     dragOffset.copy(intersectPoint).sub(model.position);
@@ -146,7 +145,7 @@
 
         function onMouseUp() {
             isDragging = false;
-            document.body.classList.remove('dragging');
+            document.body.classList.remove('clicking');
         }
 
         function animate() {
