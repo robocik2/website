@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Rotating, Fast-Moving, Bouncing Model</title>
+    <title>3D Room with Rotating, Fast-Moving, Bouncing Model and Transition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -150,11 +150,150 @@
             camera.position.y = 1;
             camera.lookAt(0, -1, 0);
 
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
+
             animate();
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            if (isDragging && model) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                const planeNormal = camera.getWorldDirection(new THREE.Vector3());
+                const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+                model.position.copy(intersectPoint.sub(dragOffset));
+
+                velocity.set(
+                    mouse.x - lastMousePosition.x,
+                    mouse.y - lastMousePosition.y,
+                    0
+                ).multiplyScalar(FORCE_MULTIPLIER);
+
+                angularVelocity.set(
+                    velocity.y,
+                    -velocity.x,
+                    velocity.x + velocity.y
+                ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
+            } else if (!isFlying) {
+                const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
+                const mouseZ = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
+
+                targetPosition.x = mouseX * STEP_SIZE;
+                targetPosition.z = mouseZ * STEP_SIZE;
+            }
+
+            lastMousePosition.set(mouse.x, mouse.y);
+        }
+
+        function onMouseDown(event) {
+            document.body.classList.add('clicking');
+            if (model) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(model, true);
+                
+                if (intersects.length > 0) {
+                    isDragging = true;
+                    isFlying = false;
+                    dragStart.copy(model.position);
+                    const intersectPoint = intersects[0].point;
+                    dragOffset.copy(intersectPoint).sub(model.position);
+                }
+            }
+        }
+
+        function onMouseUp() {
+            if (isDragging) {
+                isFlying = true;
+            }
+            isDragging = false;
+            document.body.classList.remove('clicking');
         }
 
         function animate() {
             requestAnimationFrame(animate);
+
+            if (model) {
+                if (isFlying) {
+                    velocity.y += GRAVITY;
+
+                    model.position.add(velocity);
+                    velocity.multiplyScalar(DAMPING);
+
+                    model.rotation.x += angularVelocity.x;
+                    model.rotation.y += angularVelocity.y;
+                    model.rotation.z += angularVelocity.z;
+                    angularVelocity.multiplyScalar(ANGULAR_DAMPING);
+
+                    if (model.position.x < -7.5 || model.position.x > 7.5) {
+                        velocity.x *= -BOUNCE;
+                        model.position.x = Math.sign(model.position.x) * 7.5;
+                        angularVelocity.z *= -BOUNCE;
+                    }
+                    if (model.position.z < -7.5 || model.position.z > 7.5) {
+                        velocity.z *= -BOUNCE;
+                        model.position.z = Math.sign(model.position.z) * 7.5;
+                        angularVelocity.x *= -BOUNCE;
+                    }
+                    if (model.position.y > 3.75) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = 3.75;
+                        angularVelocity.x *= -BOUNCE;
+                        angularVelocity.z *= -BOUNCE;
+                    }
+
+                    if (model.position.y < GROUND_Y) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = GROUND_Y;
+                        
+                        velocity.x *= 0.9;
+                        velocity.z *= 0.9;
+                        angularVelocity.multiplyScalar(0.9);
+                    }
+
+                    if (velocity.length() < 0.01 && angularVelocity.length() < 0.01 && Math.abs(model.position.y - GROUND_Y) < 0.01) {
+                        isFlying = false;
+                        model.position.y = GROUND_Y;
+                        model.rotation.set(0, 0, 0);
+                    }
+                } else if (!isDragging) {
+                    model.position.x = targetPosition.x;
+                    model.position.z = targetPosition.z;
+                    model.position.y = GROUND_Y;
+
+                    const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
+                    const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
+                    const totalSteps = stepsX + stepsZ;
+
+                    const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+
+                    if (model.position.x > 0) {
+                        model.rotation.y = Math.PI / 2 + additionalRotation;
+                    } else if (model.position.x < 0) {
+                        model.rotation.y = -Math.PI / 2 + additionalRotation;
+                    } else {
+                        model.rotation.y = additionalRotation;
+                    }
+
+                    if (model.position.z > 0) {
+                        model.rotation.x = -Math.PI / 8;
+                    } else if (model.position.z < 0) {
+                        model.rotation.x = Math.PI / 8;
+                    } else {
+                        model.rotation.x = 0;
+                    }
+
+                    model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+                }
+            }
+
             renderer.render(scene, camera);
         }
 
