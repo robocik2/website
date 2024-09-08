@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Even Larger Flat-Colored Model and Updated Cursor</title>
+    <title>3D Room with Throwable Model and Enhanced Cursor Behavior</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -22,6 +22,7 @@
             font-family: Arial, sans-serif;
             font-size: 24px;
             padding: 10px;
+            cursor: url('cursorhover.png') 16 16, auto;
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
         #ig { top: 10%; right: 10%; }
@@ -46,6 +47,11 @@
         const mouse = new THREE.Vector2();
         const dragStart = new THREE.Vector3();
         const dragOffset = new THREE.Vector3();
+        let velocity = new THREE.Vector3();
+        let lastMousePosition = new THREE.Vector2();
+        let isFlying = false;
+        const DAMPING = 0.98;
+        const BOUNCE = 0.7;
 
         function init() {
             scene = new THREE.Scene();
@@ -78,7 +84,7 @@
                 function (gltf) {
                     model = gltf.scene;
                     model.position.y = -1.75;
-                    model.scale.set(2, 2, 2); // Increased scale to 2x
+                    model.scale.set(2, 2, 2);
                     model.traverse((child) => {
                         if (child.isMesh) {
                             child.material = new THREE.MeshBasicMaterial({
@@ -117,13 +123,22 @@
                 const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
                 raycaster.ray.intersectPlane(plane, intersectPoint);
                 model.position.copy(intersectPoint.sub(dragOffset));
-            } else {
+
+                // Calculate velocity
+                velocity.set(
+                    mouse.x - lastMousePosition.x,
+                    mouse.y - lastMousePosition.y,
+                    0
+                ).multiplyScalar(5); // Adjust this multiplier to change throw strength
+            } else if (!isFlying) {
                 const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
                 const mouseY = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
 
                 targetPosition.x = mouseX * STEP_SIZE;
                 targetPosition.z = mouseY * STEP_SIZE;
             }
+
+            lastMousePosition.set(mouse.x, mouse.y);
         }
 
         function onMouseDown(event) {
@@ -136,6 +151,7 @@
                 
                 if (intersects.length > 0) {
                     isDragging = true;
+                    isFlying = false;
                     dragStart.copy(model.position);
                     const intersectPoint = intersects[0].point;
                     dragOffset.copy(intersectPoint).sub(model.position);
@@ -144,6 +160,9 @@
         }
 
         function onMouseUp() {
+            if (isDragging) {
+                isFlying = true;
+            }
             isDragging = false;
             document.body.classList.remove('clicking');
         }
@@ -152,9 +171,31 @@
             requestAnimationFrame(animate);
 
             if (model) {
-                if (!isDragging) {
-                    model.position.x = targetPosition.x;
-                    model.position.z = targetPosition.z;
+                if (isFlying) {
+                    model.position.add(velocity);
+                    velocity.multiplyScalar(DAMPING);
+
+                    // Check boundaries and bounce
+                    if (model.position.x < -7.5 || model.position.x > 7.5) {
+                        velocity.x *= -BOUNCE;
+                        model.position.x = Math.sign(model.position.x) * 7.5;
+                    }
+                    if (model.position.y < -3.75 || model.position.y > 3.75) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = Math.sign(model.position.y) * 3.75;
+                    }
+                    if (model.position.z < -7.5 || model.position.z > 7.5) {
+                        velocity.z *= -BOUNCE;
+                        model.position.z = Math.sign(model.position.z) * 7.5;
+                    }
+
+                    // Check if the model has stopped moving
+                    if (velocity.length() < 0.01) {
+                        isFlying = false;
+                    }
+                } else if (!isDragging) {
+                    model.position.x += (targetPosition.x - model.position.x) * 0.1;
+                    model.position.z += (targetPosition.z - model.position.z) * 0.1;
 
                     const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
                     const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
