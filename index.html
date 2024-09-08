@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Blur and Film Grain Effects</title>
+    <title>3D Room with Subtle Blur and Film Grain Effects</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -15,9 +15,22 @@
         body.clicking {
             cursor: url('cursor2.png') 16 16, auto !important;
         }
-        canvas { 
-            display: block; 
-            filter: blur(1px);
+        #scene-container { 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #blur-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            backdrop-filter: blur(10px);
         }
         #grain {
             position: fixed;
@@ -26,8 +39,9 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 1;
+            z-index: 2;
             opacity: 0.1;
+            mix-blend-mode: overlay;
         }
         .overlay {
             position: fixed;
@@ -36,7 +50,7 @@
             font-size: 24px;
             padding: 10px;
             cursor: url('cursorhover.png') 16 16, auto;
-            z-index: 2;
+            z-index: 3;
             text-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
@@ -47,6 +61,8 @@
     </style>
 </head>
 <body>
+    <div id="scene-container"></div>
+    <div id="blur-overlay"></div>
     <canvas id="grain"></canvas>
     <div id="title" class="overlay">maks rz</div>
     <div id="ig" class="overlay">ig</div>
@@ -54,10 +70,79 @@
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
     <script>
-        // ... [Previous JavaScript code remains unchanged] ...
+        let scene, camera, renderer, room, model;
+        let isDragging = false;
+        let targetPosition = new THREE.Vector3(0, -1.75, 0);
+        const GRID_SIZE = 8;
+        const STEP_SIZE = 1;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragStart = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        let velocity = new THREE.Vector3();
+        let angularVelocity = new THREE.Vector3();
+        let lastMousePosition = new THREE.Vector2();
+        let isFlying = false;
+        const DAMPING = 0.99;
+        const ANGULAR_DAMPING = 0.98;
+        const BOUNCE = 0.8;
+        const GRAVITY = -0.05;
+        const GROUND_Y = -1.75;
+        const FORCE_MULTIPLIER = 15;
+        const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
         function init() {
-            // ... [Previous init code remains unchanged] ...
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('scene-container').appendChild(renderer.domElement);
+
+            const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
+            const roomMaterial = new THREE.MeshBasicMaterial({color: 0x2e1c12, side: THREE.BackSide});
+            room = new THREE.Mesh(roomGeometry, roomMaterial);
+            scene.add(room);
+
+            const windowGeometry = new THREE.PlaneGeometry(2, 2);
+            const windowMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
+            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+            windowMesh.position.set(0, 0, 5);
+            scene.add(windowMesh);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 3);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'kid2.glb',
+                function (gltf) {
+                    model = gltf.scene;
+                    model.position.y = GROUND_Y;
+                    model.scale.set(2, 2, 2);
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: child.material.color
+                            });
+                        }
+                    });
+                    scene.add(model);
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('An error happened', error);
+                }
+            );
+
+            camera.position.z = 5;
+            camera.position.y = 1;
+            camera.lookAt(0, -1, 0);
 
             // Add film grain effect
             const grainCanvas = document.getElementById('grain');
@@ -85,6 +170,10 @@
             
             resizeGrain();
             generateGrain();
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
             
             window.addEventListener('resize', () => {
                 resizeGrain();
@@ -94,21 +183,10 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
 
-            // ... [Rest of the init function remains unchanged] ...
+            animate();
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // ... [Previous animate code remains unchanged] ...
-
-            renderer.render(scene, camera);
-
-            // Regenerate grain each frame for animation effect
-            generateGrain();
-        }
-
-        // ... [Rest of the JavaScript code remains unchanged] ...
+        // ... [Rest of the JavaScript functions (onMouseMove, onMouseDown, onMouseUp, animate) remain unchanged] ...
 
         init();
     </script>
