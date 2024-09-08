@@ -23,7 +23,6 @@
             font-size: 24px;
             padding: 10px;
             cursor: url('cursorhover.png') 16 16, auto;
-            z-index: 10;
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
         #ig { top: 10%; right: 10%; }
@@ -35,18 +34,6 @@
             text-decoration: none;
             cursor: url('cursorhover.png') 16 16, auto;
         }
-        #transition-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 1s ease;
-            z-index: 20;
-        }
     </style>
 </head>
 <body>
@@ -55,26 +42,114 @@
     <div id="animation" class="overlay"><a href="animation.html" target="_blank">animation</a></div>
     <div id="art" class="overlay"><a href="art.html" target="_blank">art</a></div>
     <div id="contact" class="overlay"><a href="contact.html" target="_blank">contact</a></div>
-    <div id="transition-overlay"></div>
     <script>
-        // ... (keep all the existing Three.js code here)
+        let scene, camera, renderer, room, model;
+        let isDragging = false;
+        let targetPosition = new THREE.Vector3(0, -1.75, 0);
+        const GRID_SIZE = 8;
+        const STEP_SIZE = 1;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragStart = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        let velocity = new THREE.Vector3();
+        let angularVelocity = new THREE.Vector3();
+        let lastMousePosition = new THREE.Vector2();
+        let isFlying = false;
+        const DAMPING = 0.99;
+        const ANGULAR_DAMPING = 0.98;
+        const BOUNCE = 0.8;
+        const GRAVITY = -0.05;
+        const GROUND_Y = -1.75;
+        const FORCE_MULTIPLIER = 15;
+        const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
-        // Add this new code at the end of the script
-        const transitionOverlay = document.getElementById('transition-overlay');
+        // Add transition plane
+        let transitionPlane;
+        let isTransitioning = false;
 
-        document.querySelectorAll('.overlay a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const href = this.getAttribute('href');
-                
-                transitionOverlay.style.opacity = '1';
-                
-                setTimeout(() => {
-                    window.open(href, '_blank');
-                    transitionOverlay.style.opacity = '0';
-                }, 1000);
+        function init() {
+            // ... (keep existing init code)
+
+            // Add transition plane
+            const planeGeometry = new THREE.PlaneGeometry(2, 2);
+            const planeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 });
+            transitionPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+            transitionPlane.position.z = -1;
+            camera.add(transitionPlane);
+            scene.add(camera);
+
+            // ... (keep the rest of the init function)
+
+            document.querySelectorAll('.overlay a').forEach(link => {
+                link.addEventListener('click', handleLinkClick);
             });
-        });
+        }
+
+        function handleLinkClick(e) {
+            e.preventDefault();
+            const href = this.getAttribute('href');
+            
+            if (!isTransitioning) {
+                isTransitioning = true;
+                transitionOut(href);
+            }
+        }
+
+        function transitionOut(href) {
+            const duration = 1000; // 1 second
+            const startTime = performance.now();
+
+            function animate(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+
+                transitionPlane.material.opacity = progress;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    setTimeout(() => {
+                        window.open(href, '_blank');
+                        transitionIn();
+                    }, 100);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function transitionIn() {
+            const duration = 1000; // 1 second
+            const startTime = performance.now();
+
+            function animate(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+
+                transitionPlane.material.opacity = 1 - progress;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isTransitioning = false;
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // ... (keep all other existing functions)
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // ... (keep existing animate code)
+
+            renderer.render(scene, camera);
+        }
+
+        // ... (keep window resize event listener)
 
         init();
     </script>
