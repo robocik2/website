@@ -15,7 +15,13 @@
         body.clicking {
             cursor: url('cursor2.png') 16 16, auto !important;
         }
-        canvas { display: block; }
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
         .overlay {
             position: fixed;
             color: white;
@@ -23,6 +29,7 @@
             font-size: 24px;
             padding: 10px;
             cursor: url('cursorhover.png') 16 16, auto;
+            z-index: 10;
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
         #ig { top: 10%; right: 10%; }
@@ -52,7 +59,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: black;
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
             display: flex;
             flex-direction: column;
@@ -84,6 +91,7 @@
     </style>
 </head>
 <body>
+    <div id="scene-container"></div>
     <div id="title" class="overlay">maks rz</div>
     <div id="ig" class="overlay"><a href="https://instagram.com/your_instagram" target="_blank">ig</a></div>
     <div id="animation" class="overlay"><a href="animation.html" target="_blank">animation</a></div>
@@ -96,7 +104,38 @@
         <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness inspired by self observation at parties.</p>
     </div>
     <script>
-        // ... (previous JavaScript code remains unchanged)
+        let scene, camera, renderer, room, model;
+        let isDragging = false;
+        let targetPosition = new THREE.Vector3(0, -1.75, 0);
+        const GRID_SIZE = 8;
+        const STEP_SIZE = 1;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragStart = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        let velocity = new THREE.Vector3();
+        let angularVelocity = new THREE.Vector3();
+        let lastMousePosition = new THREE.Vector2();
+        let isFlying = false;
+        const DAMPING = 0.99;
+        const ANGULAR_DAMPING = 0.98;
+        const BOUNCE = 0.8;
+        const GRAVITY = -0.05;
+        const GROUND_Y = -1.75;
+        const FORCE_MULTIPLIER = 15;
+        const ANGULAR_FORCE_MULTIPLIER = 0.1;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('scene-container').appendChild(renderer.domElement);
+
+            // ... (rest of the init function remains unchanged)
+        }
+
+        // ... (rest of the JavaScript code for 3D scene remains unchanged)
 
         // Add new event listeners for the overlay
         document.getElementById('title').addEventListener('click', showOverlay);
@@ -112,7 +151,26 @@
             document.getElementById('info-overlay').style.pointerEvents = 'none';
         }
 
-        // ... (rest of the JavaScript code remains unchanged)
+        init();
+
+        // Add transition functionality
+        const transitionOverlay = document.getElementById('transition-overlay');
+
+        document.querySelectorAll('.overlay a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                
+                transitionOverlay.style.opacity = '1';
+                transitionOverlay.style.pointerEvents = 'auto';
+                
+                setTimeout(() => {
+                    window.open(href, '_blank');
+                    transitionOverlay.style.opacity = '0';
+                    transitionOverlay.style.pointerEvents = 'none';
+                }, 1000);
+            });
+        });
     </script>
 </body>
 </html>
