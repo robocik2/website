@@ -3,17 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Rotating, Fast-Moving, Bouncing Model</title>
+    <title>3D Room with Rotating, Fast-Moving, Bouncing Model - Debug</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
-            cursor: url('cursor1.png') 16 16, auto;
-        }
-        body.clicking {
-            cursor: url('cursor2.png') 16 16, auto !important;
         }
         canvas { 
             display: block; 
@@ -28,7 +24,6 @@
             font-family: Arial, sans-serif;
             font-size: 24px;
             padding: 10px;
-            cursor: url('cursorhover.png') 16 16, auto;
             z-index: 10;
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
@@ -36,46 +31,6 @@
         #animation { top: 10%; left: 10%; }
         #art { bottom: 10%; left: 10%; }
         #contact { bottom: 10%; right: 10%; }
-        #transition-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            pointer-events: none;
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #ellipse {
-            width: 0;
-            height: 0;
-            background: black;
-            border-radius: 50%;
-            transition: all 1s ease-in-out;
-            position: absolute;
-        }
-        #vimeo-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: black;
-            display: none;
-            z-index: 1000;
-        }
-        #close-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            font-size: 30px;
-            color: white;
-            cursor: pointer;
-            z-index: 1001;
-        }
     </style>
 </head>
 <body>
@@ -84,69 +39,52 @@
     <div id="animation" class="overlay">animation</div>
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
-    <div id="transition-overlay">
-        <div id="ellipse"></div>
-    </div>
-    <div id="vimeo-container">
-        <iframe src="https://player.vimeo.com/video/maksrz" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
-        <div id="close-button">×</div>
-    </div>
     <script>
-        // ... (previous 3D scene code remains the same)
+        let scene, camera, renderer;
 
         function init() {
-            // ... (previous init code remains the same)
+            console.log("Initializing Three.js scene...");
 
-            document.getElementById('animation').addEventListener('click', startTransition);
-            document.getElementById('ig').addEventListener('click', function() {
-                window.open('https://www.instagram.com/robocik.2', '_blank');
-            });
-            document.getElementById('close-button').addEventListener('click', closeVimeo);
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            console.log("Renderer created and added to DOM");
+
+            // Add a simple cube to the scene
+            const geometry = new THREE.BoxGeometry();
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            const cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
+
+            console.log("Green cube added to scene");
+
+            camera.position.z = 5;
 
             animate();
         }
 
-        function startTransition() {
-            const overlay = document.getElementById('transition-overlay');
-            const ellipse = document.getElementById('ellipse');
-            const animationText = document.getElementById('animation');
-            const rect = animationText.getBoundingClientRect();
+        function animate() {
+            requestAnimationFrame(animate);
 
-            ellipse.style.width = '10px';
-            ellipse.style.height = '10px';
-            ellipse.style.left = `${rect.left + rect.width / 2 - 5}px`;
-            ellipse.style.top = `${rect.top + rect.height / 2 - 5}px`;
+            // Rotate the cube
+            scene.children[0].rotation.x += 0.01;
+            scene.children[0].rotation.y += 0.01;
 
-            setTimeout(() => {
-                const maxDimension = Math.max(window.innerWidth, window.innerHeight) * 2;
-                ellipse.style.width = `${maxDimension}px`;
-                ellipse.style.height = `${maxDimension}px`;
-                ellipse.style.left = `${window.innerWidth / 2 - maxDimension / 2}px`;
-                ellipse.style.top = `${window.innerHeight / 2 - maxDimension / 2}px`;
-            }, 50);
-
-            setTimeout(() => {
-                overlay.style.pointerEvents = 'auto';
-                document.getElementById('vimeo-container').style.display = 'block';
-            }, 1000);
+            renderer.render(scene, camera);
         }
 
-        function closeVimeo() {
-            document.getElementById('vimeo-container').style.display = 'none';
-            const overlay = document.getElementById('transition-overlay');
-            const ellipse = document.getElementById('ellipse');
-            
-            ellipse.style.width = '0';
-            ellipse.style.height = '0';
-            
-            setTimeout(() => {
-                overlay.style.pointerEvents = 'none';
-            }, 1000);
-        }
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
-        // ... (rest of the JavaScript code remains the same)
-
+        console.log("Starting initialization...");
         init();
+        console.log("Initialization complete");
     </script>
 </body>
 </html>
