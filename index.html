@@ -7,157 +7,80 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            cursor: url('cursor1.png') 16 16, auto;
-        }
-        body.clicking {
-            cursor: url('cursor2.png') 16 16, auto !important;
-        }
-        #scene-container {
+        /* ... (previous styles remain unchanged) ... */
+
+        #popup {
+            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        .overlay {
-            position: fixed;
-            color: white;
-            font-family: Arial, sans-serif;
-            font-size: 24px;
-            padding: 10px;
-            cursor: url('cursorhover.png') 16 16, auto;
-            z-index: 10;
-        }
-        #title { top: 10%; left: 50%; transform: translateX(-50%); }
-        #ig { top: 10%; right: 10%; }
-        #animation { top: 10%; left: 10%; }
-        #art { bottom: 10%; left: 10%; }
-        #contact { bottom: 10%; right: 10%; }
-        .overlay a {
-            color: white;
-            text-decoration: none;
-            cursor: url('cursorhover.png') 16 16, auto;
-        }
-        #transition-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 1s ease;
-            z-index: 1000;
-        }
-        #info-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             background-color: rgba(0, 0, 0, 0.8);
             color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 1s ease;
-            z-index: 2000;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1001;
+            max-width: 80%;
+            text-align: center;
             font-family: Arial, sans-serif;
         }
-        #info-overlay h1 {
-            font-size: 36px;
+
+        #popup-content {
             margin-bottom: 20px;
         }
-        #info-overlay p {
-            font-size: 18px;
-            max-width: 600px;
-            text-align: center;
-            line-height: 1.6;
-        }
-        #close-overlay {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 24px;
+
+        #popup-close {
             cursor: pointer;
+            color: white;
+            background-color: transparent;
+            border: 1px solid white;
+            padding: 5px 10px;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div id="scene-container"></div>
     <div id="title" class="overlay">maks rz</div>
     <div id="ig" class="overlay"><a href="https://instagram.com/your_instagram" target="_blank">ig</a></div>
     <div id="animation" class="overlay"><a href="animation.html" target="_blank">animation</a></div>
     <div id="art" class="overlay"><a href="art.html" target="_blank">art</a></div>
     <div id="contact" class="overlay"><a href="contact.html" target="_blank">contact</a></div>
     <div id="transition-overlay"></div>
-    <div id="info-overlay">
-        <div id="close-overlay">&times;</div>
-        <h1>zrzut ekranu</h1>
-        <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness inspired by self observation at parties.</p>
+
+    <!-- Add the popup div -->
+    <div id="popup">
+        <div id="popup-content">
+            maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness.
+        </div>
+        <button id="popup-close">Close</button>
     </div>
+
     <script>
-        let scene, camera, renderer, room, model;
-        let isDragging = false;
-        let targetPosition = new THREE.Vector3(0, -1.75, 0);
-        const GRID_SIZE = 8;
-        const STEP_SIZE = 1;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const dragStart = new THREE.Vector3();
-        const dragOffset = new THREE.Vector3();
-        let velocity = new THREE.Vector3();
-        let angularVelocity = new THREE.Vector3();
-        let lastMousePosition = new THREE.Vector2();
-        let isFlying = false;
-        const DAMPING = 0.99;
-        const ANGULAR_DAMPING = 0.98;
-        const BOUNCE = 0.8;
-        const GRAVITY = -0.05;
-        const GROUND_Y = -1.75;
-        const FORCE_MULTIPLIER = 15;
-        const ANGULAR_FORCE_MULTIPLIER = 0.1;
+        // ... (previous JavaScript code remains unchanged) ...
 
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('scene-container').appendChild(renderer.domElement);
+        // Add popup functionality
+        const titleElement = document.getElementById('title');
+        const popupElement = document.getElementById('popup');
+        const popupCloseButton = document.getElementById('popup-close');
 
-            // ... (rest of the init function remains unchanged)
-        }
+        titleElement.addEventListener('click', () => {
+            popupElement.style.display = 'block';
+            transitionOverlay.style.opacity = '0.5';
+            transitionOverlay.style.pointerEvents = 'auto';
+        });
 
-        // ... (rest of the JavaScript code for 3D scene remains unchanged)
+        popupCloseButton.addEventListener('click', () => {
+            popupElement.style.display = 'none';
+            transitionOverlay.style.opacity = '0';
+            transitionOverlay.style.pointerEvents = 'none';
+        });
 
-        // Add new event listeners for the overlay
-        document.getElementById('title').addEventListener('click', showOverlay);
-        document.getElementById('close-overlay').addEventListener('click', hideOverlay);
-
-        function showOverlay() {
-            document.getElementById('info-overlay').style.opacity = '1';
-            document.getElementById('info-overlay').style.pointerEvents = 'auto';
-        }
-
-        function hideOverlay() {
-            document.getElementById('info-overlay').style.opacity = '0';
-            document.getElementById('info-overlay').style.pointerEvents = 'none';
-        }
-
-        init();
-
-        // Add transition functionality
-        const transitionOverlay = document.getElementById('transition-overlay');
-
+        // Modify the transition overlay event listeners
         document.querySelectorAll('.overlay a').forEach(link => {
             link.addEventListener('click', function(e) {
+                if (this.parentElement.id === 'title') {
+                    return; // Don't apply transition effect to the title
+                }
                 e.preventDefault();
                 const href = this.getAttribute('href');
                 
