@@ -35,13 +35,16 @@
             text-decoration: none;
             cursor: url('cursorhover.png') 16 16, auto;
         }
-        #transition-shape {
+        #transition-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background-color: black;
+            opacity: 0;
             pointer-events: none;
+            transition: opacity 1s ease;
             z-index: 20;
         }
     </style>
@@ -52,30 +55,23 @@
     <div id="animation" class="overlay"><a href="animation.html" target="_blank">animation</a></div>
     <div id="art" class="overlay"><a href="art.html" target="_blank">art</a></div>
     <div id="contact" class="overlay"><a href="contact.html" target="_blank">contact</a></div>
-    <svg id="transition-shape" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="#000000" transform="scale(0)"/>
-    </svg>
+    <div id="transition-overlay"></div>
     <script>
         // ... (keep all the existing Three.js code here)
 
         // Add this new code at the end of the script
+        const transitionOverlay = document.getElementById('transition-overlay');
+
         document.querySelectorAll('.overlay a').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const href = this.getAttribute('href');
-                const shape = document.querySelector('#transition-shape path');
                 
-                shape.style.transform = 'scale(0)';
-                shape.style.transformOrigin = `${e.clientX}px ${e.clientY}px`;
-                shape.style.transition = 'transform 1s cubic-bezier(0.85, 0, 0.15, 1)';
+                transitionOverlay.style.opacity = '1';
                 
-                setTimeout(() => {
-                    shape.style.transform = 'scale(1)';
-                }, 50);
-
                 setTimeout(() => {
                     window.open(href, '_blank');
-                    shape.style.transform = 'scale(0)';
+                    transitionOverlay.style.opacity = '0';
                 }, 1000);
             });
         });
