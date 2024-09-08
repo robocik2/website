@@ -15,7 +15,13 @@
         body.clicking {
             cursor: url('cursor2.png') 16 16, auto !important;
         }
-        canvas { display: block; }
+        canvas { 
+            display: block; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
         .overlay {
             position: fixed;
             color: white;
@@ -38,7 +44,7 @@
             height: 100%;
             background: transparent;
             pointer-events: none;
-            z-index: 1000;
+            z-index: 100;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -49,6 +55,7 @@
             background: black;
             border-radius: 50%;
             transition: all 1s ease-in-out;
+            position: absolute;
         }
         #vimeo-container {
             position: fixed;
@@ -58,7 +65,7 @@
             height: 100%;
             background: black;
             display: none;
-            z-index: 2000;
+            z-index: 1000;
         }
         #close-button {
             position: fixed;
@@ -67,7 +74,7 @@
             font-size: 30px;
             color: white;
             cursor: pointer;
-            z-index: 2001;
+            z-index: 1001;
         }
     </style>
 </head>
@@ -105,11 +112,10 @@
             const animationText = document.getElementById('animation');
             const rect = animationText.getBoundingClientRect();
 
-            overlay.style.pointerEvents = 'auto';
             ellipse.style.width = '10px';
             ellipse.style.height = '10px';
-            ellipse.style.left = `${rect.left + rect.width / 2}px`;
-            ellipse.style.top = `${rect.top + rect.height / 2}px`;
+            ellipse.style.left = `${rect.left + rect.width / 2 - 5}px`;
+            ellipse.style.top = `${rect.top + rect.height / 2 - 5}px`;
 
             setTimeout(() => {
                 const maxDimension = Math.max(window.innerWidth, window.innerHeight) * 2;
@@ -120,6 +126,7 @@
             }, 50);
 
             setTimeout(() => {
+                overlay.style.pointerEvents = 'auto';
                 document.getElementById('vimeo-container').style.display = 'block';
             }, 1000);
         }
