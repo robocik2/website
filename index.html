@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Fast-Moving, Bouncing Model</title>
+    <title>3D Room with Rotating, Fast-Moving, Bouncing Model</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -48,13 +48,16 @@
         const dragStart = new THREE.Vector3();
         const dragOffset = new THREE.Vector3();
         let velocity = new THREE.Vector3();
+        let angularVelocity = new THREE.Vector3();
         let lastMousePosition = new THREE.Vector2();
         let isFlying = false;
         const DAMPING = 0.99;
+        const ANGULAR_DAMPING = 0.98;
         const BOUNCE = 0.8;
-        const GRAVITY = -0.05; // Increased gravity
-        const GROUND_Y = -1.75; // Y position of the ground
-        const FORCE_MULTIPLIER = 15; // Increased force multiplier
+        const GRAVITY = -0.05;
+        const GROUND_Y = -1.75;
+        const FORCE_MULTIPLIER = 15;
+        const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
         function init() {
             scene = new THREE.Scene();
@@ -132,7 +135,14 @@
                     mouse.x - lastMousePosition.x,
                     mouse.y - lastMousePosition.y,
                     0
-                ).multiplyScalar(FORCE_MULTIPLIER); // Increased force multiplier
+                ).multiplyScalar(FORCE_MULTIPLIER);
+
+                // Calculate angular velocity
+                angularVelocity.set(
+                    velocity.y,
+                    -velocity.x,
+                    velocity.x + velocity.y
+                ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
             } else if (!isFlying) {
                 const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
                 const mouseZ = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
@@ -179,21 +189,30 @@
                     velocity.y += GRAVITY;
 
                     model.position.add(velocity);
-                    velocity.x *= DAMPING;
-                    velocity.z *= DAMPING;
+                    velocity.multiplyScalar(DAMPING);
+
+                    // Apply rotation
+                    model.rotation.x += angularVelocity.x;
+                    model.rotation.y += angularVelocity.y;
+                    model.rotation.z += angularVelocity.z;
+                    angularVelocity.multiplyScalar(ANGULAR_DAMPING);
 
                     // Check boundaries and bounce
                     if (model.position.x < -7.5 || model.position.x > 7.5) {
                         velocity.x *= -BOUNCE;
                         model.position.x = Math.sign(model.position.x) * 7.5;
+                        angularVelocity.z *= -BOUNCE;
                     }
                     if (model.position.z < -7.5 || model.position.z > 7.5) {
                         velocity.z *= -BOUNCE;
                         model.position.z = Math.sign(model.position.z) * 7.5;
+                        angularVelocity.x *= -BOUNCE;
                     }
                     if (model.position.y > 3.75) {
                         velocity.y *= -BOUNCE;
                         model.position.y = 3.75;
+                        angularVelocity.x *= -BOUNCE;
+                        angularVelocity.z *= -BOUNCE;
                     }
 
                     // Check ground collision
@@ -204,12 +223,14 @@
                         // Apply friction when on the ground
                         velocity.x *= 0.9;
                         velocity.z *= 0.9;
+                        angularVelocity.multiplyScalar(0.9);
                     }
 
                     // Check if the model has stopped moving
-                    if (velocity.length() < 0.01 && Math.abs(model.position.y - GROUND_Y) < 0.01) {
+                    if (velocity.length() < 0.01 && angularVelocity.length() < 0.01 && Math.abs(model.position.y - GROUND_Y) < 0.01) {
                         isFlying = false;
                         model.position.y = GROUND_Y;
+                        model.rotation.set(0, 0, 0);
                     }
                 } else if (!isDragging) {
                     // Stepped movement
