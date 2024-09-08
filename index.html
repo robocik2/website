@@ -34,33 +34,6 @@
             text-decoration: none;
             cursor: url('cursorhover.png') 16 16, auto;
         }
-        #transition-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 1s ease;
-            z-index: 1000;
-        }
-        #ellipse-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 999;
-        }
-        #ellipse-overlay ellipse {
-            fill: black;
-            transform-origin: center;
-            transform: scale(0);
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
     </style>
 </head>
 <body>
@@ -69,56 +42,129 @@
     <div id="animation" class="overlay"><a href="animation.html" target="_blank">animation</a></div>
     <div id="art" class="overlay"><a href="art.html" target="_blank">art</a></div>
     <div id="contact" class="overlay"><a href="contact.html" target="_blank">contact</a></div>
-    <div id="transition-overlay"></div>
-    <svg id="ellipse-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <ellipse cx="50" cy="50" rx="25" ry="15"/>
-    </svg>
     <script>
-        // ... (keep all the existing Three.js code here)
+        let scene, camera, renderer, room, model;
+        let isDragging = false;
+        let targetPosition = new THREE.Vector3(0, -1.75, 0);
+        const GRID_SIZE = 8;
+        const STEP_SIZE = 1;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragStart = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        let velocity = new THREE.Vector3();
+        let angularVelocity = new THREE.Vector3();
+        let lastMousePosition = new THREE.Vector2();
+        let isFlying = false;
+        const DAMPING = 0.99;
+        const ANGULAR_DAMPING = 0.98;
+        const BOUNCE = 0.8;
+        const GRAVITY = -0.05;
+        const GROUND_Y = -1.75;
+        const FORCE_MULTIPLIER = 15;
+        const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
-        // Add transition functionality
-        const transitionOverlay = document.getElementById('transition-overlay');
-        const ellipseOverlay = document.getElementById('ellipse-overlay');
-        const ellipse = ellipseOverlay.querySelector('ellipse');
+        // Add transition elements
+        let transitionCircle, transitionPlane;
+        let isTransitioning = false;
 
-        document.querySelectorAll('.overlay a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const href = this.getAttribute('href');
-                
-                // Position and scale the ellipse
-                const rect = this.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                ellipse.setAttribute('cx', centerX);
-                ellipse.setAttribute('cy', centerY);
-                ellipseOverlay.style.display = 'block';
-                
-                // Trigger reflow
-                ellipse.getBoundingClientRect();
-                
-                // Scale up the ellipse
-                ellipse.style.transform = 'scale(50)';
-                
-                // Start the full-screen transition after the ellipse animation
-                setTimeout(() => {
-                    transitionOverlay.style.opacity = '1';
-                    transitionOverlay.style.pointerEvents = 'auto';
-                }, 300);
-                
-                // Open the link and reset the overlays
-                setTimeout(() => {
-                    window.open(href, '_blank');
-                    transitionOverlay.style.opacity = '0';
-                    transitionOverlay.style.pointerEvents = 'none';
-                    ellipse.style.transform = 'scale(0)';
-                    setTimeout(() => {
-                        ellipseOverlay.style.display = 'none';
-                    }, 300);
-                }, 1300);
+        function init() {
+            // ... (keep existing init code)
+
+            // Add transition elements
+            const circleGeometry = new THREE.CircleGeometry(0.01, 32);
+            const circleMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            transitionCircle = new THREE.Mesh(circleGeometry, circleMaterial);
+            transitionCircle.visible = false;
+            scene.add(transitionCircle);
+
+            const planeGeometry = new THREE.PlaneGeometry(2, 2);
+            const planeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 });
+            transitionPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+            transitionPlane.position.z = -1;
+            camera.add(transitionPlane);
+            scene.add(camera);
+
+            // ... (keep the rest of the init function)
+
+            document.querySelectorAll('.overlay a').forEach(link => {
+                link.addEventListener('click', handleLinkClick);
             });
-        });
+        }
+
+        function handleLinkClick(e) {
+            e.preventDefault();
+            if (isTransitioning) return;
+            
+            const href = this.getAttribute('href');
+            const rect = this.getBoundingClientRect();
+            const centerX = (rect.left + rect.width / 2) / window.innerWidth * 2 - 1;
+            const centerY = -(rect.top + rect.height / 2) / window.innerHeight * 2 + 1;
+            
+            isTransitioning = true;
+            transitionOut(centerX, centerY, href);
+        }
+
+        function transitionOut(x, y, href) {
+            transitionCircle.position.set(x * 5, y * 2.5, -5);
+            transitionCircle.visible = true;
+            transitionCircle.scale.set(0.01, 0.01, 1);
+
+            const duration = 300; // milliseconds
+            const startTime = performance.now();
+
+            function animate(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+
+                transitionCircle.scale.set(progress * 100, progress * 100, 1);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    transitionPlane.material.opacity = 1;
+                    setTimeout(() => {
+                        window.open(href, '_blank');
+                        transitionIn();
+                    }, 700);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function transitionIn() {
+            const duration = 500; // milliseconds
+            const startTime = performance.now();
+
+            function animate(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+
+                transitionPlane.material.opacity = 1 - progress;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    transitionCircle.visible = false;
+                    isTransitioning = false;
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // ... (keep all other existing functions)
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // ... (keep existing animate code)
+
+            renderer.render(scene, camera);
+        }
+
+        // ... (keep window resize event listener)
 
         init();
     </script>
