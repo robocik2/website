@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Throwable Model, Gravity, and Stepped Movement</title>
+    <title>3D Room with Fast-Moving, Bouncing Model</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -50,10 +50,11 @@
         let velocity = new THREE.Vector3();
         let lastMousePosition = new THREE.Vector2();
         let isFlying = false;
-        const DAMPING = 0.98;
-        const BOUNCE = 0.7;
-        const GRAVITY = -0.01;
+        const DAMPING = 0.99;
+        const BOUNCE = 0.8;
+        const GRAVITY = -0.05; // Increased gravity
         const GROUND_Y = -1.75; // Y position of the ground
+        const FORCE_MULTIPLIER = 15; // Increased force multiplier
 
         function init() {
             scene = new THREE.Scene();
@@ -131,7 +132,7 @@
                     mouse.x - lastMousePosition.x,
                     mouse.y - lastMousePosition.y,
                     0
-                ).multiplyScalar(5); // Adjust this multiplier to change throw strength
+                ).multiplyScalar(FORCE_MULTIPLIER); // Increased force multiplier
             } else if (!isFlying) {
                 const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
                 const mouseZ = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
@@ -189,6 +190,10 @@
                     if (model.position.z < -7.5 || model.position.z > 7.5) {
                         velocity.z *= -BOUNCE;
                         model.position.z = Math.sign(model.position.z) * 7.5;
+                    }
+                    if (model.position.y > 3.75) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = 3.75;
                     }
 
                     // Check ground collision
