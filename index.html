@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Subtle Blur and Film Grain Effects</title>
+    <title>3D Room with Rotating, Fast-Moving, Bouncing Model</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -15,34 +15,7 @@
         body.clicking {
             cursor: url('cursor2.png') 16 16, auto !important;
         }
-        #scene-container { 
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        #blur-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-            backdrop-filter: blur(10px);
-        }
-        #grain {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 2;
-            opacity: 0.1;
-            mix-blend-mode: overlay;
-        }
+        canvas { display: block; }
         .overlay {
             position: fixed;
             color: white;
@@ -50,8 +23,6 @@
             font-size: 24px;
             padding: 10px;
             cursor: url('cursorhover.png') 16 16, auto;
-            z-index: 3;
-            text-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
         #ig { top: 10%; right: 10%; }
@@ -61,9 +32,6 @@
     </style>
 </head>
 <body>
-    <div id="scene-container"></div>
-    <div id="blur-overlay"></div>
-    <canvas id="grain"></canvas>
     <div id="title" class="overlay">maks rz</div>
     <div id="ig" class="overlay">ig</div>
     <div id="animation" class="overlay">animation</div>
@@ -96,10 +64,10 @@
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('scene-container').appendChild(renderer.domElement);
+            document.body.appendChild(renderer.domElement);
 
             const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
-            const roomMaterial = new THREE.MeshBasicMaterial({color: 0x2e1c12, side: THREE.BackSide});
+            const roomMaterial = new THREE.MeshBasicMaterial({color: 0x8B4513, side: THREE.BackSide});
             room = new THREE.Mesh(roomGeometry, roomMaterial);
             scene.add(room);
 
@@ -144,49 +112,166 @@
             camera.position.y = 1;
             camera.lookAt(0, -1, 0);
 
-            // Add film grain effect
-            const grainCanvas = document.getElementById('grain');
-            const grainCtx = grainCanvas.getContext('2d');
-            
-            function resizeGrain() {
-                grainCanvas.width = window.innerWidth;
-                grainCanvas.height = window.innerHeight;
-            }
-            
-            function generateGrain() {
-                const imageData = grainCtx.createImageData(grainCanvas.width, grainCanvas.height);
-                const data = imageData.data;
-                
-                for (let i = 0; i < data.length; i += 4) {
-                    const value = Math.random() * 255;
-                    data[i] = value;
-                    data[i + 1] = value;
-                    data[i + 2] = value;
-                    data[i + 3] = 25; // Adjust alpha for grain intensity
-                }
-                
-                grainCtx.putImageData(imageData, 0, 0);
-            }
-            
-            resizeGrain();
-            generateGrain();
-
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mousedown', onMouseDown);
             document.addEventListener('mouseup', onMouseUp);
-            
-            window.addEventListener('resize', () => {
-                resizeGrain();
-                generateGrain();
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-
             animate();
         }
 
-        // ... [Rest of the JavaScript functions (onMouseMove, onMouseDown, onMouseUp, animate) remain unchanged] ...
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            if (isDragging && model) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                const planeNormal = camera.getWorldDirection(new THREE.Vector3());
+                const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+                model.position.copy(intersectPoint.sub(dragOffset));
+
+                // Calculate velocity
+                velocity.set(
+                    mouse.x - lastMousePosition.x,
+                    mouse.y - lastMousePosition.y,
+                    0
+                ).multiplyScalar(FORCE_MULTIPLIER);
+
+                // Calculate angular velocity
+                angularVelocity.set(
+                    velocity.y,
+                    -velocity.x,
+                    velocity.x + velocity.y
+                ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
+            } else if (!isFlying) {
+                const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
+                const mouseZ = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
+
+                targetPosition.x = mouseX * STEP_SIZE;
+                targetPosition.z = mouseZ * STEP_SIZE;
+            }
+
+            lastMousePosition.set(mouse.x, mouse.y);
+        }
+
+        function onMouseDown(event) {
+            document.body.classList.add('clicking');
+            if (model) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(model, true);
+                
+                if (intersects.length > 0) {
+                    isDragging = true;
+                    isFlying = false;
+                    dragStart.copy(model.position);
+                    const intersectPoint = intersects[0].point;
+                    dragOffset.copy(intersectPoint).sub(model.position);
+                }
+            }
+        }
+
+        function onMouseUp() {
+            if (isDragging) {
+                isFlying = true;
+            }
+            isDragging = false;
+            document.body.classList.remove('clicking');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (model) {
+                if (isFlying) {
+                    // Apply gravity
+                    velocity.y += GRAVITY;
+
+                    model.position.add(velocity);
+                    velocity.multiplyScalar(DAMPING);
+
+                    // Apply rotation
+                    model.rotation.x += angularVelocity.x;
+                    model.rotation.y += angularVelocity.y;
+                    model.rotation.z += angularVelocity.z;
+                    angularVelocity.multiplyScalar(ANGULAR_DAMPING);
+
+                    // Check boundaries and bounce
+                    if (model.position.x < -7.5 || model.position.x > 7.5) {
+                        velocity.x *= -BOUNCE;
+                        model.position.x = Math.sign(model.position.x) * 7.5;
+                        angularVelocity.z *= -BOUNCE;
+                    }
+                    if (model.position.z < -7.5 || model.position.z > 7.5) {
+                        velocity.z *= -BOUNCE;
+                        model.position.z = Math.sign(model.position.z) * 7.5;
+                        angularVelocity.x *= -BOUNCE;
+                    }
+                    if (model.position.y > 3.75) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = 3.75;
+                        angularVelocity.x *= -BOUNCE;
+                        angularVelocity.z *= -BOUNCE;
+                    }
+
+                    // Check ground collision
+                    if (model.position.y < GROUND_Y) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = GROUND_Y;
+                        
+                        // Apply friction when on the ground
+                        velocity.x *= 0.9;
+                        velocity.z *= 0.9;
+                        angularVelocity.multiplyScalar(0.9);
+                    }
+
+                    // Check if the model has stopped moving
+                    if (velocity.length() < 0.01 && angularVelocity.length() < 0.01 && Math.abs(model.position.y - GROUND_Y) < 0.01) {
+                        isFlying = false;
+                        model.position.y = GROUND_Y;
+                        model.rotation.set(0, 0, 0);
+                    }
+                } else if (!isDragging) {
+                    // Stepped movement
+                    model.position.x = targetPosition.x;
+                    model.position.z = targetPosition.z;
+                    model.position.y = GROUND_Y;
+
+                    const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
+                    const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
+                    const totalSteps = stepsX + stepsZ;
+
+                    const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+
+                    if (model.position.x > 0) {
+                        model.rotation.y = Math.PI / 2 + additionalRotation;
+                    } else if (model.position.x < 0) {
+                        model.rotation.y = -Math.PI / 2 + additionalRotation;
+                    } else {
+                        model.rotation.y = additionalRotation;
+                    }
+
+                    if (model.position.z > 0) {
+                        model.rotation.x = -Math.PI / 8;
+                    } else if (model.position.z < 0) {
+                        model.rotation.x = Math.PI / 8;
+                    } else {
+                        model.rotation.x = 0;
+                    }
+
+                    model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
         init();
     </script>
