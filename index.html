@@ -122,13 +122,6 @@
             windowMesh.position.set(0, 0, 5);
             scene.add(windowMesh);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 3);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-            directionalLight.position.set(5, 5, 5);
-            scene.add(directionalLight);
-
             const loader = new THREE.GLTFLoader();
             loader.load(
                 'kid2.glb',
@@ -137,13 +130,11 @@
                     model.position.y = GROUND_Y;
                     model.scale.set(2, 2, 2);
                     
-                    // Apply flat shading to the model
+                    // Apply flat, unlit materials to the model
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            child.material = new THREE.MeshPhongMaterial({
-                                color: child.material.color,
-                                flatShading: true,
-                                shininess: 0
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: child.material.color
                             });
                         }
                     });
