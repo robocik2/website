@@ -32,6 +32,19 @@
         .overlay a {
             color: white;
             text-decoration: none;
+            cursor: url('cursorhover.png') 16 16, auto;
+        }
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            z-index: 1000;
         }
     </style>
 </head>
@@ -41,6 +54,7 @@
     <div id="animation" class="overlay"><a href="animation.html" target="_blank">animation</a></div>
     <div id="art" class="overlay"><a href="art.html" target="_blank">art</a></div>
     <div id="contact" class="overlay"><a href="contact.html" target="_blank">contact</a></div>
+    <div id="transition-overlay"></div>
     <script>
         let scene, camera, renderer, room, model;
         let isDragging = false;
@@ -154,3 +168,149 @@
                 targetPosition.x = mouseX * STEP_SIZE;
                 targetPosition.z = mouseZ * STEP_SIZE;
             }
+
+            lastMousePosition.set(mouse.x, mouse.y);
+        }
+
+        function onMouseDown(event) {
+            document.body.classList.add('clicking');
+            if (model) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(model, true);
+                
+                if (intersects.length > 0) {
+                    isDragging = true;
+                    isFlying = false;
+                    dragStart.copy(model.position);
+                    const intersectPoint = intersects[0].point;
+                    dragOffset.copy(intersectPoint).sub(model.position);
+                }
+            }
+        }
+
+        function onMouseUp() {
+            if (isDragging) {
+                isFlying = true;
+            }
+            isDragging = false;
+            document.body.classList.remove('clicking');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (model) {
+                if (isFlying) {
+                    // Apply gravity
+                    velocity.y += GRAVITY;
+
+                    model.position.add(velocity);
+                    velocity.multiplyScalar(DAMPING);
+
+                    // Apply rotation
+                    model.rotation.x += angularVelocity.x;
+                    model.rotation.y += angularVelocity.y;
+                    model.rotation.z += angularVelocity.z;
+                    angularVelocity.multiplyScalar(ANGULAR_DAMPING);
+
+                    // Check boundaries and bounce
+                    if (model.position.x < -7.5 || model.position.x > 7.5) {
+                        velocity.x *= -BOUNCE;
+                        model.position.x = Math.sign(model.position.x) * 7.5;
+                        angularVelocity.z *= -BOUNCE;
+                    }
+                    if (model.position.z < -7.5 || model.position.z > 7.5) {
+                        velocity.z *= -BOUNCE;
+                        model.position.z = Math.sign(model.position.z) * 7.5;
+                        angularVelocity.x *= -BOUNCE;
+                    }
+                    if (model.position.y > 3.75) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = 3.75;
+                        angularVelocity.x *= -BOUNCE;
+                        angularVelocity.z *= -BOUNCE;
+                    }
+
+                    // Check ground collision
+                    if (model.position.y < GROUND_Y) {
+                        velocity.y *= -BOUNCE;
+                        model.position.y = GROUND_Y;
+                        
+                        // Apply friction when on the ground
+                        velocity.x *= 0.9;
+                        velocity.z *= 0.9;
+                        angularVelocity.multiplyScalar(0.9);
+                    }
+
+                    // Check if the model has stopped moving
+                    if (velocity.length() < 0.01 && angularVelocity.length() < 0.01 && Math.abs(model.position.y - GROUND_Y) < 0.01) {
+                        isFlying = false;
+                        model.position.y = GROUND_Y;
+                        model.rotation.set(0, 0, 0);
+                    }
+                } else if (!isDragging) {
+                    // Stepped movement
+                    model.position.x = targetPosition.x;
+                    model.position.z = targetPosition.z;
+                    model.position.y = GROUND_Y;
+
+                    const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
+                    const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
+                    const totalSteps = stepsX + stepsZ;
+
+                    const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+
+                    if (model.position.x > 0) {
+                        model.rotation.y = Math.PI / 2 + additionalRotation;
+                    } else if (model.position.x < 0) {
+                        model.rotation.y = -Math.PI / 2 + additionalRotation;
+                    } else {
+                        model.rotation.y = additionalRotation;
+                    }
+
+                    if (model.position.z > 0) {
+                        model.rotation.x = -Math.PI / 8;
+                    } else if (model.position.z < 0) {
+                        model.rotation.x = Math.PI / 8;
+                    } else {
+                        model.rotation.x = 0;
+                    }
+
+                    model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+
+        // Add transition functionality
+        const transitionOverlay = document.getElementById('transition-overlay');
+
+        document.querySelectorAll('.overlay a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                
+                transitionOverlay.style.opacity = '1';
+                transitionOverlay.style.pointerEvents = 'auto';
+                
+                setTimeout(() => {
+                    window.open(href, '_blank');
+                    transitionOverlay.style.opacity = '0';
+                    transitionOverlay.style.pointerEvents = 'none';
+                }, 1000);
+            });
+        });
+    </script>
+</body>
+</html>
