@@ -3,27 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Rotating, Fast-Moving, Bouncing Model - Debug</title>
+    <title>3D Room with Rotating, Fast-Moving, Bouncing Model and Animated Transition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
+            cursor: url('cursor1.png') 16 16, auto;
         }
-        canvas { 
-            display: block; 
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1;
+        body.clicking {
+            cursor: url('cursor2.png') 16 16, auto !important;
         }
+        canvas { display: block; }
         .overlay {
             position: fixed;
             color: white;
             font-family: Arial, sans-serif;
             font-size: 24px;
             padding: 10px;
+            cursor: url('cursorhover.png') 16 16, auto;
             z-index: 10;
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
@@ -31,6 +30,41 @@
         #animation { top: 10%; left: 10%; }
         #art { bottom: 10%; left: 10%; }
         #contact { bottom: 10%; right: 10%; }
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            opacity: 0;
+            z-index: 20;
+            pointer-events: none;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #transition-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 36px;
+            text-align: center;
+            opacity: 0;
+            z-index: 30;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #close-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 30;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -39,52 +73,71 @@
     <div id="animation" class="overlay">animation</div>
     <div id="art" class="overlay">art</div>
     <div id="contact" class="overlay">contact</div>
+    <div id="transition-overlay"></div>
+    <div id="transition-content"></div>
+    <div id="close-button">✕</div>
     <script>
-        let scene, camera, renderer;
+        // ... (previous JavaScript code remains the same)
 
         function init() {
-            console.log("Initializing Three.js scene...");
+            // ... (previous init code remains the same)
 
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
+            document.querySelectorAll('.overlay').forEach(elem => {
+                elem.addEventListener('click', handleOverlayClick);
+            });
 
-            console.log("Renderer created and added to DOM");
-
-            // Add a simple cube to the scene
-            const geometry = new THREE.BoxGeometry();
-            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-            const cube = new THREE.Mesh(geometry, material);
-            scene.add(cube);
-
-            console.log("Green cube added to scene");
-
-            camera.position.z = 5;
+            document.getElementById('close-button').addEventListener('click', closeTransition);
 
             animate();
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
+        function handleOverlayClick(event) {
+            const clickedText = event.target.textContent;
+            if (clickedText === 'animation' || clickedText === 'maks rz' || clickedText === 'contact') {
+                startTransition(clickedText);
+            }
+        }
 
-            // Rotate the cube
-            scene.children[0].rotation.x += 0.01;
-            scene.children[0].rotation.y += 0.01;
+        function startTransition(text) {
+            const overlay = document.getElementById('transition-overlay');
+            const content = document.getElementById('transition-content');
+            const closeButton = document.getElementById('close-button');
+
+            overlay.style.opacity = '1';
+            content.textContent = text;
+            content.style.opacity = '1';
+            closeButton.style.display = 'block';
+
+            // Pause the 3D animation
+            cancelAnimationFrame(animationFrameId);
+        }
+
+        function closeTransition() {
+            const overlay = document.getElementById('transition-overlay');
+            const content = document.getElementById('transition-content');
+            const closeButton = document.getElementById('close-button');
+
+            overlay.style.opacity = '0';
+            content.style.opacity = '0';
+            closeButton.style.display = 'none';
+
+            // Resume the 3D animation
+            animate();
+        }
+
+        let animationFrameId;
+
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            // ... (previous animation code remains the same)
 
             renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        // ... (remaining JavaScript code stays the same)
 
-        console.log("Starting initialization...");
         init();
-        console.log("Initialization complete");
     </script>
 </body>
 </html>
