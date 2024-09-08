@@ -11,6 +11,7 @@
             margin: 0;
             overflow: hidden;
             cursor: url('cursor1.png') 16 16, auto;
+            font-family: Arial, sans-serif;
         }
         body.clicking {
             cursor: url('cursor2.png') 16 16, auto !important;
@@ -47,16 +48,18 @@
             transition: transform 1s ease;
             z-index: 999;
         }
-        #clicked-title {
+        #clicked-content {
             position: fixed;
-            color: white;
-            font-size: 48px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
             opacity: 0;
             transition: opacity 0.5s ease;
             z-index: 1001;
+            text-align: center;
+            max-width: 80%;
         }
         #close-btn {
             position: fixed;
@@ -69,17 +72,32 @@
             transition: opacity 0.5s ease;
             z-index: 1001;
         }
+        #profile-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #profile-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            margin-right: 20px;
+        }
+        #profile-text {
+            text-align: left;
+            max-width: 500px;
+        }
     </style>
 </head>
 <body>
-    <div id="title" class="overlay">maks rz</div>
+    <div id="title" class="overlay"><a href="#" data-title="profile">maks rz</a></div>
     <div id="ig" class="overlay"><a href="https://instagram.com/your_instagram" target="_blank">ig</a></div>
-    <div id="animation" class="overlay"><a href="#" data-title="Animation">animation</a></div>
+    <div id="animation" class="overlay"><a href="#" data-title="animation">animation</a></div>
     <div id="art" class="overlay"><a href="#" data-title="Art">art</a></div>
     <div id="contact" class="overlay"><a href="#" data-title="Contact">contact</a></div>
 
     <div id="black-ellipse"></div>
-    <div id="clicked-title"></div>
+    <div id="clicked-content"></div>
     <div id="close-btn">✕</div>
 
     <script>
@@ -310,32 +328,23 @@
 
         // Transition handling
         const blackEllipse = document.getElementById('black-ellipse');
-        const clickedTitle = document.getElementById('clicked-title');
+        const clickedContent = document.getElementById('clicked-content');
         const closeButton = document.getElementById('close-btn');
 
         document.querySelectorAll('.overlay a').forEach(link => {
             link.addEventListener('click', function (e) {
                 e.preventDefault();
                 const title = this.getAttribute('data-title');
-                clickedTitle.innerHTML = title;
                 blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
                 blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
 
                 // Start the ellipse transition
                 blackEllipse.style.transform = 'scale(15)';
                 setTimeout(() => {
-                    clickedTitle.style.opacity = '1';
-                    closeButton.style.opacity = '1';
-                }, 1000);
-            });
-        });
-
-        closeButton.addEventListener('click', () => {
-            // Reverse the transition
-            blackEllipse.style.transform = 'scale(0)';
-            clickedTitle.style.opacity = '0';
-            closeButton.style.opacity = '0';
-        });
-    </script>
-</body>
-</html>
+                    if (title === 'animation') {
+                        clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+                    } else if (title === 'profile') {
+                        clickedContent.innerHTML = `
+                            <div id="profile-content">
+                                <img id="profile-image" src="photo.png" alt="Maks Rzontkowski">
+                                <div id="profile-text">
