@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Room with Rotating, Fast-Moving, Bouncing Model and Animated Transition</title>
+    <title>White 3D Room with Rotating, Fast-Moving, Bouncing Model and Simple Fade Transition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -18,7 +18,7 @@
         canvas { display: block; }
         .overlay {
             position: fixed;
-            color: white;
+            color: black;
             font-family: Arial, sans-serif;
             font-size: 24px;
             padding: 10px;
@@ -77,11 +77,78 @@
     <div id="transition-content"></div>
     <div id="close-button">✕</div>
     <script>
-        // ... (previous JavaScript code remains the same)
+        let scene, camera, renderer, room, model;
+        let isDragging = false;
+        let targetPosition = new THREE.Vector3(0, -1.75, 0);
+        const GRID_SIZE = 8;
+        const STEP_SIZE = 1;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragStart = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        let velocity = new THREE.Vector3();
+        let angularVelocity = new THREE.Vector3();
+        let lastMousePosition = new THREE.Vector2();
+        let isFlying = false;
+        const DAMPING = 0.99;
+        const ANGULAR_DAMPING = 0.98;
+        const BOUNCE = 0.8;
+        const GRAVITY = -0.05;
+        const GROUND_Y = -1.75;
+        const FORCE_MULTIPLIER = 15;
+        const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
         function init() {
-            // ... (previous init code remains the same)
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
+            const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
+            const roomMaterial = new THREE.MeshBasicMaterial({color: 0xFFFFFF, side: THREE.BackSide});
+            room = new THREE.Mesh(roomGeometry, roomMaterial);
+            scene.add(room);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 3);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'kid2.glb',
+                function (gltf) {
+                    model = gltf.scene;
+                    model.position.y = GROUND_Y;
+                    model.scale.set(2, 2, 2);
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: child.material.color
+                            });
+                        }
+                    });
+                    scene.add(model);
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('An error happened', error);
+                }
+            );
+
+            camera.position.z = 5;
+            camera.position.y = 1;
+            camera.lookAt(0, -1, 0);
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
+            
             document.querySelectorAll('.overlay').forEach(elem => {
                 elem.addEventListener('click', handleOverlayClick);
             });
@@ -89,6 +156,18 @@
             document.getElementById('close-button').addEventListener('click', closeTransition);
 
             animate();
+        }
+
+        function onMouseMove(event) {
+            // ... (previous onMouseMove code remains the same)
+        }
+
+        function onMouseDown(event) {
+            // ... (previous onMouseDown code remains the same)
+        }
+
+        function onMouseUp() {
+            // ... (previous onMouseUp code remains the same)
         }
 
         function handleOverlayClick(event) {
@@ -130,12 +209,22 @@
         function animate() {
             animationFrameId = requestAnimationFrame(animate);
 
-            // ... (previous animation code remains the same)
+            if (model) {
+                if (isFlying) {
+                    // ... (previous flying animation code remains the same)
+                } else if (!isDragging) {
+                    // ... (previous stepped movement code remains the same)
+                }
+            }
 
             renderer.render(scene, camera);
         }
 
-        // ... (remaining JavaScript code stays the same)
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
         init();
     </script>
