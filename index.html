@@ -100,6 +100,21 @@
             white-space: pre-line;
             line-height: 1.6;
         }
+        .info-container {
+            display: flex;
+            gap: 20px;
+        }
+        .bio, .awards {
+            flex: 1;
+        }
+        .awards ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .awards li {
+            font-style: italic;
+            margin-bottom: 5px;
+        }
 
         /* Mobile responsiveness */
         @media (max-width: 768px) {
@@ -117,6 +132,9 @@
             }
             .info-text {
                 font-size: 14px;
+            }
+            .info-container {
+                flex-direction: column;
             }
         }
     </style>
@@ -357,18 +375,18 @@
                         model.rotation.y = Math.PI / 2 + additionalRotation;
                     } else if (model.position.x < 0) {
                         model.rotation.y = -Math.PI / 2 + additionalRotation;
-                    } else {
-                        model.rotation.y = additionalRotation;
-                    }
+                    } else {model.rotation.y = additionalRotation;
+                }
 
-                    if (model.position.z > 0) {
-                        model.rotation.x = -Math.PI / 8;
-                    } else if (model.position.z < 0) {
-                        model.rotation.x = Math.PI / 8;
-                    } else {
-                        model.rotation.x = 0;
-                    }
-model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+                if (model.position.z > 0) {
+                    model.rotation.x = -Math.PI / 8;
+                } else if (model.position.z < 0) {
+                    model.rotation.x = Math.PI / 8;
+                } else {
+                    model.rotation.x = 0;
+                }
+
+                model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
             }
         }
 
@@ -403,27 +421,31 @@ model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
                 } else if (title === 'maks-info') {
                     clickedContent.innerHTML = `
                         <img id="photo" src="photo.png" alt="Maks Rzontkowski">
-                        <div class="info-text">
-                            maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).
-
-                            selections, awards and festivals:
-
-                            Sundance Film Festival 2024
-                            ANNECY International Animation Festival 2024
-                            OTTAWA Animation Festival
-                            New Horizons Festival 2024
-                            PICTOPLASMA 2024
-                            FEST New Directors 2024
-                            Rooftop Films 2024
-                            Animator Festival 2024: II PRIZE
-                            Kaboom Animation Festival 2024: Special Mention
-                            ŻUBROFFKA 2024: II Prize
-                            Salute Your Shorts Festival 2024
-                            Fest Anca 2024
-                            HELSINKI INTERNATIONAL FILM FESTIVAL
-                            TOHORROR 2024
-
-                            & more.
+                        <div class="info-container">
+                            <div class="bio">
+                                <h2>Bio</h2>
+                                <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).</p>
+                            </div>
+                            <div class="awards">
+                                <h2>Awards and Festivals</h2>
+                                <ul>
+                                    <li>Sundance Film Festival 2024</li>
+                                    <li>ANNECY International Animation Festival 2024</li>
+                                    <li>OTTAWA Animation Festival</li>
+                                    <li>New Horizons Festival 2024</li>
+                                    <li>PICTOPLASMA 2024</li>
+                                    <li>FEST New Directors 2024</li>
+                                    <li>Rooftop Films 2024</li>
+                                    <li>Animator Festival 2024: II PRIZE</li>
+                                    <li>Kaboom Animation Festival 2024: Special Mention</li>
+                                    <li>ŻUBROFFKA 2024: II Prize</li>
+                                    <li>Salute Your Shorts Festival 2024</li>
+                                    <li>Fest Anca 2024</li>
+                                    <li>HELSINKI INTERNATIONAL FILM FESTIVAL</li>
+                                    <li>TOHORROR 2024</li>
+                                </ul>
+                                <p>& more.</p>
+                            </div>
                         </div>
                     `;
                 } else {
