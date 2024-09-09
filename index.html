@@ -10,11 +10,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            cursor: url('cursor1.png') 16 16, auto;
             font-family: Helvetica, Arial, sans-serif;
-        }
-        body.clicking {
-            cursor: url('cursor2.png') 16 16, auto !important;
         }
         canvas {
             display: block;
@@ -24,7 +20,6 @@
             color: white;
             font-size: 24px;
             padding: 10px;
-            cursor: url('cursorhover.png') 16 16, auto;
             z-index: 10;
         }
         #title { top: 10%; left: 50%; transform: translateX(-50%); }
@@ -35,7 +30,6 @@
         .overlay a {
             color: white;
             text-decoration: none;
-            cursor: url('cursorhover.png') 16 16, auto;
         }
         #black-ellipse {
             position: absolute;
@@ -158,6 +152,7 @@
         const STEP_SIZE = 1;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
+        const touch = new THREE.Vector2();
         const dragStart = new THREE.Vector3();
         const dragOffset = new THREE.Vector3();
         let velocity = new THREE.Vector3();
@@ -239,7 +234,24 @@
             touchStartY = event.touches[0].clientY;
             lastTouchX = touchStartX;
             lastTouchY = touchStartY;
-            updateTargetPosition(touchStartX, touchStartY);
+
+            touch.x = (touchStartX / window.innerWidth) * 2 - 1;
+            touch.y = -(touchStartY / window.innerHeight) * 2 + 1;
+
+            if (model) {
+                raycaster.setFromCamera(touch, camera);
+                const intersects = raycaster.intersectObject(model, true);
+                
+                if (intersects.length > 0) {
+                    isDragging = true;
+                    isFlying = false;
+                    dragStart.copy(model.position);
+                    const intersectPoint = intersects[0].point;
+                    dragOffset.copy(intersectPoint).sub(model.position);
+                } else {
+                    updateTargetPosition(touchStartX, touchStartY);
+                }
+            }
         }
 
         function onTouchMove(event) {
@@ -251,14 +263,43 @@
             const touchX = event.touches[0].clientX;
             const touchY = event.touches[0].clientY;
 
-            updateTargetPosition(touchX, touchY);
+            touch.x = (touchX / window.innerWidth) * 2 - 1;
+            touch.y = -(touchY / window.innerHeight) * 2 + 1;
 
+            if (isDragging && model) {
+                raycaster.setFromCamera(touch, camera);
+                const intersectPoint = new THREE.Vector3();
+                const planeNormal = camera.getWorldDirection(new THREE.Vector3());
+                const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+                model.position.copy(intersectPoint.sub(dragOffset));
+
+                velocity.set(
+                    touch.x - lastMousePosition.x,
+                    touch.y - lastMousePosition.y,
+                    0
+                ).multiplyScalar(FORCE_MULTIPLIER);
+
+                angularVelocity.set(
+                    velocity.y,
+                    -velocity.x,
+                    velocity.x + velocity.y
+                ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
+            } else {
+                updateTargetPosition(touchX, touchY);
+            }
+
+            lastMousePosition.set(touch.x, touch.y);
             lastTouchX = touchX;
             lastTouchY = touchY;
         }
 
         function onTouchEnd(event) {
             event.preventDefault();
+            if (isDragging) {
+                isFlying = true;
+            }
+            isDragging = false;
             touchStartX = null;
             touchStartY = null;
         }
@@ -305,7 +346,6 @@
         }
 
         function onMouseDown(event) {
-            document.body.classList.add('clicking');
             if (model) {
                 mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -327,7 +367,6 @@
                 isFlying = true;
             }
             isDragging = false;
-            document.body.classList.remove('clicking');
         }
 
         function animate() {
