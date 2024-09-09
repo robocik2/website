@@ -72,7 +72,7 @@
         #clicked-content {
             position: fixed;
             color: white;
-            font-size: 24px;
+            font-size: 16px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -85,38 +85,21 @@
             justify-content: center;
             gap: 20px;
             max-width: 80%;
+            max-height: 80vh;
             margin: 0 auto;
+            overflow-y: auto;
         }
         #photo {
             max-width: 300px;
             max-height: 300px;
             border-radius: 10px;
         }
-        .interactive-text {
+        .info-text {
             flex: 1;
             text-align: left;
-            font-size: 16px;
+            white-space: pre-line;
             line-height: 1.6;
         }
-        .interactive-text p {
-            margin-bottom: 15px;
-        }
-        .festival-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        .festival-list li {
-            margin-bottom: 5px;
-        }.interactive-text {
-    flex: 1;
-    text-align: left;
-    font-size: 16px;
-    line-height: 1.6;
-    white-space: pre-line;
-}
-.interactive-text p {
-    margin-bottom: 10px;
-}
     </style>
 </head>
 <body>
@@ -372,34 +355,33 @@
                 blackEllipse.style.transform = 'scale(15)';
                 setTimeout(() => {
                     if (title === 'animation') {
-                        clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+                        clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
                     } else if (title === 'maks-info') {
                         clickedContent.innerHTML = `
                             <img id="photo" src="photo.png" alt="Maks Rzontkowski">
-                           <div class="interactive-text">
-        <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).</p>
-        <br><br>
-        <p>selections, awards and festivals:</p>
-        <br>
-        Sundance Film Festival 2024<br>
-        ANNECY International Animation Festival 2024<br>
-        OTTAWA Animation Festival<br>
-        New Horizons Festival 2024<br>
-        PICTOPLASMA 2024<br>
-        FEST New Directors 2024<br>
-        Rooftop Films 2024<br>
-        Animator Festival 2024: II PRIZE<br>
-        Kaboom Animation Festival 2024: Special Mention<br>
-        ŻUBROFFKA 2024: II Prize<br>
-        Salute Your Shorts Festival 2024<br>
-        Fest Anca 2024<br>
-        HELSINKI INTERNATIONAL FILM FESTIVAL<br>
-        TOHORROR 2024<br>
-        <br>
-        & more.
-    </div>
+                            <div class="info-text">
+                                maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).
+
+                                selections, awards and festivals:
+
+                                Sundance Film Festival 2024
+                                ANNECY International Animation Festival 2024
+                                OTTAWA Animation Festival
+                                New Horizons Festival 2024
+                                PICTOPLASMA 2024
+                                FEST New Directors 2024
+                                Rooftop Films 2024
+                                Animator Festival 2024: II PRIZE
+                                Kaboom Animation Festival 2024: Special Mention
+                                ŻUBROFFKA 2024: II Prize
+                                Salute Your Shorts Festival 2024
+                                Fest Anca 2024
+                                HELSINKI INTERNATIONAL FILM FESTIVAL
+                                TOHORROR 2024
+
+                                & more.
+                            </div>
                         `;
-                        addInteractiveTextEffect();
                     } else {
                         clickedContent.innerHTML = title;
                     }
@@ -408,46 +390,6 @@
                 }, 1000);
             });
         });
-
-        function addInteractiveTextEffect() {
-            const text = document.querySelector('.interactive-text');
-            const textContent = text.innerHTML;
-            text.innerHTML = textContent.replace(/\S/g, "<span>$&</span>");
-            
-            const chars = text.querySelectorAll('span');
-            
-            text.addEventListener('mousemove', (e) => {
-                const rect = text.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-                
-                chars.forEach(char => {
-                    const charRect = char.getBoundingClientRect();
-                    const charX = charRect.left - rect.left + charRect.width / 2;
-                    const charY = charRect.top - rect.top + charRect.height / 2;
-                    
-                    const distance = Math.sqrt(Math.pow(mouseX - charX, 2) + Math.pow(mouseY - charY, 2));
-                    const maxDistance = 100;
-                    
-                    if (distance < maxDistance) {
-                        const angle = Math.atan2(mouseY - charY, mouseX - charX);
-                        const displacement = (1 - distance / maxDistance) * 10;
-                        const x = Math.cos(angle) * displacement;
-                        const y = Math.sin(angle) * displacement;
-                        
-                        char.style.transform = `translate(${x}px, ${y}px)`;
-                    } else {
-                        char.style.transform = 'translate(0, 0)';
-                    }
-                });
-            });
-            
-            text.addEventListener('mouseleave', () => {
-                chars.forEach(char => {
-                    char.style.transform = 'translate(0, 0)';
-                });
-            });
-        }
 
         closeButton.addEventListener('click', () => {
             // Reverse the transition
