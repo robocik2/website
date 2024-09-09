@@ -173,54 +173,6 @@
         const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
         function init() {
-              if (isMobile()) {
-        document.addEventListener('touchstart', onTouchStart);
-        document.addEventListener('touchmove', onTouchMove);
-        document.addEventListener('touchend', onTouchEnd);
-    } else {
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mousedown', onMouseDown);
-        document.addEventListener('mouseup', onMouseUp);
-    }
-
-    animate();
-}
-
-let touchStartX, touchStartY;
-
-function onTouchStart(event) {
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
-}
-
-function onTouchMove(event) {
-    if (!touchStartX || !touchStartY) {
-        return;
-    }
-
-    const touchEndX = event.touches[0].clientX;
-    const touchEndY = event.touches[0].clientY;
-
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
-
-    const sensitivity = 0.05; // Adjust this value to change movement speed
-
-    targetPosition.x += deltaX * sensitivity;
-    targetPosition.z += deltaY * sensitivity;
-
-    // Clamp the target position to the room boundaries
-    targetPosition.x = Math.max(-7.5, Math.min(7.5, targetPosition.x));
-    targetPosition.z = Math.max(-7.5, Math.min(7.5, targetPosition.z));
-
-    touchStartX = touchEndX;
-    touchStartY = touchEndY;
-}
-
-function onTouchEnd() {
-    touchStartX = null;
-    touchStartY = null;
-}
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer();
@@ -270,7 +222,9 @@ function onTouchEnd() {
             camera.lookAt(0, -1, 0);
 
             if (isMobile()) {
-                window.addEventListener('deviceorientation', handleOrientation);
+                document.addEventListener('touchstart', onTouchStart);
+                document.addEventListener('touchmove', onTouchMove);
+                document.addEventListener('touchend', onTouchEnd);
             } else {
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mousedown', onMouseDown);
@@ -284,22 +238,40 @@ function onTouchEnd() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
-        function handleOrientation(event) {
-            const x = event.gamma; // In degree in the range [-90,90]
-            const y = event.beta; // In degree in the range [-180,180]
+        let touchStartX, touchStartY;
 
-            // Because we don't want to have the device upside down
-            // We constrain the x value to the range [-90,90]
-            if (x > 90) { x = 90; }
-            if (x < -90) { x = -90; }
+        function onTouchStart(event) {
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+        }
 
-            // To make computation easier we shift the range of 
-            // x and y to [0,180]
-            const xScale = (x + 90) / 180;
-            const yScale = (y + 180) / 360;
+        function onTouchMove(event) {
+            if (!touchStartX || !touchStartY) {
+                return;
+            }
 
-            targetPosition.x = (xScale - 0.5) * GRID_SIZE * STEP_SIZE;
-            targetPosition.z = (yScale - 0.5) * GRID_SIZE * STEP_SIZE;
+            const touchEndX = event.touches[0].clientX;
+            const touchEndY = event.touches[0].clientY;
+
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+
+            const sensitivity = 0.05; // Adjust this value to change movement speed
+
+            targetPosition.x += deltaX * sensitivity;
+            targetPosition.z += deltaY * sensitivity;
+
+            // Clamp the target position to the room boundaries
+            targetPosition.x = Math.max(-7.5, Math.min(7.5, targetPosition.x));
+            targetPosition.z = Math.max(-7.5, Math.min(7.5, targetPosition.z));
+
+            touchStartX = touchEndX;
+            touchStartY = touchEndY;
+        }
+
+        function onTouchEnd() {
+            touchStartX = null;
+            touchStartY = null;
         }
 
         function onMouseMove(event) {
@@ -415,15 +387,16 @@ function onTouchEnd() {
 
                     const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
                     const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
-                    const totalSteps = stepsX + stepsZ;
+                    const totalSteps = st               const totalSteps = stepsX + stepsZ;
 
-                    const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+                const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
 
-                    if (model.position.x > 0) {
-                        model.rotation.y = Math.PI / 2 + additionalRotation;
-                    } else if (model.position.x < 0) {
-                        model.rotation.y = -Math.PI / 2 + additionalRotation;
-                    } else {model.rotation.y = additionalRotation;
+                if (model.position.x > 0) {
+                    model.rotation.y = Math.PI / 2 + additionalRotation;
+                } else if (model.position.x < 0) {
+                    model.rotation.y = -Math.PI / 2 + additionalRotation;
+                } else {
+                    model.rotation.y = additionalRotation;
                 }
 
                 if (model.position.z > 0) {
@@ -512,3 +485,5 @@ function onTouchEnd() {
         closeButton.style.opacity = '0';
     });
 </script>
+</body>
+</html>
