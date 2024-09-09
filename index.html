@@ -173,6 +173,54 @@
         const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
         function init() {
+              if (isMobile()) {
+        document.addEventListener('touchstart', onTouchStart);
+        document.addEventListener('touchmove', onTouchMove);
+        document.addEventListener('touchend', onTouchEnd);
+    } else {
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mousedown', onMouseDown);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+
+    animate();
+}
+
+let touchStartX, touchStartY;
+
+function onTouchStart(event) {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+}
+
+function onTouchMove(event) {
+    if (!touchStartX || !touchStartY) {
+        return;
+    }
+
+    const touchEndX = event.touches[0].clientX;
+    const touchEndY = event.touches[0].clientY;
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    const sensitivity = 0.05; // Adjust this value to change movement speed
+
+    targetPosition.x += deltaX * sensitivity;
+    targetPosition.z += deltaY * sensitivity;
+
+    // Clamp the target position to the room boundaries
+    targetPosition.x = Math.max(-7.5, Math.min(7.5, targetPosition.x));
+    targetPosition.z = Math.max(-7.5, Math.min(7.5, targetPosition.z));
+
+    touchStartX = touchEndX;
+    touchStartY = touchEndY;
+}
+
+function onTouchEnd() {
+    touchStartX = null;
+    touchStartY = null;
+}
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer();
