@@ -100,6 +100,25 @@
             white-space: pre-line;
             line-height: 1.6;
         }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .overlay {
+                font-size: 18px;
+            }
+            #clicked-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            #photo {
+                max-width: 200px;
+                max-height: 200px;
+            }
+            .info-text {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -184,11 +203,37 @@
             camera.position.y = 1;
             camera.lookAt(0, -1, 0);
 
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mousedown', onMouseDown);
-            document.addEventListener('mouseup', onMouseUp);
+            if (isMobile()) {
+                window.addEventListener('deviceorientation', handleOrientation);
+            } else {
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mousedown', onMouseDown);
+                document.addEventListener('mouseup', onMouseUp);
+            }
 
             animate();
+        }
+
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        function handleOrientation(event) {
+            const x = event.gamma; // In degree in the range [-90,90]
+            const y = event.beta; // In degree in the range [-180,180]
+
+            // Because we don't want to have the device upside down
+            // We constrain the x value to the range [-90,90]
+            if (x > 90) { x = 90; }
+            if (x < -90) { x = -90; }
+
+            // To make computation easier we shift the range of 
+            // x and y to [0,180]
+            const xScale = (x + 90) / 180;
+            const yScale = (y + 180) / 360;
+
+            targetPosition.x = (xScale - 0.5) * GRID_SIZE * STEP_SIZE;
+            targetPosition.z = (yScale - 0.5) * GRID_SIZE * STEP_SIZE;
         }
 
         function onMouseMove(event) {
@@ -323,80 +368,79 @@
                     } else {
                         model.rotation.x = 0;
                     }
-
-                    model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
-                }
+ model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
             }
-
-            renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        init();
-
-        // Transition handling
-        const blackEllipse = document.getElementById('black-ellipse');
-        const clickedContent = document.getElementById('clicked-content');
-        const closeButton = document.getElementById('close-btn');
-
-        document.querySelectorAll('.overlay a').forEach(link => {
-            link.addEventListener('click', function (e) {
-                e.preventDefault();
-                const title = this.getAttribute('data-title');
-                blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
-                blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
-
-                // Start the ellipse transition
-                blackEllipse.style.transform = 'scale(15)';
-                setTimeout(() => {
-    if (title === 'animation') {
-        clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
-    } else if (title === 'maks-info') {
-        clickedContent.innerHTML = `
-            <img id="photo" src="photo.png" alt="Maks Rzontkowski">
-            <div class="info-text">
-                maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).
-
-                selections, awards and festivals:
-
-                Sundance Film Festival 2024
-                ANNECY International Animation Festival 2024
-                OTTAWA Animation Festival
-                New Horizons Festival 2024
-                PICTOPLASMA 2024
-                FEST New Directors 2024
-                Rooftop Films 2024
-                Animator Festival 2024: II PRIZE
-                Kaboom Animation Festival 2024: Special Mention
-                ŻUBROFFKA 2024: II Prize
-                Salute Your Shorts Festival 2024
-                Fest Anca 2024
-                HELSINKI INTERNATIONAL FILM FESTIVAL
-                TOHORROR 2024
-
-                & more.
-            </div>
-        `;
-    } else {
-        clickedContent.innerHTML = title;
+        renderer.render(scene, camera);
     }
-    clickedContent.style.opacity = '1';
-    closeButton.style.opacity = '1';
-}, 1000);
-            });
-        });
 
-        closeButton.addEventListener('click', () => {
-            // Reverse the transition
-            blackEllipse.style.transform = 'scale(0)';
-            clickedContent.style.opacity = '0';
-            closeButton.style.opacity = '0';
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    init();
+
+    // Transition handling
+    const blackEllipse = document.getElementById('black-ellipse');
+    const clickedContent = document.getElementById('clicked-content');
+    const closeButton = document.getElementById('close-btn');
+
+    document.querySelectorAll('.overlay a').forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const title = this.getAttribute('data-title');
+            blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
+            blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
+
+            // Start the ellipse transition
+            blackEllipse.style.transform = 'scale(15)';
+            setTimeout(() => {
+                if (title === 'animation') {
+                    clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+                } else if (title === 'maks-info') {
+                    clickedContent.innerHTML = `
+                        <img id="photo" src="photo.png" alt="Maks Rzontkowski">
+                        <div class="info-text">
+                            maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).
+
+                            selections, awards and festivals:
+
+                            Sundance Film Festival 2024
+                            ANNECY International Animation Festival 2024
+                            OTTAWA Animation Festival
+                            New Horizons Festival 2024
+                            PICTOPLASMA 2024
+                            FEST New Directors 2024
+                            Rooftop Films 2024
+                            Animator Festival 2024: II PRIZE
+                            Kaboom Animation Festival 2024: Special Mention
+                            ŻUBROFFKA 2024: II Prize
+                            Salute Your Shorts Festival 2024
+                            Fest Anca 2024
+                            HELSINKI INTERNATIONAL FILM FESTIVAL
+                            TOHORROR 2024
+
+                            & more.
+                        </div>
+                    `;
+                } else {
+                    clickedContent.innerHTML = title;
+                }
+                clickedContent.style.opacity = '1';
+                closeButton.style.opacity = '1';
+            }, 1000);
         });
-    </script>
+    });
+
+    closeButton.addEventListener('click', () => {
+        // Reverse the transition
+        blackEllipse.style.transform = 'scale(0)';
+        clickedContent.style.opacity = '0';
+        closeButton.style.opacity = '0';
+    });
+</script>
 </body>
 </html>
