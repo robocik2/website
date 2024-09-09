@@ -7,6 +7,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
+        * {
+            cursor: url('cursor1.png') 16 16, auto !important;
+        }
         body {
             margin: 0;
             overflow: hidden;
@@ -30,6 +33,7 @@
         .overlay a {
             color: white;
             text-decoration: none;
+            cursor: url('cursorhover.png') 16 16, auto !important;
         }
         #black-ellipse {
             position: absolute;
@@ -59,7 +63,7 @@
             font-size: 36px;
             color: white;
             opacity: 0;
-            cursor: pointer;
+            cursor: url('cursorhover.png') 16 16, auto !important;
             transition: opacity 0.5s ease;
             z-index: 1001;
         }
