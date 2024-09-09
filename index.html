@@ -143,7 +143,7 @@
     <div id="title" class="overlay"><a href="#" data-title="maks-info">maks rz</a></div>
     <div id="animation" class="overlay"><a href="#" data-title="Animation">animation</a></div>
     <div id="clicked-content"></div>
-    <div id="ig" class="overlay"><a href="https://instagram.com/your_instagram" target="_blank">ig</a></div>
+    <div id="ig" class="overlay"><a href="#" data-title="Instagram">ig</a></div>
     <div id="art" class="overlay"><a href="#" data-title="Art">art</a></div>
     <div id="contact" class="overlay"><a href="#" data-title="Contact">contact</a></div>
 
@@ -223,21 +223,14 @@
             camera.position.y = 1;
             camera.lookAt(0, -1, 0);
 
-            if (isMobile()) {
-                renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
-                renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
-                renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
-            } else {
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mousedown', onMouseDown);
-                document.addEventListener('mouseup', onMouseUp);
-            }
+            renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+            renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+            renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
 
             animate();
-        }
-
-        function isMobile() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
         function onTouchStart(event) {
@@ -246,6 +239,7 @@
             touchStartY = event.touches[0].clientY;
             lastTouchX = touchStartX;
             lastTouchY = touchStartY;
+            updateTargetPosition(touchStartX, touchStartY);
         }
 
         function onTouchMove(event) {
@@ -257,19 +251,7 @@
             const touchX = event.touches[0].clientX;
             const touchY = event.touches[0].clientY;
 
-            const deltaX = touchX - lastTouchX;
-            const deltaY = touchY - lastTouchY;
-
-            const sensitivity = 0.02;
-
-            const mouseX = Math.round(((touchX / window.innerWidth) - 0.5) * GRID_SIZE);
-            const mouseZ = Math.round(((touchY / window.innerHeight) - 0.5) * GRID_SIZE);
-
-            targetPosition.x = mouseX * STEP_SIZE;
-            targetPosition.z = mouseZ * STEP_SIZE;
-
-            targetPosition.x = Math.max(-7.5, Math.min(7.5, targetPosition.x));
-            targetPosition.z = Math.max(-7.5, Math.min(7.5, targetPosition.z));
+            updateTargetPosition(touchX, touchY);
 
             lastTouchX = touchX;
             lastTouchY = touchY;
@@ -279,6 +261,17 @@
             event.preventDefault();
             touchStartX = null;
             touchStartY = null;
+        }
+
+        function updateTargetPosition(x, y) {
+            const mouseX = Math.round(((x / window.innerWidth) - 0.5) * GRID_SIZE);
+            const mouseZ = Math.round(((y / window.innerHeight) - 0.5) * GRID_SIZE);
+
+            targetPosition.x = mouseX * STEP_SIZE;
+            targetPosition.z = mouseZ * STEP_SIZE;
+
+            targetPosition.x = Math.max(-7.5, Math.min(7.5, targetPosition.x));
+            targetPosition.z = Math.max(-7.5, Math.min(7.5, targetPosition.z));
         }
 
         function onMouseMove(event) {
@@ -305,11 +298,7 @@
                     velocity.x + velocity.y
                 ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
             } else if (!isFlying) {
-                const mouseX = Math.round((event.clientX / window.innerWidth - 0.5) * GRID_SIZE);
-                const mouseZ = Math.round((event.clientY / window.innerHeight - 0.5) * GRID_SIZE);
-
-                targetPosition.x = mouseX * STEP_SIZE;
-                targetPosition.z = mouseZ * STEP_SIZE;
+                updateTargetPosition(event.clientX, event.clientY);
             }
 
             lastMousePosition.set(mouse.x, mouse.y);
@@ -388,110 +377,118 @@
                         model.rotation.set(0, 0, 0);
                     }
                 } else if (!isDragging) {
-                    model.position.x =model.position.x = targetPosition.x;
-                model.position.z = targetPosition.z;
-                model.position.y = GROUND_Y;
+                    model.position.x = targetPosition.x;
+                    model.position.z = targetPosition.z;
+                    model.position.y = GROUND_Y;
 
-                const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
-                const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
-                const totalSteps = stepsX + stepsZ;
+                    const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
+                    const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
+                    const totalSteps = stepsX + stepsZ;
 
-                const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+                    const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
 
-                if (model.position.x > 0) {
-                    model.rotation.y = Math.PI / 2 + additionalRotation;
-                } else if (model.position.x < 0) {
-                    model.rotation.y = -Math.PI / 2 + additionalRotation;
-                } else {
-                    model.rotation.y = additionalRotation;
+                    if (model.position.x > 0) {
+                        model.rotation.y = Math.PI / 2 + additionalRotation;
+                    } else if (model.position.x < 0) {
+                        model.rotation.y = -Math.PI / 2 + additionalRotation;
+                    } else {
+                        model.rotation.y = additionalRotation;
+                    }
+
+                    if (model.position.z > 0) {
+                        model.rotation.x = -Math.PI / 8;
+                    } else if (model.position.z < 0) {
+                        model.rotation.x = Math.PI / 8;
+                    } else {
+                        model.rotation.x = 0;
+                    }
+
+                    model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
                 }
-
-                if (model.position.z > 0) {
-                    model.rotation.x = -Math.PI / 8;
-                } else if (model.position.z < 0) {
-                    model.rotation.x = Math.PI / 8;
-                } else {
-                    model.rotation.x = 0;
-                }
-
-                model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
             }
+
+            renderer.render(scene, camera);
         }
 
-        renderer.render(scene, camera);
-    }
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    init();
-
-    // Transition handling
-    const blackEllipse = document.getElementById('black-ellipse');
-    const clickedContent = document.getElementById('clicked-content');
-    const closeButton = document.getElementById('close-btn');
-
-    document.querySelectorAll('.overlay a').forEach(link => {
-        link.addEventListener('click', function (e) {
-            e.preventDefault();
-            const title = this.getAttribute('data-title');
-            blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
-            blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
-
-            // Start the ellipse transition
-            blackEllipse.style.transform = 'scale(15)';
-            setTimeout(() => {
-                if (title === 'animation') {
-                    clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
-                } else if (title === 'maks-info') {
-                    clickedContent.innerHTML = `
-                        <img id="photo" src="photo.png" alt="Maks Rzontkowski">
-                        <div class="info-container">
-                            <div class="bio">
-                                <h2>Bio</h2>
-                                <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).</p>
-                            </div>
-                            <div class="awards">
-                                <h2>Awards and Festivals</h2>
-                                <ul>
-                                    <li>Sundance Film Festival 2024</li>
-                                    <li>ANNECY International Animation Festival 2024</li>
-                                    <li>OTTAWA Animation Festival</li>
-                                    <li>New Horizons Festival 2024</li>
-                                    <li>PICTOPLASMA 2024</li>
-                                    <li>FEST New Directors 2024</li>
-                                    <li>Rooftop Films 2024</li>
-                                    <li>Animator Festival 2024: II PRIZE</li>
-                                    <li>Kaboom Animation Festival 2024: Special Mention</li>
-                                    <li>ŻUBROFFKA 2024: II Prize</li>
-                                    <li>Salute Your Shorts Festival 2024</li>
-                                    <li>Fest Anca 2024</li>
-                                    <li>HELSINKI INTERNATIONAL FILM FESTIVAL</li>
-                                    <li>TOHORROR 2024</li>
-                                </ul>
-                                <p>& more.</p>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    clickedContent.innerHTML = title;
-                }
-                clickedContent.style.opacity = '1';
-                closeButton.style.opacity = '1';
-            }, 1000);
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
-    });
 
-    closeButton.addEventListener('click', () => {
-        // Reverse the transition
-        blackEllipse.style.transform = 'scale(0)';
-        clickedContent.style.opacity = '0';
-        closeButton.style.opacity = '0';
-    });
-</script>
+        init();
+
+        // Transition handling
+        const blackEllipse = document.getElementById('black-ellipse');
+        const clickedContent = document.getElementById('clicked-content');
+        const closeButton = document.getElementById('close-btn');
+
+        document.querySelectorAll('.overlay a').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const title = this.getAttribute('data-title');
+                blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
+                blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
+
+                // Start the ellipse transition
+                blackEllipse.style.transform = 'scale(15)';
+                setTimeout(() => {
+                    if (title === 'Animation') {
+                        setTimeout(() => {
+                            window.location.href = 'https://www.vimeo.com/maksrz';
+                        }, 2000);
+                    } else if (title === 'Instagram') {
+                        setTimeout(() => {
+                            window.location.href = 'https://www.instagram.com/robocik.2';
+                        }, 2000);
+                    } else if (title === 'maks-info') {
+                        clickedContent.innerHTML = `
+                            <img id="photo" src="photo.png" alt="Maks Rzontkowski">
+                            <div class="info-container">
+                                <div class="bio">
+                                    <h2>Bio</h2>
+                                    <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).</p>
+                                </div>
+                                <div class="awards">
+                                    <h2>Awards and Festivals</h2>
+                                    <ul>
+                                        <li>Sundance Film Festival 2024</li>
+                                        <li>ANNECY International Animation Festival 2024</li>
+                                        <li>OTTAWA Animation Festival</li>
+                                        <li>New Horizons Festival 2024</li>
+                                        <li>PICTOPLASMA 2024</li>
+                                        <li>FEST New Directors 2024</li>
+                                        <li>Rooftop Films 2024</li>
+                                        <li>Animator Festival 2024: II PRIZE</li>
+                                        <li>Kaboom Animation Festival 2024: Special Mention</li>
+                                        <li>ŻUBROFFKA 2024: II Prize</li>
+                                        <li>Salute Your Shorts Festival 2024</li>
+                                        <li>Fest Anca 2024</li>
+                                        <li>HELSINKI INTERNATIONAL FILM FESTIVAL</li>
+                                        <li>TOHORROR 2024</li>
+                                    </ul>
+                                    <p>& more.</p>
+                                </div>
+                            </div>
+                        `;
+                        clickedContent.style.opacity = '1';
+                        closeButton.style.opacity = '1';
+                    } else {
+                        clickedContent.innerHTML = title;
+                        clickedContent.style.opacity = '1';
+                        closeButton.style.opacity = '1';
+                    }
+                }, 1000);
+            });
+        });
+
+        closeButton.addEventListener('click', () => {
+            // Reverse the transition
+            blackEllipse.style.transform = 'scale(0)';
+            clickedContent.style.opacity = '0';
+            closeButton.style.opacity = '0';
+        });
+    </script>
 
 </body>
 </html>
