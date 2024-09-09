@@ -354,40 +354,40 @@
                 // Start the ellipse transition
                 blackEllipse.style.transform = 'scale(15)';
                 setTimeout(() => {
-                    if (title === 'animation') {
-                        clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
-                    } else if (title === 'maks-info} else if (title === 'maks-info') {
-                        clickedContent.innerHTML = `
-                            <img id="photo" src="photo.png" alt="Maks Rzontkowski">
-                            <div class="info-text">
-                                maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).
+    if (title === 'animation') {
+        clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+    } else if (title === 'maks-info') {
+        clickedContent.innerHTML = `
+            <img id="photo" src="photo.png" alt="Maks Rzontkowski">
+            <div class="info-text">
+                maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).
 
-                                selections, awards and festivals:
+                selections, awards and festivals:
 
-                                Sundance Film Festival 2024
-                                ANNECY International Animation Festival 2024
-                                OTTAWA Animation Festival
-                                New Horizons Festival 2024
-                                PICTOPLASMA 2024
-                                FEST New Directors 2024
-                                Rooftop Films 2024
-                                Animator Festival 2024: II PRIZE
-                                Kaboom Animation Festival 2024: Special Mention
-                                ŻUBROFFKA 2024: II Prize
-                                Salute Your Shorts Festival 2024
-                                Fest Anca 2024
-                                HELSINKI INTERNATIONAL FILM FESTIVAL
-                                TOHORROR 2024
+                Sundance Film Festival 2024
+                ANNECY International Animation Festival 2024
+                OTTAWA Animation Festival
+                New Horizons Festival 2024
+                PICTOPLASMA 2024
+                FEST New Directors 2024
+                Rooftop Films 2024
+                Animator Festival 2024: II PRIZE
+                Kaboom Animation Festival 2024: Special Mention
+                ŻUBROFFKA 2024: II Prize
+                Salute Your Shorts Festival 2024
+                Fest Anca 2024
+                HELSINKI INTERNATIONAL FILM FESTIVAL
+                TOHORROR 2024
 
-                                & more.
-                            </div>
-                        `;
-                    } else {
-                        clickedContent.innerHTML = title;
-                    }
-                    clickedContent.style.opacity = '1';
-                    closeButton.style.opacity = '1';
-                }, 1000);
+                & more.
+            </div>
+        `;
+    } else {
+        clickedContent.innerHTML = title;
+    }
+    clickedContent.style.opacity = '1';
+    closeButton.style.opacity = '1';
+}, 1000);
             });
         });
 
