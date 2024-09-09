@@ -79,28 +79,34 @@
             opacity: 0;
             transition: opacity 0.5s ease;
             z-index: 1001;
-            text-align: center;
-            max-width: 800px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            flex-direction: row;
+            align-items: flex-start;
             justify-content: center;
+            gap: 20px;
+            max-width: 80%;
+            margin: 0 auto;
         }
         #photo {
             max-width: 300px;
             max-height: 300px;
-            margin-bottom: 20px;
             border-radius: 10px;
         }
         .interactive-text {
-            position: relative;
-            font-size: 18px;
-            line-height: 1.6;
+            flex: 1;
             text-align: left;
+            font-size: 16px;
+            line-height: 1.6;
         }
-        .interactive-text span {
-            display: inline-block;
-            transition: transform 0.3s ease;
+        .interactive-text p {
+            margin-bottom: 15px;
+        }
+        .festival-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .festival-list li {
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -356,15 +362,31 @@
                 // Start the ellipse transition
                 blackEllipse.style.transform = 'scale(15)';
                 setTimeout(() => {
-               if (title === 'animation') {
-    clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+                    if (title === 'animation') {
+                        clickedContent.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/AWhrPw6LfVs?si=2GMWcIsMsi1yZ3fG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
                     } else if (title === 'maks-info') {
                         clickedContent.innerHTML = `
                             <img id="photo" src="photo.png" alt="Maks Rzontkowski">
                             <div class="interactive-text">
                                 <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).</p>
                                 <p>selections, awards and festivals:</p>
-                                <p>(Sundance Film Festival 2024) (ANNECY International Animation Festival 2024) (OTTAWA Animation Festival) (New Horizons Festival 2024) (PICTOPLASMA 2024) (FEST New Directors 2024) (Rooftop Films 2024) (Animator Festival 2024: II PRIZE) (Kaboom Animation Festival 2024: Special Mention) (ŻUBROFFKA 2024: II Prize) (Salute Your Shorts Festival 2024) (Fest Anca 2024) (HELSINKI INTERNATIONAL FILM FESTIVAL) (TOHORROR 2024) & more.</p>
+                                <ul class="festival-list">
+                                    <li>Sundance Film Festival 2024</li>
+                                    <li>ANNECY International Animation Festival 2024</li>
+                                    <li>OTTAWA Animation Festival</li>
+                                    <li>New Horizons Festival 2024</li>
+                                    <li>PICTOPLASMA 2024</li>
+                                    <li>FEST New Directors 2024</li>
+                                    <li>Rooftop Films 2024</li>
+                                    <li>Animator Festival 2024: II PRIZE</li>
+                                    <li>Kaboom Animation Festival 2024: Special Mention</li>
+                                    <li>ŻUBROFFKA 2024: II Prize</li>
+                                    <li>Salute Your Shorts Festival 2024</li>
+                                    <li>Fest Anca 2024</li>
+                                    <li>HELSINKI INTERNATIONAL FILM FESTIVAL</li>
+                                    <li>TOHORROR 2024</li>
+                                </ul>
+                                <p>& more.</p>
                             </div>
                         `;
                         addInteractiveTextEffect();
@@ -379,7 +401,8 @@
 
         function addInteractiveTextEffect() {
             const text = document.querySelector('.interactive-text');
-            text.innerHTML = text.textContent.split('').map(char => `<span>${char}</span>`).join('');
+            const textContent = text.innerHTML;
+            text.innerHTML = textContent.replace(/\S/g, "<span>$&</span>");
             
             const chars = text.querySelectorAll('span');
             
