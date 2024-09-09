@@ -380,39 +380,39 @@
                         model.position.y = GROUND_Y;
                         model.rotation.set(0, 0, 0);
                     }
-                } else if (!isDragging) {
-                    model.position.x = targetPosition.x;
-                    model.position.z = targetPosition.z;
-                    model.position.y = GROUND_Y;
+               } else if (!isDragging) {
+            model.position.x = targetPosition.x;
+            model.position.z = targetPosition.z;
+            model.position.y = GROUND_Y;
 
-                    const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
-                    const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
-                    const totalSteps = st               const totalSteps = stepsX + stepsZ;
+            const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
+            const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
+            const totalSteps = stepsX + stepsZ;
 
-                const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+            const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
 
-                if (model.position.x > 0) {
-                    model.rotation.y = Math.PI / 2 + additionalRotation;
-                } else if (model.position.x < 0) {
-                    model.rotation.y = -Math.PI / 2 + additionalRotation;
-                } else {
-                    model.rotation.y = additionalRotation;
-                }
-
-                if (model.position.z > 0) {
-                    model.rotation.x = -Math.PI / 8;
-                } else if (model.position.z < 0) {
-                    model.rotation.x = Math.PI / 8;
-                } else {
-                    model.rotation.x = 0;
-                }
-
-                model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+            if (model.position.x > 0) {
+                model.rotation.y = Math.PI / 2 + additionalRotation;
+            } else if (model.position.x < 0) {
+                model.rotation.y = -Math.PI / 2 + additionalRotation;
+            } else {
+                model.rotation.y = additionalRotation;
             }
-        }
 
-        renderer.render(scene, camera);
+            if (model.position.z > 0) {
+                model.rotation.x = -Math.PI / 8;
+            } else if (model.position.z < 0) {
+                model.rotation.x = Math.PI / 8;
+            } else {
+                model.rotation.x = 0;
+            }
+
+            model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+        }
     }
+
+    renderer.render(scene, camera);
+}
 
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
