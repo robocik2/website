@@ -306,13 +306,19 @@
 
         function steppedMotion() {
             const stepSize = 0.2; // Adjust step size as needed
+            const epsilon = 0.001; // Small threshold to stop rotation when close enough
 
             // Calculate the direction vector towards the target position
             const direction = targetPosition.clone().sub(modelPosition);
             const distance = direction.length();
 
-            if (distance > stepSize) {
-                direction.normalize().multiplyScalar(stepSize);
+            if (distance > epsilon) {
+                if (distance > stepSize) {
+                    direction.normalize().multiplyScalar(stepSize);
+                } else {
+                    // Move the remaining distance
+                    direction.normalize().multiplyScalar(distance);
+                }
 
                 // Move the model by one step
                 modelPosition.add(direction);
@@ -326,10 +332,13 @@
 
                 // Calculate rotation angle based on the distance moved
                 const radius = 1; // Approximate radius of the model
-                const angularDistance = stepSize / radius; // θ = s / r
+                const angularDistance = direction.length() / radius; // θ = s / r
 
                 // Determine the axis of rotation (perpendicular to the movement direction)
-                const rotationAxis = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), direction.normalize()).normalize();
+                const rotationAxis = new THREE.Vector3().crossVectors(
+                    new THREE.Vector3(0, 1, 0),
+                    direction.normalize()
+                ).normalize();
 
                 // Rotate the model around the rotation axis
                 model.rotateOnWorldAxis(rotationAxis, angularDistance);
