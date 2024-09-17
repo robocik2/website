@@ -18,7 +18,7 @@
             overflow: hidden;
             font-family: Helvetica, Arial, sans-serif;
             cursor: url('cursor1.png') 16 16, auto !important;
-            background-color: #A8C3FF; /* Pastel dim blue sky color */
+            background-color: #a1725d; /* Updated sky color */
         }
         canvas {
             display: block;
@@ -176,8 +176,8 @@
         function init() {
             scene = new THREE.Scene();
 
-            // Set background color to pastel dim blue sky color
-            scene.background = new THREE.Color(0xA8C3FF);
+            // Set background color to the updated sky color
+            scene.background = new THREE.Color(0xa1725d);
 
             camera = new THREE.PerspectiveCamera(
                 75,
@@ -214,8 +214,8 @@
             }
             terrainGeometry.computeVertexNormals();
 
-            // Use MeshBasicMaterial for flat shading
-            const terrainMaterial = new THREE.MeshBasicMaterial({ color: 0x228822 });
+            // Update terrain material to the new grass color
+            const terrainMaterial = new THREE.MeshBasicMaterial({ color: 0x445d3e });
             terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
             scene.add(terrain);
 
