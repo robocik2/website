@@ -160,34 +160,10 @@
         let scene, camera, renderer, model, terrain;
         let isDragging = false;
         let targetPosition = new THREE.Vector3(0, 0, 0);
-        const GRID_SIZE = 10; // Number of grid cells
-        const STEP_SIZE = 2; // Size of each grid cell
-        const GRID_BOUNDARY = (GRID_SIZE / 2) * STEP_SIZE;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const touch = new THREE.Vector2();
-        const dragStart = new THREE.Vector3();
-        const dragOffset = new THREE.Vector3();
-        let velocity = new THREE.Vector3();
-        let angularVelocity = new THREE.Vector3();
         let lastMousePosition = new THREE.Vector2();
-        let isMoving = false;
-        let isFlying = false;
-        const DAMPING = 0.99;
-        const ANGULAR_DAMPING = 0.98;
-        const BOUNCE = 0.8;
-        const GRAVITY = -0.05;
-        const FORCE_MULTIPLIER = 15;
-        const ANGULAR_FORCE_MULTIPLIER = 0.1;
-
-        let touchStartX, touchStartY;
-        let lastTouchX, lastTouchY;
-
-        // Variables for decay effect
-        let modelClones = [];
-        let lastCloneTime = 0;
-        const cloneInterval = 100; // Clone every 100ms
-        const cloneLifetime = 2000; // Clones last for 2 seconds (shorter lifetime)
 
         function init() {
             scene = new THREE.Scene();
@@ -202,8 +178,8 @@
             document.body.appendChild(renderer.domElement);
 
             // Hilly terrain
-            const terrainWidth = GRID_SIZE * STEP_SIZE;
-            const terrainDepth = GRID_SIZE * STEP_SIZE;
+            const terrainWidth = 50;
+            const terrainDepth = 50;
             const terrainSegments = 128;
             const terrainGeometry = new THREE.PlaneGeometry(
                 terrainWidth,
@@ -218,23 +194,26 @@
                 const vertex = new THREE.Vector3();
                 vertex.fromBufferAttribute(terrainGeometry.attributes.position, i);
 
-                // Simple hills using sine and cosine functions
+                // Simplex noise or Perlin noise can be used for more natural hills
                 const height = Math.sin(vertex.x * 0.2) * Math.cos(vertex.z * 0.2) * 2;
                 vertex.y = height;
 
                 terrainGeometry.attributes.position.setY(i, vertex.y);
             }
+            terrainGeometry.computeVertexNormals();
 
-            // Compute flat normals for flat shading
-            terrainGeometry.computeFlatVertexNormals();
-
-            const terrainMaterial = new THREE.MeshBasicMaterial({
-                color: 0x228822, // Flat green color
-            });
+            // Use MeshBasicMaterial for flat shading
+            const terrainMaterial = new THREE.MeshBasicMaterial({ color: 0x228822 });
             terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
             scene.add(terrain);
 
-            // Remove lighting (since MeshBasicMaterial doesn't require lights)
+            // Remove lighting
+            // const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
+            // scene.add(ambientLight);
+
+            // const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            // directionalLight.position.set(50, 50, 50);
+            // scene.add(directionalLight);
 
             // Load the model
             const loader = new THREE.GLTFLoader();
@@ -242,9 +221,10 @@
                 'kid2.glb',
                 function (gltf) {
                     model = gltf.scene;
-                    model.scale.set(0.5, 0.5, 0.5); // Smaller model
+                    model.scale.set(0.5, 0.5, 0.5); // Adjust as needed
                     updateModelPosition();
 
+                    // Update materials to MeshBasicMaterial
                     model.traverse((child) => {
                         if (child.isMesh) {
                             child.material = new THREE.MeshBasicMaterial({
@@ -263,7 +243,7 @@
                 }
             );
 
-            camera.position.set(0, 20, 30);
+            camera.position.set(0, 10, 20);
             camera.lookAt(0, 0, 0);
 
             // Event Listeners
@@ -281,79 +261,43 @@
         // Event Handlers
         function onTouchStart(event) {
             event.preventDefault();
-            touchStartX = event.touches[0].clientX;
-            touchStartY = event.touches[0].clientY;
-            lastTouchX = touchStartX;
-            lastTouchY = touchStartY;
-
-            touch.x = (touchStartX / window.innerWidth) * 2 - 1;
-            touch.y = -(touchStartY / window.innerHeight) * 2 + 1;
-
-            if (model) {
-                raycaster.setFromCamera(touch, camera);
-                const intersects = raycaster.intersectObject(model, true);
-
-                if (intersects.length > 0) {
-                    isDragging = true;
-                    isFlying = false;
-                    isMoving = false;
-                    dragStart.copy(model.position);
-                    const intersectPoint = intersects[0].point;
-                    dragOffset.copy(intersectPoint).sub(model.position);
-                } else {
-                    updateTargetPosition(touchStartX, touchStartY);
-                }
-            }
-        }
-
-        function onTouchMove(event) {
-            event.preventDefault();
-            if (!touchStartX || !touchStartY) {
-                return;
-            }
-
             const touchX = event.touches[0].clientX;
             const touchY = event.touches[0].clientY;
 
             touch.x = (touchX / window.innerWidth) * 2 - 1;
             touch.y = -(touchY / window.innerHeight) * 2 + 1;
 
-            if (isDragging && model) {
-                raycaster.setFromCamera(touch, camera);
-                const intersectPoint = new THREE.Vector3();
-                const planeNormal = camera.getWorldDirection(new THREE.Vector3());
-                const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
-                raycaster.ray.intersectPlane(plane, intersectPoint);
-                model.position.copy(intersectPoint.sub(dragOffset));
+            updateTargetPosition(touchX, touchY);
+        }
 
-                velocity.set(
-                    touch.x - lastMousePosition.x,
-                    touch.y - lastMousePosition.y,
-                    0
-                ).multiplyScalar(FORCE_MULTIPLIER);
+        function onTouchMove(event) {
+            event.preventDefault();
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
 
-                angularVelocity.set(
-                    velocity.y,
-                    -velocity.x,
-                    velocity.x + velocity.y
-                ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
-            } else {
-                updateTargetPosition(touchX, touchY);
-            }
+            touch.x = (touchX / window.innerWidth) * 2 - 1;
+            touch.y = -(touchY / window.innerHeight) * 2 + 1;
 
-            lastMousePosition.set(touch.x, touch.y);
-            lastTouchX = touchX;
-            lastTouchY = touchY;
+            updateTargetPosition(touchX, touchY);
         }
 
         function onTouchEnd(event) {
             event.preventDefault();
-            if (isDragging) {
-                isFlying = true;
-            }
-            isDragging = false;
-            touchStartX = null;
-            touchStartY = null;
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            updateTargetPosition(event.clientX, event.clientY);
+        }
+
+        function onMouseDown(event) {
+            // Optional: Implement click interactions if needed
+        }
+
+        function onMouseUp() {
+            // Optional: Implement click interactions if needed
         }
 
         function updateTargetPosition(x, y) {
@@ -364,70 +308,8 @@
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(terrain);
             if (intersects.length > 0) {
-                // Map position to grid
-                let gridX = Math.round(intersects[0].point.x / STEP_SIZE) * STEP_SIZE;
-                let gridZ = Math.round(intersects[0].point.z / STEP_SIZE) * STEP_SIZE;
-
-                // Clamp to grid boundaries
-                gridX = Math.max(-GRID_BOUNDARY, Math.min(GRID_BOUNDARY, gridX));
-                gridZ = Math.max(-GRID_BOUNDARY, Math.min(GRID_BOUNDARY, gridZ));
-
-                targetPosition.set(gridX, 0, gridZ);
-                isMoving = true;
+                targetPosition.copy(intersects[0].point);
             }
-        }
-
-        function onMouseMove(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            if (isDragging && model) {
-                raycaster.setFromCamera(mouse, camera);
-                const intersectPoint = new THREE.Vector3();
-                const planeNormal = camera.getWorldDirection(new THREE.Vector3());
-                const plane = new THREE.Plane(planeNormal, -dragStart.dot(planeNormal));
-                raycaster.ray.intersectPlane(plane, intersectPoint);
-                model.position.copy(intersectPoint.sub(dragOffset));
-
-                velocity.set(
-                    mouse.x - lastMousePosition.x,
-                    mouse.y - lastMousePosition.y,
-                    0
-                ).multiplyScalar(FORCE_MULTIPLIER);
-
-                angularVelocity.set(
-                    velocity.y,
-                    -velocity.x,
-                    velocity.x + velocity.y
-                ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
-            }
-
-            lastMousePosition.set(mouse.x, mouse.y);
-        }
-
-        function onMouseDown(event) {
-            if (model) {
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObject(model, true);
-
-                if (intersects.length > 0) {
-                    isDragging = true;
-                    isFlying = false;
-                    isMoving = false;
-                    dragStart.copy(model.position);
-                    const intersectPoint = intersects[0].point;
-                    dragOffset.copy(intersectPoint).sub(model.position);
-                }
-            }
-        }
-
-        function onMouseUp() {
-            if (isDragging) {
-                isFlying = true;
-            }
-            isDragging = false;
         }
 
         function updateModelPosition() {
@@ -450,111 +332,41 @@
             return 0;
         }
 
+        function steppedMotion() {
+            const stepSize = 0.5; // Adjust step size as needed
+
+            // Calculate the direction vector towards the target position
+            const direction = targetPosition.clone().sub(model.position);
+            const distance = direction.length();
+
+            if (distance > stepSize) {
+                direction.normalize().multiplyScalar(stepSize);
+
+                // Move the model by one step
+                model.position.add(direction);
+
+                // Calculate rotation angle based on the distance moved
+                const radius = 1; // Approximate radius of the model
+                const angularDistance = stepSize / radius; // θ = s / r
+
+                // Determine the axis of rotation (perpendicular to the movement direction)
+                const rotationAxis = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
+
+                // Rotate the model around the rotation axis
+                model.rotateOnAxis(rotationAxis, angularDistance);
+
+                // Update Y position based on terrain
+                const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
+                model.position.y = terrainHeight;
+            }
+        }
+
         function animate(time) {
             requestAnimationFrame(animate);
 
             if (model) {
-                if (isFlying) {
-                    // Flying physics
-                    velocity.y += GRAVITY;
-
-                    model.position.add(velocity);
-                    velocity.multiplyScalar(DAMPING);
-
-                    model.rotation.x += angularVelocity.x;
-                    model.rotation.y += angularVelocity.y;
-                    model.rotation.z += angularVelocity.z;
-                    angularVelocity.multiplyScalar(ANGULAR_DAMPING);
-
-                    // Terrain collision
-                    const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
-                    if (model.position.y < terrainHeight) {
-                        model.position.y = terrainHeight;
-                        velocity.y *= -BOUNCE;
-                        angularVelocity.multiplyScalar(0.9);
-                    }
-
-                    // Friction when on the ground
-                    if (Math.abs(model.position.y - terrainHeight) < 0.01) {
-                        velocity.x *= 0.9;
-                        velocity.z *= 0.9;
-                    }
-
-                    // Stop flying if movement is minimal
-                    if (
-                        velocity.length() < 0.01 &&
-                        angularVelocity.length() < 0.01 &&
-                        Math.abs(model.position.y - terrainHeight) < 0.01
-                    ) {
-                        isFlying = false;
-                        model.position.y = terrainHeight;
-                        model.rotation.set(0, 0, 0);
-                    }
-                } else if (isMoving && !isDragging) {
-                    // Stepped motion towards target position
-                    const currentGridX = Math.round(model.position.x / STEP_SIZE) * STEP_SIZE;
-                    const currentGridZ = Math.round(model.position.z / STEP_SIZE) * STEP_SIZE;
-
-                    if (currentGridX !== targetPosition.x || currentGridZ !== targetPosition.z) {
-                        // Move one step towards target
-                        let deltaX = targetPosition.x - currentGridX;
-                        let deltaZ = targetPosition.z - currentGridZ;
-
-                        if (Math.abs(deltaX) > Math.abs(deltaZ)) {
-                            deltaX = STEP_SIZE * Math.sign(deltaX);
-                            deltaZ = 0;
-                        } else {
-                            deltaZ = STEP_SIZE * Math.sign(deltaZ);
-                            deltaX = 0;
-                        }
-
-                        model.position.x = currentGridX + deltaX;
-                        model.position.z = currentGridZ + deltaZ;
-
-                        // Update Y position based on terrain
-                        const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
-                        model.position.y = terrainHeight;
-
-                        // Rolling over
-                        const axis = new THREE.Vector3(deltaZ, 0, -deltaX).normalize();
-                        const angle = Math.PI / 2; // 90 degrees
-
-                        model.rotateOnWorldAxis(axis, angle);
-
-                    } else {
-                        isMoving = false;
-                        model.rotation.set(0, 0, 0);
-                    }
-                }
-
-                // Decay effect: Clone the model every 100ms
-                if (time - lastCloneTime > cloneInterval) {
-                    const clone = model.clone();
-
-                    // Copy position, rotation, and scale
-                    clone.position.copy(model.position);
-                    clone.rotation.copy(model.rotation);
-                    clone.scale.copy(model.scale);
-
-                    // Assign timestamp
-                    clone.userData.timestamp = time;
-
-                    // Add to scene and array
-                    scene.add(clone);
-                    modelClones.push(clone);
-
-                    // Update last clone time
-                    lastCloneTime = time;
-                }
-
-                // Remove clones older than cloneLifetime
-                for (let i = modelClones.length - 1; i >= 0; i--) {
-                    const clone = modelClones[i];
-                    if (time - clone.userData.timestamp > cloneLifetime) {
-                        scene.remove(clone);
-                        modelClones.splice(i, 1);
-                    }
-                }
+                // Implement stepped motion with rolling animation
+                steppedMotion();
             }
 
             renderer.render(scene, camera);
