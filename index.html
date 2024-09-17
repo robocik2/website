@@ -228,24 +228,13 @@
             // Compute flat normals for flat shading
             terrainGeometry.computeFlatVertexNormals();
 
-            const terrainMaterial = new THREE.MeshLambertMaterial({
-                color: 0x228822,
-                flatShading: true, // Enable flat shading
+            const terrainMaterial = new THREE.MeshBasicMaterial({
+                color: 0x228822, // Flat green color
             });
             terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
             scene.add(terrain);
 
-            // Grid helper (optional, can be removed)
-            // const gridHelper = new THREE.GridHelper(terrainWidth, GRID_SIZE);
-            // scene.add(gridHelper);
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(50, 50, 50);
-            scene.add(directionalLight);
+            // Remove lighting (since MeshBasicMaterial doesn't require lights)
 
             // Load the model
             const loader = new THREE.GLTFLoader();
@@ -258,9 +247,8 @@
 
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            child.material = new THREE.MeshLambertMaterial({
+                            child.material = new THREE.MeshBasicMaterial({
                                 color: child.material.color,
-                                flatShading: true, // Enable flat shading for the model
                             });
                         }
                     });
