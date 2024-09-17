@@ -18,7 +18,7 @@
             overflow: hidden;
             font-family: Helvetica, Arial, sans-serif;
             cursor: url('cursor1.png') 16 16, auto !important;
-            background-color: #87CEEB; /* Sky blue background */
+            background-color: #A8C3FF; /* Pastel dim blue sky color */
         }
         canvas {
             display: block;
@@ -162,18 +162,10 @@
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        // Variables for movement and animation
+        // Variables for stepped movement
         let modelPosition = new THREE.Vector3();
         let modelHeightOffset = 0;
         let previousPosition = new THREE.Vector3();
-
-        let isMoving = false;
-        let movementStartTime = 0;
-        const movementDuration = 1000; // Movement duration in milliseconds
-        const movementUpdateInterval = 100; // Update every 100ms
-        let lastMovementUpdateTime = 0;
-        let startPosition = new THREE.Vector3();
-        let endPosition = new THREE.Vector3();
 
         // Variables for frame decay effect
         let modelClones = [];
@@ -183,6 +175,10 @@
 
         function init() {
             scene = new THREE.Scene();
+
+            // Set background color to pastel dim blue sky color
+            scene.background = new THREE.Color(0xA8C3FF);
+
             camera = new THREE.PerspectiveCamera(
                 75,
                 window.innerWidth / window.innerHeight,
@@ -194,9 +190,9 @@
             document.body.appendChild(renderer.domElement);
 
             // Hilly terrain
-            const terrainWidth = 50;
-            const terrainDepth = 50;
-            const terrainSegments = 128;
+            const terrainWidth = 500;
+            const terrainDepth = 500;
+            const terrainSegments = 256;
             const terrainGeometry = new THREE.PlaneGeometry(
                 terrainWidth,
                 terrainDepth,
@@ -210,8 +206,8 @@
                 const vertex = new THREE.Vector3();
                 vertex.fromBufferAttribute(terrainGeometry.attributes.position, i);
 
-                // Simplex noise or Perlin noise can be used for more natural hills
-                const height = Math.sin(vertex.x * 0.2) * Math.cos(vertex.z * 0.2) * 2;
+                // Adjusted to stretch hills over the larger terrain
+                const height = Math.sin(vertex.x * 0.05) * Math.cos(vertex.z * 0.05) * 5;
                 vertex.y = height;
 
                 terrainGeometry.attributes.position.setY(i, vertex.y);
@@ -269,11 +265,6 @@
             animate();
         }
 
-        // Easing Function
-        function easeInOutQuad(t) {
-            return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-        }
-
         // Event Handlers
         function onTouchStart(event) {
             event.preventDefault();
@@ -303,13 +294,7 @@
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(terrain);
             if (intersects.length > 0) {
-                // If the target position has changed, start a new movement
-                startPosition.copy(modelPosition);
-                endPosition.copy(intersects[0].point);
-                endPosition.y = getTerrainHeightAt(endPosition.x, endPosition.z) + modelHeightOffset;
-
-                movementStartTime = performance.now();
-                isMoving = true;
+                targetPosition.copy(intersects[0].point);
             }
         }
 
@@ -325,57 +310,63 @@
             return 0;
         }
 
+        function steppedMotion() {
+            const stepSize = 0.2; // Adjust step size as needed
+            const epsilon = 0.001; // Small threshold to stop movement when close enough
+
+            // Calculate the direction vector towards the target position
+            const direction = targetPosition.clone().sub(modelPosition);
+            const distance = direction.length();
+
+            if (distance > epsilon) {
+                let moveDistance = stepSize;
+                if (distance < stepSize) {
+                    moveDistance = distance;
+                }
+
+                direction.normalize().multiplyScalar(moveDistance);
+
+                // Move the model by one step
+                modelPosition.add(direction);
+
+                // Adjust Y position based on terrain
+                const terrainHeight = getTerrainHeightAt(modelPosition.x, modelPosition.z);
+                modelPosition.y = terrainHeight + modelHeightOffset;
+
+                // Update model's position
+                model.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
+
+                // Calculate actual movement
+                const actualMovement = modelPosition.clone().sub(previousPosition);
+                const actualDistance = actualMovement.length();
+
+                // Apply rotation only if the model has moved significantly
+                if (actualDistance > epsilon) {
+                    // Calculate rotation angle based on the distance moved
+                    const radius = 1; // Approximate radius of the model
+                    const angularDistance = actualDistance / radius; // θ = s / r
+
+                    // Determine the axis of rotation (perpendicular to the movement direction)
+                    const rotationAxis = new THREE.Vector3().crossVectors(
+                        new THREE.Vector3(0, 1, 0),
+                        actualMovement.normalize()
+                    ).normalize();
+
+                    // Rotate the model around the rotation axis
+                    model.rotateOnWorldAxis(rotationAxis, angularDistance);
+                }
+
+                // Update previous position
+                previousPosition.copy(modelPosition);
+            }
+        }
+
         function animate(time) {
             requestAnimationFrame(animate);
 
             if (model) {
-                // Implement movement with easing and stepped updates
-                if (isMoving && time - lastMovementUpdateTime >= movementUpdateInterval) {
-                    lastMovementUpdateTime = time;
-
-                    let elapsedTime = time - movementStartTime;
-                    let t = elapsedTime / movementDuration;
-                    if (t >= 1) {
-                        t = 1;
-                        isMoving = false;
-                    }
-
-                    // Apply easing function
-                    let easedT = easeInOutQuad(t);
-
-                    // Calculate new position
-                    modelPosition.lerpVectors(startPosition, endPosition, easedT);
-
-                    // Adjust Y position based on terrain
-                    const terrainHeight = getTerrainHeightAt(modelPosition.x, modelPosition.z);
-                    modelPosition.y = terrainHeight + modelHeightOffset;
-
-                    // Update model's position
-                    model.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
-
-                    // Calculate actual movement
-                    const actualMovement = modelPosition.clone().sub(previousPosition);
-                    const actualDistance = actualMovement.length();
-
-                    // Apply rotation only if the model has moved significantly
-                    if (actualDistance > 0.001) {
-                        // Calculate rotation angle based on the actual distance moved
-                        const radius = 1; // Approximate radius of the model
-                        const angularDistance = actualDistance / radius; // θ = s / r
-
-                        // Determine the axis of rotation (perpendicular to the movement direction)
-                        const rotationAxis = new THREE.Vector3().crossVectors(
-                            new THREE.Vector3(0, 1, 0),
-                            actualMovement.normalize()
-                        ).normalize();
-
-                        // Rotate the model around the rotation axis
-                        model.rotateOnWorldAxis(rotationAxis, angularDistance);
-                    }
-
-                    // Update previous position
-                    previousPosition.copy(modelPosition);
-                }
+                // Implement stepped movement
+                steppedMotion();
 
                 // Frame decay effect
                 if (time - lastCloneTime > cloneInterval) {
