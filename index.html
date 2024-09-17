@@ -220,7 +220,7 @@
                 'kid2.glb',
                 function (gltf) {
                     model = gltf.scene;
-                    model.scale.set(1.5, 1.5, 1.5); // Make the model bigger
+                    model.scale.set(1.8, 1.8, 1.8); // Increase the model size
                     modelPosition.copy(model.position);
 
                     // Calculate model's bounding box to get height offset
@@ -305,7 +305,7 @@
         }
 
         function steppedMotion() {
-            const stepSize = 0.5; // Adjust step size as needed
+            const stepSize = 0.2; // Reduced step size to increase following delay
 
             // Calculate the direction vector towards the target position
             const direction = targetPosition.clone().sub(modelPosition);
@@ -324,15 +324,9 @@
                 // Update model's position
                 model.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
 
-                // Calculate rotation angle based on the distance moved
-                const radius = 1; // Approximate radius of the model
-                const angularDistance = stepSize / radius; // θ = s / r
-
-                // Determine the axis of rotation (perpendicular to the movement direction)
-                const rotationAxis = new THREE.Vector3().crossVectors(direction.normalize(), new THREE.Vector3(0, 1, 0)).normalize();
-
-                // Rotate the model around the rotation axis
-                model.rotateOnAxis(rotationAxis, angularDistance);
+                // Remove rotation to prevent excessive spinning
+                // Optionally, make the model face the direction of movement
+                // model.rotation.y = Math.atan2(direction.x, direction.z);
             }
         }
 
