@@ -158,12 +158,20 @@
     <!-- Three.js Script -->
     <script>
         let scene, camera, renderer, model, terrain;
-        let isDragging = false;
         let targetPosition = new THREE.Vector3(0, 0, 0);
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const touch = new THREE.Vector2();
-        let lastMousePosition = new THREE.Vector2();
+
+        // Variables for delayed following
+        let cursorPosition = new THREE.Vector3();
+        let modelPosition = new THREE.Vector3();
+
+        // Variables for frame decay effect
+        let modelClones = [];
+        let lastCloneTime = 0;
+        const cloneInterval = 100; // Clone every 100ms
+        const cloneLifetime = 500; // Clones last for 500ms
 
         function init() {
             scene = new THREE.Scene();
@@ -207,21 +215,14 @@
             terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
             scene.add(terrain);
 
-            // Remove lighting
-            // const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
-            // scene.add(ambientLight);
-
-            // const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            // directionalLight.position.set(50, 50, 50);
-            // scene.add(directionalLight);
-
             // Load the model
             const loader = new THREE.GLTFLoader();
             loader.load(
                 'kid2.glb',
                 function (gltf) {
                     model = gltf.scene;
-                    model.scale.set(0.5, 0.5, 0.5); // Adjust as needed
+                    model.scale.set(1, 1, 1); // Make the model bigger
+                    modelPosition.copy(model.position);
                     updateModelPosition();
 
                     // Update materials to MeshBasicMaterial
@@ -251,8 +252,6 @@
             renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
             renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
             renderer.domElement.addEventListener('mousemove', onMouseMove);
-            renderer.domElement.addEventListener('mousedown', onMouseDown);
-            renderer.domElement.addEventListener('mouseup', onMouseUp);
 
             // Start animation
             animate();
@@ -292,14 +291,6 @@
             updateTargetPosition(event.clientX, event.clientY);
         }
 
-        function onMouseDown(event) {
-            // Optional: Implement click interactions if needed
-        }
-
-        function onMouseUp() {
-            // Optional: Implement click interactions if needed
-        }
-
         function updateTargetPosition(x, y) {
             // Convert screen coordinates to world coordinates
             mouse.x = (x / window.innerWidth) * 2 - 1;
@@ -308,7 +299,7 @@
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(terrain);
             if (intersects.length > 0) {
-                targetPosition.copy(intersects[0].point);
+                cursorPosition.copy(intersects[0].point);
             }
         }
 
@@ -332,41 +323,76 @@
             return 0;
         }
 
-        function steppedMotion() {
-            const stepSize = 0.5; // Adjust step size as needed
+        function steppedMotion(deltaTime) {
+            const lerpFactor = 0.02; // Adjust this value to control the delay
 
-            // Calculate the direction vector towards the target position
-            const direction = targetPosition.clone().sub(model.position);
+            // Calculate the direction vector towards the cursor position
+            const direction = cursorPosition.clone().sub(modelPosition);
             const distance = direction.length();
 
-            if (distance > stepSize) {
-                direction.normalize().multiplyScalar(stepSize);
+            if (distance > 0.01) { // A small threshold to stop when close enough
+                // Interpolate model position towards the cursor position
+                modelPosition.lerp(cursorPosition, lerpFactor);
 
-                // Move the model by one step
-                model.position.add(direction);
+                // Calculate the actual movement step
+                const movementStep = direction.multiplyScalar(lerpFactor);
+
+                // Update model's position
+                model.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
+
+                // Adjust Y position based on terrain
+                const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
+                model.position.y = terrainHeight;
 
                 // Calculate rotation angle based on the distance moved
                 const radius = 1; // Approximate radius of the model
-                const angularDistance = stepSize / radius; // θ = s / r
+                const angularDistance = movementStep.length() / radius; // θ = s / r
 
                 // Determine the axis of rotation (perpendicular to the movement direction)
-                const rotationAxis = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
+                const rotationAxis = new THREE.Vector3().crossVectors(direction.normalize(), new THREE.Vector3(0, 1, 0)).normalize();
 
                 // Rotate the model around the rotation axis
                 model.rotateOnAxis(rotationAxis, angularDistance);
-
-                // Update Y position based on terrain
-                const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
-                model.position.y = terrainHeight;
             }
         }
 
         function animate(time) {
             requestAnimationFrame(animate);
 
+            const deltaTime = renderer.info.render.frame * 0.016; // Approximate deltaTime in seconds
+
             if (model) {
-                // Implement stepped motion with rolling animation
-                steppedMotion();
+                // Implement delayed following with rolling animation
+                steppedMotion(deltaTime);
+
+                // Frame decay effect
+                if (time - lastCloneTime > cloneInterval) {
+                    const clone = model.clone();
+
+                    // Copy position, rotation, and scale
+                    clone.position.copy(model.position);
+                    clone.rotation.copy(model.rotation);
+                    clone.scale.copy(model.scale);
+
+                    // Assign timestamp
+                    clone.userData.timestamp = time;
+
+                    // Add to scene and array
+                    scene.add(clone);
+                    modelClones.push(clone);
+
+                    // Update last clone time
+                    lastCloneTime = time;
+                }
+
+                // Remove clones older than cloneLifetime
+                for (let i = modelClones.length - 1; i >= 0; i--) {
+                    const clone = modelClones[i];
+                    if (time - clone.userData.timestamp > cloneLifetime) {
+                        scene.remove(clone);
+                        modelClones.splice(i, 1);
+                    }
+                }
             }
 
             renderer.render(scene, camera);
