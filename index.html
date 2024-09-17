@@ -162,10 +162,18 @@
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        // Variables for stepped movement
+        // Variables for movement and animation
         let modelPosition = new THREE.Vector3();
         let modelHeightOffset = 0;
         let previousPosition = new THREE.Vector3();
+
+        let isMoving = false;
+        let movementStartTime = 0;
+        const movementDuration = 1000; // Movement duration in milliseconds
+        const movementUpdateInterval = 100; // Update every 100ms
+        let lastMovementUpdateTime = 0;
+        let startPosition = new THREE.Vector3();
+        let endPosition = new THREE.Vector3();
 
         // Variables for frame decay effect
         let modelClones = [];
@@ -261,6 +269,11 @@
             animate();
         }
 
+        // Easing Function
+        function easeInOutQuad(t) {
+            return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        }
+
         // Event Handlers
         function onTouchStart(event) {
             event.preventDefault();
@@ -290,7 +303,13 @@
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(terrain);
             if (intersects.length > 0) {
-                targetPosition.copy(intersects[0].point);
+                // If the target position has changed, start a new movement
+                startPosition.copy(modelPosition);
+                endPosition.copy(intersects[0].point);
+                endPosition.y = getTerrainHeightAt(endPosition.x, endPosition.z) + modelHeightOffset;
+
+                movementStartTime = performance.now();
+                isMoving = true;
             }
         }
 
@@ -306,63 +325,57 @@
             return 0;
         }
 
-        function steppedMotion() {
-            const stepSize = 0.2; // Adjust step size as needed
-            const epsilon = 0.001; // Small threshold to stop movement when close enough
-
-            // Calculate the direction vector towards the target position
-            const direction = targetPosition.clone().sub(modelPosition);
-            const distance = direction.length();
-
-            if (distance > epsilon) {
-                let moveDistance = stepSize;
-                if (distance < stepSize) {
-                    moveDistance = distance;
-                }
-
-                direction.normalize().multiplyScalar(moveDistance);
-
-                // Move the model by one step
-                modelPosition.add(direction);
-
-                // Adjust Y position based on terrain
-                const terrainHeight = getTerrainHeightAt(modelPosition.x, modelPosition.z);
-                modelPosition.y = terrainHeight + modelHeightOffset;
-
-                // Update model's position
-                model.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
-
-                // Calculate actual movement
-                const actualMovement = modelPosition.clone().sub(previousPosition);
-                const actualDistance = actualMovement.length();
-
-                // Apply rotation only if the model has moved significantly
-                if (actualDistance > epsilon) {
-                    // Calculate rotation angle based on the distance moved
-                    const radius = 1; // Approximate radius of the model
-                    const angularDistance = actualDistance / radius; // θ = s / r
-
-                    // Determine the axis of rotation (perpendicular to the movement direction)
-                    const rotationAxis = new THREE.Vector3().crossVectors(
-                        new THREE.Vector3(0, 1, 0),
-                        actualMovement.normalize()
-                    ).normalize();
-
-                    // Rotate the model around the rotation axis
-                    model.rotateOnWorldAxis(rotationAxis, angularDistance);
-                }
-
-                // Update previous position
-                previousPosition.copy(modelPosition);
-            }
-        }
-
         function animate(time) {
             requestAnimationFrame(animate);
 
             if (model) {
-                // Implement stepped movement
-                steppedMotion();
+                // Implement movement with easing and stepped updates
+                if (isMoving && time - lastMovementUpdateTime >= movementUpdateInterval) {
+                    lastMovementUpdateTime = time;
+
+                    let elapsedTime = time - movementStartTime;
+                    let t = elapsedTime / movementDuration;
+                    if (t >= 1) {
+                        t = 1;
+                        isMoving = false;
+                    }
+
+                    // Apply easing function
+                    let easedT = easeInOutQuad(t);
+
+                    // Calculate new position
+                    modelPosition.lerpVectors(startPosition, endPosition, easedT);
+
+                    // Adjust Y position based on terrain
+                    const terrainHeight = getTerrainHeightAt(modelPosition.x, modelPosition.z);
+                    modelPosition.y = terrainHeight + modelHeightOffset;
+
+                    // Update model's position
+                    model.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
+
+                    // Calculate actual movement
+                    const actualMovement = modelPosition.clone().sub(previousPosition);
+                    const actualDistance = actualMovement.length();
+
+                    // Apply rotation only if the model has moved significantly
+                    if (actualDistance > 0.001) {
+                        // Calculate rotation angle based on the actual distance moved
+                        const radius = 1; // Approximate radius of the model
+                        const angularDistance = actualDistance / radius; // θ = s / r
+
+                        // Determine the axis of rotation (perpendicular to the movement direction)
+                        const rotationAxis = new THREE.Vector3().crossVectors(
+                            new THREE.Vector3(0, 1, 0),
+                            actualMovement.normalize()
+                        ).normalize();
+
+                        // Rotate the model around the rotation axis
+                        model.rotateOnWorldAxis(rotationAxis, angularDistance);
+                    }
+
+                    // Update previous position
+                    previousPosition.copy(modelPosition);
+                }
 
                 // Frame decay effect
                 if (time - lastCloneTime > cloneInterval) {
