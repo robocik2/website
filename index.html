@@ -160,8 +160,9 @@
         let scene, camera, renderer, model, terrain;
         let isDragging = false;
         let targetPosition = new THREE.Vector3(0, 0, 0);
-        const GRID_SIZE = 8;
-        const STEP_SIZE = 1;
+        const GRID_SIZE = 10; // Number of grid cells
+        const STEP_SIZE = 2; // Size of each grid cell
+        const GRID_BOUNDARY = (GRID_SIZE / 2) * STEP_SIZE;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const touch = new THREE.Vector2();
@@ -170,6 +171,7 @@
         let velocity = new THREE.Vector3();
         let angularVelocity = new THREE.Vector3();
         let lastMousePosition = new THREE.Vector2();
+        let isMoving = false;
         let isFlying = false;
         const DAMPING = 0.99;
         const ANGULAR_DAMPING = 0.98;
@@ -200,8 +202,8 @@
             document.body.appendChild(renderer.domElement);
 
             // Hilly terrain
-            const terrainWidth = 50;
-            const terrainDepth = 50;
+            const terrainWidth = GRID_SIZE * STEP_SIZE;
+            const terrainDepth = GRID_SIZE * STEP_SIZE;
             const terrainSegments = 128;
             const terrainGeometry = new THREE.PlaneGeometry(
                 terrainWidth,
@@ -216,17 +218,26 @@
                 const vertex = new THREE.Vector3();
                 vertex.fromBufferAttribute(terrainGeometry.attributes.position, i);
 
-                // Simplex noise or Perlin noise can be used for more natural hills
+                // Simple hills using sine and cosine functions
                 const height = Math.sin(vertex.x * 0.2) * Math.cos(vertex.z * 0.2) * 2;
                 vertex.y = height;
 
                 terrainGeometry.attributes.position.setY(i, vertex.y);
             }
-            terrainGeometry.computeVertexNormals();
 
-            const terrainMaterial = new THREE.MeshLambertMaterial({ color: 0x228822 });
+            // Compute flat normals for flat shading
+            terrainGeometry.computeFlatVertexNormals();
+
+            const terrainMaterial = new THREE.MeshLambertMaterial({
+                color: 0x228822,
+                flatShading: true, // Enable flat shading
+            });
             terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
             scene.add(terrain);
+
+            // Grid helper (optional, can be removed)
+            // const gridHelper = new THREE.GridHelper(terrainWidth, GRID_SIZE);
+            // scene.add(gridHelper);
 
             // Lighting
             const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
@@ -249,6 +260,7 @@
                         if (child.isMesh) {
                             child.material = new THREE.MeshLambertMaterial({
                                 color: child.material.color,
+                                flatShading: true, // Enable flat shading for the model
                             });
                         }
                     });
@@ -263,7 +275,7 @@
                 }
             );
 
-            camera.position.set(0, 10, 20);
+            camera.position.set(0, 20, 30);
             camera.lookAt(0, 0, 0);
 
             // Event Listeners
@@ -296,6 +308,7 @@
                 if (intersects.length > 0) {
                     isDragging = true;
                     isFlying = false;
+                    isMoving = false;
                     dragStart.copy(model.position);
                     const intersectPoint = intersects[0].point;
                     dragOffset.copy(intersectPoint).sub(model.position);
@@ -363,7 +376,16 @@
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(terrain);
             if (intersects.length > 0) {
-                targetPosition.copy(intersects[0].point);
+                // Map position to grid
+                let gridX = Math.round(intersects[0].point.x / STEP_SIZE) * STEP_SIZE;
+                let gridZ = Math.round(intersects[0].point.z / STEP_SIZE) * STEP_SIZE;
+
+                // Clamp to grid boundaries
+                gridX = Math.max(-GRID_BOUNDARY, Math.min(GRID_BOUNDARY, gridX));
+                gridZ = Math.max(-GRID_BOUNDARY, Math.min(GRID_BOUNDARY, gridZ));
+
+                targetPosition.set(gridX, 0, gridZ);
+                isMoving = true;
             }
         }
 
@@ -390,8 +412,6 @@
                     -velocity.x,
                     velocity.x + velocity.y
                 ).multiplyScalar(ANGULAR_FORCE_MULTIPLIER);
-            } else if (!isFlying) {
-                updateTargetPosition(event.clientX, event.clientY);
             }
 
             lastMousePosition.set(mouse.x, mouse.y);
@@ -407,6 +427,7 @@
                 if (intersects.length > 0) {
                     isDragging = true;
                     isFlying = false;
+                    isMoving = false;
                     dragStart.copy(model.position);
                     const intersectPoint = intersects[0].point;
                     dragOffset.copy(intersectPoint).sub(model.position);
@@ -481,17 +502,41 @@
                         model.position.y = terrainHeight;
                         model.rotation.set(0, 0, 0);
                     }
-                } else if (!isDragging) {
-                    // Move towards target position
-                    const direction = targetPosition.clone().sub(model.position).multiplyScalar(0.1);
-                    model.position.add(direction);
+                } else if (isMoving && !isDragging) {
+                    // Stepped motion towards target position
+                    const currentGridX = Math.round(model.position.x / STEP_SIZE) * STEP_SIZE;
+                    const currentGridZ = Math.round(model.position.z / STEP_SIZE) * STEP_SIZE;
 
-                    // Update Y position based on terrain
-                    const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
-                    model.position.y = terrainHeight;
+                    if (currentGridX !== targetPosition.x || currentGridZ !== targetPosition.z) {
+                        // Move one step towards target
+                        let deltaX = targetPosition.x - currentGridX;
+                        let deltaZ = targetPosition.z - currentGridZ;
 
-                    // Simple rotation to face movement direction
-                    model.rotation.y = Math.atan2(direction.x, direction.z);
+                        if (Math.abs(deltaX) > Math.abs(deltaZ)) {
+                            deltaX = STEP_SIZE * Math.sign(deltaX);
+                            deltaZ = 0;
+                        } else {
+                            deltaZ = STEP_SIZE * Math.sign(deltaZ);
+                            deltaX = 0;
+                        }
+
+                        model.position.x = currentGridX + deltaX;
+                        model.position.z = currentGridZ + deltaZ;
+
+                        // Update Y position based on terrain
+                        const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
+                        model.position.y = terrainHeight;
+
+                        // Rolling over
+                        const axis = new THREE.Vector3(deltaZ, 0, -deltaX).normalize();
+                        const angle = Math.PI / 2; // 90 degrees
+
+                        model.rotateOnWorldAxis(axis, angle);
+
+                    } else {
+                        isMoving = false;
+                        model.rotation.set(0, 0, 0);
+                    }
                 }
 
                 // Decay effect: Clone the model every 100ms
