@@ -18,6 +18,7 @@
             overflow: hidden;
             font-family: Helvetica, Arial, sans-serif;
             cursor: url('cursor1.png') 16 16, auto !important;
+            background-color: #87CEEB; /* Sky blue background */
         }
         canvas {
             display: block;
@@ -156,9 +157,9 @@
 
     <!-- Three.js Script -->
     <script>
-        let scene, camera, renderer, room, model;
+        let scene, camera, renderer, model, terrain;
         let isDragging = false;
-        let targetPosition = new THREE.Vector3(0, -1.75, 0);
+        let targetPosition = new THREE.Vector3(0, 0, 0);
         const GRID_SIZE = 8;
         const STEP_SIZE = 1;
         const raycaster = new THREE.Raycaster();
@@ -174,7 +175,6 @@
         const ANGULAR_DAMPING = 0.98;
         const BOUNCE = 0.8;
         const GRAVITY = -0.05;
-        const GROUND_Y = -1.75;
         const FORCE_MULTIPLIER = 15;
         const ANGULAR_FORCE_MULTIPLIER = 0.1;
 
@@ -185,6 +185,7 @@
         let modelClones = [];
         let lastCloneTime = 0;
         const cloneInterval = 100; // Clone every 100ms
+        const cloneLifetime = 2000; // Clones last for 2 seconds (shorter lifetime)
 
         function init() {
             scene = new THREE.Scene();
@@ -194,25 +195,46 @@
                 0.1,
                 1000
             );
-            renderer = new THREE.WebGLRenderer();
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // Room
-            const roomGeometry = new THREE.BoxGeometry(15, 7.5, 15);
-            const roomMaterial = new THREE.MeshBasicMaterial({
-                color: 0x382a14,
-                side: THREE.BackSide,
-            });
-            room = new THREE.Mesh(roomGeometry, roomMaterial);
-            scene.add(room);
+            // Hilly terrain
+            const terrainWidth = 50;
+            const terrainDepth = 50;
+            const terrainSegments = 128;
+            const terrainGeometry = new THREE.PlaneGeometry(
+                terrainWidth,
+                terrainDepth,
+                terrainSegments,
+                terrainSegments
+            );
+            terrainGeometry.rotateX(-Math.PI / 2);
 
-            // Window (optional)
-            const windowGeometry = new THREE.PlaneGeometry(2, 2);
-            const windowMaterial = new THREE.MeshBasicMaterial({ color: 0x87ceeb });
-            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
-            windowMesh.position.set(0, 0, 5);
-            scene.add(windowMesh);
+            // Create hills by manipulating vertices
+            for (let i = 0; i < terrainGeometry.attributes.position.count; i++) {
+                const vertex = new THREE.Vector3();
+                vertex.fromBufferAttribute(terrainGeometry.attributes.position, i);
+
+                // Simplex noise or Perlin noise can be used for more natural hills
+                const height = Math.sin(vertex.x * 0.2) * Math.cos(vertex.z * 0.2) * 2;
+                vertex.y = height;
+
+                terrainGeometry.attributes.position.setY(i, vertex.y);
+            }
+            terrainGeometry.computeVertexNormals();
+
+            const terrainMaterial = new THREE.MeshLambertMaterial({ color: 0x228822 });
+            terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+            scene.add(terrain);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 50, 50);
+            scene.add(directionalLight);
 
             // Load the model
             const loader = new THREE.GLTFLoader();
@@ -220,12 +242,12 @@
                 'kid2.glb',
                 function (gltf) {
                     model = gltf.scene;
-                    model.position.y = GROUND_Y;
-                    model.scale.set(2, 2, 2);
+                    model.scale.set(0.5, 0.5, 0.5); // Smaller model
+                    updateModelPosition();
 
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            child.material = new THREE.MeshBasicMaterial({
+                            child.material = new THREE.MeshLambertMaterial({
                                 color: child.material.color,
                             });
                         }
@@ -241,9 +263,8 @@
                 }
             );
 
-            camera.position.z = 5;
-            camera.position.y = 1;
-            camera.lookAt(0, -1, 0);
+            camera.position.set(0, 10, 20);
+            camera.lookAt(0, 0, 0);
 
             // Event Listeners
             renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -335,14 +356,15 @@
         }
 
         function updateTargetPosition(x, y) {
-            const mouseX = Math.round(((x / window.innerWidth) - 0.5) * GRID_SIZE);
-            const mouseZ = Math.round(((y / window.innerHeight) - 0.5) * GRID_SIZE);
+            // Convert screen coordinates to world coordinates
+            mouse.x = (x / window.innerWidth) * 2 - 1;
+            mouse.y = -(y / window.innerHeight) * 2 + 1;
 
-            targetPosition.x = mouseX * STEP_SIZE;
-            targetPosition.z = mouseZ * STEP_SIZE;
-
-            targetPosition.x = Math.max(-7.5, Math.min(7.5, targetPosition.x));
-            targetPosition.z = Math.max(-7.5, Math.min(7.5, targetPosition.z));
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(terrain);
+            if (intersects.length > 0) {
+                targetPosition.copy(intersects[0].point);
+            }
         }
 
         function onMouseMove(event) {
@@ -399,6 +421,26 @@
             isDragging = false;
         }
 
+        function updateModelPosition() {
+            if (model) {
+                // Get height from terrain
+                const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
+                model.position.y = terrainHeight;
+            }
+        }
+
+        function getTerrainHeightAt(x, z) {
+            const raycaster = new THREE.Raycaster(
+                new THREE.Vector3(x, 100, z),
+                new THREE.Vector3(0, -1, 0)
+            );
+            const intersects = raycaster.intersectObject(terrain);
+            if (intersects.length > 0) {
+                return intersects[0].point.y;
+            }
+            return 0;
+        }
+
         function animate(time) {
             requestAnimationFrame(animate);
 
@@ -415,71 +457,41 @@
                     model.rotation.z += angularVelocity.z;
                     angularVelocity.multiplyScalar(ANGULAR_DAMPING);
 
-                    if (model.position.x < -7.5 || model.position.x > 7.5) {
-                        velocity.x *= -BOUNCE;
-                        model.position.x = Math.sign(model.position.x) * 7.5;
-                        angularVelocity.z *= -BOUNCE;
-                    }
-                    if (model.position.z < -7.5 || model.position.z > 7.5) {
-                        velocity.z *= -BOUNCE;
-                        model.position.z = Math.sign(model.position.z) * 7.5;
-                        angularVelocity.x *= -BOUNCE;
-                    }
-                    if (model.position.y > 3.75) {
+                    // Terrain collision
+                    const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
+                    if (model.position.y < terrainHeight) {
+                        model.position.y = terrainHeight;
                         velocity.y *= -BOUNCE;
-                        model.position.y = 3.75;
-                        angularVelocity.x *= -BOUNCE;
-                        angularVelocity.z *= -BOUNCE;
-                    }
-
-                    if (model.position.y < GROUND_Y) {
-                        velocity.y *= -BOUNCE;
-                        model.position.y = GROUND_Y;
-
-                        velocity.x *= 0.9;
-                        velocity.z *= 0.9;
                         angularVelocity.multiplyScalar(0.9);
                     }
 
+                    // Friction when on the ground
+                    if (Math.abs(model.position.y - terrainHeight) < 0.01) {
+                        velocity.x *= 0.9;
+                        velocity.z *= 0.9;
+                    }
+
+                    // Stop flying if movement is minimal
                     if (
                         velocity.length() < 0.01 &&
                         angularVelocity.length() < 0.01 &&
-                        Math.abs(model.position.y - GROUND_Y) < 0.01
+                        Math.abs(model.position.y - terrainHeight) < 0.01
                     ) {
                         isFlying = false;
-                        model.position.y = GROUND_Y;
+                        model.position.y = terrainHeight;
                         model.rotation.set(0, 0, 0);
                     }
                 } else if (!isDragging) {
-                    // Update position
-                    model.position.x = targetPosition.x;
-                    model.position.z = targetPosition.z;
-                    model.position.y = GROUND_Y;
+                    // Move towards target position
+                    const direction = targetPosition.clone().sub(model.position).multiplyScalar(0.1);
+                    model.position.add(direction);
 
-                    // Rotation logic (optional)
-                    const stepsX = Math.abs(Math.round(model.position.x / STEP_SIZE));
-                    const stepsZ = Math.abs(Math.round(model.position.z / STEP_SIZE));
-                    const totalSteps = stepsX + stepsZ;
+                    // Update Y position based on terrain
+                    const terrainHeight = getTerrainHeightAt(model.position.x, model.position.z);
+                    model.position.y = terrainHeight;
 
-                    const additionalRotation = (totalSteps * Math.PI / 2) % (2 * Math.PI);
-
-                    if (model.position.x > 0) {
-                        model.rotation.y = Math.PI / 2 + additionalRotation;
-                    } else if (model.position.x < 0) {
-                        model.rotation.y = -Math.PI / 2 + additionalRotation;
-                    } else {
-                        model.rotation.y = additionalRotation;
-                    }
-
-                    if (model.position.z > 0) {
-                        model.rotation.x = -Math.PI / 8;
-                    } else if (model.position.z < 0) {
-                        model.rotation.x = Math.PI / 8;
-                    } else {
-                        model.rotation.x = 0;
-                    }
-
-                    model.rotation.z = (totalSteps * Math.PI / 2) % (2 * Math.PI);
+                    // Simple rotation to face movement direction
+                    model.rotation.y = Math.atan2(direction.x, direction.z);
                 }
 
                 // Decay effect: Clone the model every 100ms
@@ -502,10 +514,10 @@
                     lastCloneTime = time;
                 }
 
-                // Remove clones older than 4 seconds
+                // Remove clones older than cloneLifetime
                 for (let i = modelClones.length - 1; i >= 0; i--) {
                     const clone = modelClones[i];
-                    if (time - clone.userData.timestamp > 4000) {
+                    if (time - clone.userData.timestamp > cloneLifetime) {
                         scene.remove(clone);
                         modelClones.splice(i, 1);
                     }
