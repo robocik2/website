@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>maks rz/robocik.2</title>
 
-    <!-- Three.js and OBJLoader -->
+    <!-- Three.js and GLTFLoader -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <!-- Post-processing Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -171,7 +171,7 @@
 
     <!-- Three.js Script -->
     <script>
-        let scene, camera, renderer, model, terrain;
+        let scene, camera, renderer, composer, model, terrain;
         let targetPosition = new THREE.Vector3(0, 0, 0);
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
@@ -180,6 +180,12 @@
         let modelPosition = new THREE.Vector3();
         let modelHeightOffset = 0;
         let previousPosition = new THREE.Vector3();
+
+        // Variables for frame decay effect
+        let modelClones = [];
+        let lastCloneTime = 0;
+        const cloneInterval = 100; // Clone every 100ms
+        const cloneLifetime = 500; // Clones last for 500ms
 
         function init() {
             scene = new THREE.Scene();
@@ -228,11 +234,11 @@
             scene.add(terrain);
 
             // Load the model
-            const loader = new THREE.OBJLoader();
+            const loader = new THREE.GLTFLoader();
             loader.load(
-                'BOYLAY.obj',
-                function (obj) {
-                    model = obj;
+                'kid2.glb',
+                function (gltf) {
+                    model = gltf.scene;
                     model.scale.set(1.8, 1.8, 1.8); // Increase the model size
                     modelPosition.copy(model.position);
                     previousPosition.copy(model.position);
@@ -242,11 +248,11 @@
                     const modelHeight = box.max.y - box.min.y;
                     modelHeightOffset = modelHeight / 2;
 
-                    // Set model's material to gray
+                    // Set model's material to darker gray
                     model.traverse((child) => {
                         if (child.isMesh) {
                             child.material = new THREE.MeshBasicMaterial({
-                                color: 0x808080, // Gray color
+                                color: 0x333333, // Darker gray color
                             });
                         }
                     });
@@ -269,7 +275,7 @@
             renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
             renderer.domElement.addEventListener('mousemove', onMouseMove);
 
-            // Post-processing setup
+            // Post-processing setup for Gaussian blur
             composer = new THREE.EffectComposer(renderer);
             composer.addPass(new THREE.RenderPass(scene, camera));
 
@@ -358,6 +364,26 @@
                 // Update model's position
                 model.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
 
+                // Calculate actual movement
+                const actualMovement = modelPosition.clone().sub(previousPosition);
+                const actualDistance = actualMovement.length();
+
+                // Apply rotation only if the model has moved significantly
+                if (actualDistance > epsilon) {
+                    // Calculate rotation angle based on the distance moved
+                    const radius = 1; // Approximate radius of the model
+                    const angularDistance = actualDistance / radius; // θ = s / r
+
+                    // Determine the axis of rotation (perpendicular to the movement direction)
+                    const rotationAxis = new THREE.Vector3().crossVectors(
+                        new THREE.Vector3(0, 1, 0),
+                        actualMovement.normalize()
+                    ).normalize();
+
+                    // Rotate the model around the rotation axis
+                    model.rotateOnWorldAxis(rotationAxis, angularDistance);
+                }
+
                 // Update previous position
                 previousPosition.copy(modelPosition);
             }
@@ -369,6 +395,35 @@
             if (model) {
                 // Implement stepped movement
                 steppedMotion();
+
+                // Frame decay effect
+                if (time - lastCloneTime > cloneInterval) {
+                    const clone = model.clone();
+
+                    // Copy position, rotation, and scale
+                    clone.position.copy(model.position);
+                    clone.rotation.copy(model.rotation);
+                    clone.scale.copy(model.scale);
+
+                    // Assign timestamp
+                    clone.userData.timestamp = time;
+
+                    // Add to scene and array
+                    scene.add(clone);
+                    modelClones.push(clone);
+
+                    // Update last clone time
+                    lastCloneTime = time;
+                }
+
+                // Remove clones older than cloneLifetime
+                for (let i = modelClones.length - 1; i >= 0; i--) {
+                    const clone = modelClones[i];
+                    if (time - clone.userData.timestamp > cloneLifetime) {
+                        scene.remove(clone);
+                        modelClones.splice(i, 1);
+                    }
+                }
             }
 
             composer.render();
