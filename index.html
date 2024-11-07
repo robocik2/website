@@ -426,8 +426,8 @@
             link.addEventListener('click', function (e) {
                 e.preventDefault();
                 const title = this.getAttribute('data-title');
-                blackEllipse.style.left = ${this.getBoundingClientRect().left}px;
-                blackEllipse.style.top = ${this.getBoundingClientRect().top}px;
+                blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
+                blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
 
                 // Start the ellipse transition
                 blackEllipse.style.transform = 'scale(15)';
@@ -441,7 +441,7 @@
                             window.location.href = 'https://www.instagram.com/robocik.2';
                         }, 2000);
                     } else if (title === 'maks-info') {
-                        clickedContent.innerHTML = 
+                        clickedContent.innerHTML = `
                             <img id="soup" src="soup.png" alt="Maks Rzontkowski">
                             <div class="info-container">
                                 <div class="bio">
@@ -472,7 +472,7 @@
                                     <p>& more.</p>
                                 </div>
                             </div>
-                        ;
+                        `;
                         clickedContent.style.opacity = '1';
                         closeButton.style.opacity = '1';
                     } else {
