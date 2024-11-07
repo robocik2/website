@@ -248,12 +248,10 @@
                     const modelHeight = box.max.y - box.min.y;
                     modelHeightOffset = modelHeight / 2;
 
-                    // Set model's material to darker gray
+                    // Assign the model to a specific layer
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            child.material = new THREE.MeshBasicMaterial({
-                                color: 0x333333, // Darker gray color
-                            });
+                            child.layers.set(1); // Set to layer 1
                         }
                     });
 
@@ -275,10 +273,19 @@
             renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
             renderer.domElement.addEventListener('mousemove', onMouseMove);
 
-            // Post-processing setup for Gaussian blur
+            // Post-processing setup
             composer = new THREE.EffectComposer(renderer);
-            composer.addPass(new THREE.RenderPass(scene, camera));
 
+            // Render passes for different layers
+            const renderBackground = new THREE.RenderPass(scene, camera);
+            renderBackground.clear = true;
+            renderBackground.layers.set(0); // Default layer
+
+            const renderModel = new THREE.RenderPass(scene, camera);
+            renderModel.clear = false;
+            renderModel.layers.set(1); // Layer 1 for the model
+
+            // Blur passes
             const hblur = new THREE.ShaderPass(THREE.HorizontalBlurShader);
             const vblur = new THREE.ShaderPass(THREE.VerticalBlurShader);
 
@@ -286,6 +293,9 @@
             hblur.uniforms['h'].value = blurAmount / window.innerWidth;
             vblur.uniforms['v'].value = blurAmount / window.innerHeight;
 
+            // Assemble composer passes
+            composer.addPass(renderBackground);
+            composer.addPass(renderModel);
             composer.addPass(hblur);
             composer.addPass(vblur);
 
@@ -407,6 +417,13 @@
 
                     // Assign timestamp
                     clone.userData.timestamp = time;
+
+                    // Assign to the same layer
+                    clone.traverse((child) => {
+                        if (child.isMesh) {
+                            child.layers.set(1); // Layer 1
+                        }
+                    });
 
                     // Add to scene and array
                     scene.add(clone);
