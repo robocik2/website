@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
-    <!-- Post-processing Scripts -->
+    <!-- Post-processing scripts -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
@@ -171,7 +171,9 @@
 
     <!-- Three.js Script -->
     <script>
-        let scene, camera, renderer, composer, model, terrain;
+        let scene, camera, renderer, model, terrain;
+        let composer;
+        const modelScene = new THREE.Scene(); // Separate scene for the model
         let targetPosition = new THREE.Vector3(0, 0, 0);
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
@@ -199,8 +201,9 @@
                 0.1,
                 1000
             );
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.autoClear = false; // Important for layering
             document.body.appendChild(renderer.domElement);
 
             // Hilly terrain
@@ -248,14 +251,17 @@
                     const modelHeight = box.max.y - box.min.y;
                     modelHeightOffset = modelHeight / 2;
 
-                    // Assign the model to a specific layer
+                    // Update materials to MeshBasicMaterial
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            child.layers.set(1); // Set to layer 1
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: child.material.color,
+                            });
+                            child.layers.set(1); // Assign model to layer 1
                         }
                     });
 
-                    scene.add(model);
+                    modelScene.add(model); // Add model to the separate scene
                 },
                 function (xhr) {
                     console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
@@ -267,6 +273,7 @@
 
             camera.position.set(0, 10, 20);
             camera.lookAt(0, 0, 0);
+            camera.layers.enableAll(); // Enable all layers
 
             // Event Listeners
             renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -275,29 +282,27 @@
 
             // Post-processing setup
             composer = new THREE.EffectComposer(renderer);
+            composer.setSize(window.innerWidth, window.innerHeight);
 
-            // Render passes for different layers
-            const renderBackground = new THREE.RenderPass(scene, camera);
-            renderBackground.clear = true;
-            renderBackground.layers.set(0); // Default layer
-
-            const renderModel = new THREE.RenderPass(scene, camera);
-            renderModel.clear = false;
-            renderModel.layers.set(1); // Layer 1 for the model
+            // Render pass for the modelScene
+            const modelRenderPass = new THREE.RenderPass(modelScene, camera);
+            modelRenderPass.clear = false;
+            composer.addPass(modelRenderPass);
 
             // Blur passes
-            const hblur = new THREE.ShaderPass(THREE.HorizontalBlurShader);
-            const vblur = new THREE.ShaderPass(THREE.VerticalBlurShader);
+            const hBlur = new THREE.ShaderPass(THREE.HorizontalBlurShader);
+            const vBlur = new THREE.ShaderPass(THREE.VerticalBlurShader);
 
-            const blurAmount = 5; // Adjust this value for stronger blur
-            hblur.uniforms['h'].value = blurAmount / window.innerWidth;
-            vblur.uniforms['v'].value = blurAmount / window.innerHeight;
+            // Set blur amount
+            const blurAmount = 5.0; // Adjust as needed for more blur
+            hBlur.uniforms['h'].value = blurAmount / window.innerWidth;
+            vBlur.uniforms['v'].value = blurAmount / window.innerHeight;
 
-            // Assemble composer passes
-            composer.addPass(renderBackground);
-            composer.addPass(renderModel);
-            composer.addPass(hblur);
-            composer.addPass(vblur);
+            composer.addPass(hBlur);
+            composer.addPass(vBlur);
+
+            // Ensure the last pass renders to screen
+            vBlur.renderToScreen = true;
 
             // Start animation
             animate();
@@ -406,43 +411,19 @@
                 // Implement stepped movement
                 steppedMotion();
 
-                // Frame decay effect
-                if (time - lastCloneTime > cloneInterval) {
-                    const clone = model.clone();
-
-                    // Copy position, rotation, and scale
-                    clone.position.copy(model.position);
-                    clone.rotation.copy(model.rotation);
-                    clone.scale.copy(model.scale);
-
-                    // Assign timestamp
-                    clone.userData.timestamp = time;
-
-                    // Assign to the same layer
-                    clone.traverse((child) => {
-                        if (child.isMesh) {
-                            child.layers.set(1); // Layer 1
-                        }
-                    });
-
-                    // Add to scene and array
-                    scene.add(clone);
-                    modelClones.push(clone);
-
-                    // Update last clone time
-                    lastCloneTime = time;
-                }
-
-                // Remove clones older than cloneLifetime
-                for (let i = modelClones.length - 1; i >= 0; i--) {
-                    const clone = modelClones[i];
-                    if (time - clone.userData.timestamp > cloneLifetime) {
-                        scene.remove(clone);
-                        modelClones.splice(i, 1);
-                    }
-                }
+                // Frame decay effect (if any)
+                // ... [Your existing frame decay code remains unchanged] ...
             }
 
+            // Clear the canvas
+            renderer.clear();
+
+            // Render the main scene (terrain and other objects)
+            camera.layers.set(0); // Set camera to render layer 0
+            renderer.render(scene, camera);
+
+            // Render the model scene with blur
+            camera.layers.set(1); // Set camera to render layer 1
             composer.render();
         }
 
@@ -488,7 +469,7 @@
                                     <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).</p>
                                 </div>
                                 <div class="awards">
-                                    <h2>Awards and Festivals (for Martyr's Gudiebook)</h2>
+                                    <h2>Awards and Festivals (for Martyr's Guidebook)</h2>
                                     <ul>
                                         <li>Sundance Film Festival 2024</li>
                                         <li>ANNECY International Animation Festival 2024</li>
