@@ -54,7 +54,7 @@
             padding: 0;
             overflow: hidden;
             font-family: Helvetica, Arial, sans-serif;
-            cursor: url('cursor1.png') 16 16, auto !important;
+            cursor: url('cursor1.png') 16 16, none !important;
             background-color: #a1725d; /* Updated sky color */
         }
         canvas {
@@ -75,7 +75,7 @@
         .overlay a {
             color: white;
             text-decoration: none;
-            cursor: url('cursorhover.png') 16 16, auto !important;
+            cursor: url('cursorhover.png') 16 16, none !important;
         }
         #black-ellipse {
             position: absolute;
@@ -290,17 +290,7 @@
                                         
                     scene.add(model);
 
-                    // Add additional kid instances with slight variations
-                    for (let i = 0; i < 3; i++) {
-                        const modelClone = model.clone();
-                        modelClone.position.x += (Math.random() - 0.5) * 10; // Randomize position slightly
-                        modelClone.position.z += (Math.random() - 0.5) * 10; // Randomize position slightly
-                        modelClone.scale.set(1.8 + (Math.random() * 0.2 - 0.1), 1.8 + (Math.random() * 0.2 - 0.1), 1.8 + (Math.random() * 0.2 - 0.1)); // Slight variation in size
-                        scene.add(modelClone);
-                    }
-
-                    scene.add(model);
-                    scene.add(model);
+                    
                 },
                 function (xhr) {
                     console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
