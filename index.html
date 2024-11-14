@@ -1,7 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <!-- Meta and Title -->
+    <!-- Meta and Title -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maks Rz / Artist & Animator - Martyr's Guidebook</title>
+    <meta name="description" content="Explore the work of Maks Rzontkowski, an artist and animator known for 'Martyr's Guidebook'. Experience unique storytelling with subtle blends of sadness and awkwardness.">
+    <meta name="keywords" content="Maks Rzontkowski, Maks Rz, Martyr's Guidebook, artist, animator, animation, filmmaker, music producer">
+    <meta name="author" content="Maks Rzontkowski">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:title" content="Maks Rzontkowski - Artist & Animator">
+    <meta property="og:description" content="Discover the award-winning work of Maks Rzontkowski, an artist and animator known for 'Martyr's Guidebook'.">
+    <meta property="og:image" content="path/to/featured-image.jpg">
+    <meta property="og:url" content="https://yourwebsite.com">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Maks Rzontkowski - Artist & Animator">
+    <meta name="twitter:description" content="Award-winning artist and animator Maks Rzontkowski presents 'Martyr's Guidebook'.">
+    <meta name="twitter:image" content="path/to/featured-image.jpg">
+
+    <!-- Structured Data with JSON-LD for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Maks Rzontkowski",
+        "alternateName": "Maks Rz",
+        "jobTitle": "Artist, Animator, Filmmaker, Music Producer",
+        "url": "https://yourwebsite.com",
+        "sameAs": [
+            "https://www.instagram.com/robocik.2",
+            "https://www.vimeo.com/maksrz"
+        ],
+        "description": "Artist and animator known for 'Martyr's Guidebook', blending subtle sadness and awkwardness.",
+        "image": "path/to/featured-image.jpg"
+    }
+    </script>
+<!-- Meta and Title -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>maks rz/robocik.2</title>
@@ -386,9 +423,9 @@
 
                     // Assign random greyish pastel color
                     const randomColor = new THREE.Color(
-                        Math.random() * 0.5 + 0.5, // Red channel
-                        Math.random() * 0.5 + 0.5, // Green channel
-                        Math.random() * 0.5 + 0.5  // Blue channel
+                        Math.random() * 0.3 + 0.5, // Red channel (darker and more saturated)
+                        Math.random() * 0.3 + 0.5, // Green channel (darker and more saturated)
+                        Math.random() * 0.3 + 0.5  // Blue channel (darker and more saturated)
                     );
                     clone.traverse((child) => {
                         if (child.isMesh) {
