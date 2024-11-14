@@ -287,18 +287,7 @@
                         }
                     });
 
-                    // Add lightweight Gaussian blur to maintain performance
-                    const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth / 2, window.innerHeight / 2);
-                    const composer = new THREE.EffectComposer(renderer, renderTarget);
-                    const renderPass = new THREE.RenderPass(scene, camera);
-                    composer.addPass(renderPass);
-                    
-                    // Lightweight Gaussian blur shader
-                    const blurPass = new THREE.ShaderPass(THREE.GaussianBlurShader);
-                    blurPass.uniforms["resolution"].value.set(window.innerWidth / 2, window.innerHeight / 2);
-                    blurPass.uniforms["radius"].value = 10.0; // Moderate radius for balanced blur
-                    composer.addPass(blurPass);
-                    
+                                        
                     scene.add(model);
 
                     scene.add(model);
@@ -315,6 +304,7 @@
             );
 
             camera.position.set(0, 10, 20);
+            model.rotation.z = Math.PI / 2; // Rotate model 90 degrees on Z axis
             camera.lookAt(0, 0, 0);
 
             // Event Listeners
