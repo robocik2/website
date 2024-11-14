@@ -282,7 +282,7 @@
                     model.traverse((child) => {
                         if (child.isMesh) {
                             child.material = new THREE.MeshBasicMaterial({
-                                color: 0x555555, // Set color to dark grey
+                                color: 0x2C2C2C // Set color to even darker grey for better contrast
                             });
                         }
                     });
@@ -429,10 +429,11 @@
 
                     // Assign random greyish pastel color
                     const colors = [
-                        0x565940, // Dark olive green
-                        0x73624D, // Brownish grey
-                        0xA67563, // Muted rose
-                        0x8C6456, // Warm grey
+                        0x3E402E, // Dark olive
+                        0x4F3D2E, // Dark brown
+                        0x5C3A24, // Deep orange-brown
+                        0x4B4A47, // Dark grey
+                        0x364732  // Dark green
                     ];
                     const randomColor = new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
                     clone.traverse((child) => {
@@ -506,7 +507,7 @@
                                     <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).</p>
                                 </div>
                                 <div class="awards">
-                                    <h2>Awards and Festivals (for Martyr's Guidebook(</h2>
+                                    <h2>Awards and Festivals (for Martyr's Gudiebook(</h2>
                                     <ul>
                                         <li>Sundance Film Festival 2024</li>
                                         <li>ANNECY International Animation Festival 2024</li>
