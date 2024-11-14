@@ -439,11 +439,13 @@
                     clone.scale.copy(model.scale);
 
                     // Assign random greyish pastel color
-                    const randomColor = new THREE.Color(
-                        Math.random() * 0.3 + 0.5, // Red channel (darker and more saturated)
-                        Math.random() * 0.3 + 0.5, // Green channel (darker and more saturated)
-                        Math.random() * 0.3 + 0.5  // Blue channel (darker and more saturated)
-                    );
+                    const colors = [
+                        0x565940, // Dark olive green
+                        0x73624D, // Brownish grey
+                        0xA67563, // Muted rose
+                        0x8C6456, // Warm grey
+                    ];
+                    const randomColor = new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
                     clone.traverse((child) => {
                         if (child.isMesh) {
                             child.material = new THREE.MeshBasicMaterial({ color: randomColor });
