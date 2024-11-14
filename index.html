@@ -384,6 +384,18 @@
                     clone.rotation.copy(model.rotation);
                     clone.scale.copy(model.scale);
 
+                    // Assign random greyish pastel color
+                    const randomColor = new THREE.Color(
+                        Math.random() * 0.5 + 0.5, // Red channel
+                        Math.random() * 0.5 + 0.5, // Green channel
+                        Math.random() * 0.5 + 0.5  // Blue channel
+                    );
+                    clone.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshBasicMaterial({ color: randomColor });
+                        }
+                    });
+
                     // Assign timestamp
                     clone.userData.timestamp = time;
 
