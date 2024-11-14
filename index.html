@@ -287,19 +287,19 @@
                         }
                     });
 
-                    // Add blur effect to the model
-                    const modelBlur = new THREE.Mesh(model.geometry, new THREE.MeshStandardMaterial({
-                        color: model.material.color,
-                        transparent: true,
-                        opacity: 0.5
-                    }));
-                    modelBlur.layers.set(1);
-                    const composer = new THREE.EffectComposer(renderer);
+                    // Add Gaussian blur effect to the model
+                    const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+                    const composer = new THREE.EffectComposer(renderer, renderTarget);
                     const renderPass = new THREE.RenderPass(scene, camera);
                     composer.addPass(renderPass);
-                    const blurPass = new THREE.ShaderPass(THREE.HorizontalBlurShader);
-                    blurPass.uniforms.h.value = 1.0 / window.innerWidth;
+
+                    // Gaussian blur shader
+                    const blurPass = new THREE.ShaderPass(THREE.GaussianBlurShader);
+                    blurPass.uniforms["resolution"].value.set(window.innerWidth, window.innerHeight);
+                    blurPass.uniforms["radius"].value = 5.0; // Increase radius for stronger blur
                     composer.addPass(blurPass);
+
+                    scene.add(model);
                     scene.add(model);
                 },
                 function (xhr) {
