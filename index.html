@@ -290,7 +290,14 @@
                                         
                     scene.add(model);
 
-                    scene.add(model);
+                    // Add additional kid instances with slight variations
+                    for (let i = 0; i < 3; i++) {
+                        const modelClone = model.clone();
+                        modelClone.position.x += (Math.random() - 0.5) * 10; // Randomize position slightly
+                        modelClone.position.z += (Math.random() - 0.5) * 10; // Randomize position slightly
+                        modelClone.scale.set(1.8 + (Math.random() * 0.2 - 0.1), 1.8 + (Math.random() * 0.2 - 0.1), 1.8 + (Math.random() * 0.2 - 0.1)); // Slight variation in size
+                        scene.add(modelClone);
+                    }
 
                     scene.add(model);
                     scene.add(model);
