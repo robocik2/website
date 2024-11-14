@@ -413,19 +413,18 @@
                 steppedMotion();
 
                 // Frame decay effect
-                if (time - lastCloneTime > cloneInterval) {
-                    const clone = model.clone();
+                if (time - lastCloneTime > cloneInterval && previousPosition.distanceTo(modelPosition) > 0.001) {
 
                     // Copy position, rotation, and scale
                     clone.position.copy(model.position);
                     clone.rotation.copy(model.rotation);
                     clone.scale.copy(model.scale);
 
-                    // Assign random greyish pastel color
+                    // Assign random color inspired by Vuillard painting (browns, dark yellows, dark orange, greys, and greens)
                     const randomColor = new THREE.Color(
-                        Math.random() * 0.3 + 0.5, // Red channel (darker and more saturated)
-                        Math.random() * 0.3 + 0.5, // Green channel (darker and more saturated)
-                        Math.random() * 0.3 + 0.5  // Blue channel (darker and more saturated)
+                        (Math.random() * 0.2 + 0.4), // Red channel for darker and more saturated color
+                        (Math.random() * 0.2 + 0.3), // Green channel for darker and more saturated color
+                        (Math.random() * 0.1 + 0.2)  // Blue channel for darker and more saturated color
                     );
                     clone.traverse((child) => {
                         if (child.isMesh) {
