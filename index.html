@@ -81,6 +81,13 @@
       font-size: clamp(36px, 6vw, 48px);
     }
 
+    #gifaniol {
+      display: none;
+      margin-top: 10px;
+      max-width: 100%;
+      height: auto;
+    }
+
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -159,6 +166,7 @@
 
     <div>
       <a href="#" class="nav-button" id="awards-button">awards and festivals</a>
+      <img src="gifaniol.gif" alt="Awards Angel" id="gifaniol">
       <ul class="enemies-list" id="awards-list">
         <li>*Sundance Film Festival 2024 Official Selection*</li>
         <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
@@ -219,7 +227,15 @@
     document.getElementById('awards-button').addEventListener('click', (e) => {
       e.preventDefault();
       const awardsList = document.getElementById('awards-list');
-      awardsList.style.display = awardsList.style.display === 'block' ? 'none' : 'block';
+      const gifaniol = document.getElementById('gifaniol');
+      
+      if (awardsList.style.display === 'block') {
+        awardsList.style.display = 'none';
+        gifaniol.style.display = 'none';
+      } else {
+        awardsList.style.display = 'block';
+        gifaniol.style.display = 'block';
+      }
     });
   </script>
 </body>
