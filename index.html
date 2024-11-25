@@ -34,6 +34,35 @@
       background-size: contain;
     }
 
+    .following-image {
+      position: fixed;
+      width: min(735px, 90vw);
+      height: auto;
+      aspect-ratio: 735/862;
+      pointer-events: none;
+      transform-origin: center center;
+      z-index: 1000;
+      top: 50%;
+      animation: walk 0.5s infinite alternate ease-in-out;
+      transition: left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .following-image.move-right {
+      left: calc(100vw - min(200px, 25vw)) !important;
+    }
+
+    @keyframes walk {
+      0% {
+        transform: translate(-50%, -50%) rotate(-2deg) translateY(-20px);
+      }
+      50% {
+        transform: translate(-50%, -50%) rotate(0deg) translateY(0px);
+      }
+      100% {
+        transform: translate(-50%, -50%) rotate(2deg) translateY(-20px);
+      }
+    }
+
     .content {
       max-width: 800px;
       margin: 0 auto;
@@ -82,6 +111,10 @@
   </style>
 </head>
 <body>
+  <!-- A Man Image -->
+  <img src="a man.png" alt="A man" class="following-image">
+
+  <!-- Custom Cursor -->
   <div class="custom-cursor"></div>
   
   <div class="content">
@@ -125,9 +158,11 @@
 
   <script>
     const cursor = document.querySelector('.custom-cursor');
-    let lastX = 0, lastY = 0;
+    const image = document.querySelector('.following-image');
+    const navButtons = document.querySelectorAll('.nav-button');
+    let lastX = 0, lastY = 0, mouseX = 0;
 
-    // Track mouse movement for squish/stretch effect
+    // Custom Cursor Movement
     document.addEventListener('mousemove', (e) => {
       const deltaX = e.clientX - lastX;
       const deltaY = e.clientY - lastY;
@@ -145,7 +180,31 @@
       lastY = e.clientY;
     });
 
-    // Toggle enemies and awards lists
+    // A Man Movement
+    if (window.innerWidth > 768) {
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+      });
+
+      function updatePosition() {
+        requestAnimationFrame(updatePosition);
+        image.style.left = mouseX + 'px';
+      }
+
+      updatePosition();
+    }
+
+    // Button Hover Events
+    navButtons.forEach(button => {
+      button.addEventListener('mouseenter', () => {
+        image.classList.add('move-right');
+      });
+      button.addEventListener('mouseleave', () => {
+        image.classList.remove('move-right');
+      });
+    });
+
+    // Toggle Enemies and Awards Lists
     document.getElementById('enemies-button').addEventListener('click', (e) => {
       e.preventDefault();
       const enemiesList = document.getElementById('enemies-list');
