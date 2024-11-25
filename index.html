@@ -81,25 +81,6 @@
       font-size: clamp(36px, 6vw, 48px);
     }
 
-    .awards-section {
-      margin-top: clamp(20px, 4vw, 40px);
-    }
-
-    .awards-title {
-      font-size: clamp(20px, 3vw, 24px);
-      margin-bottom: clamp(10px, 2vw, 20px);
-    }
-
-    .awards-list {
-      list-style: none;
-      padding: 0;
-    }
-
-    .awards-list li {
-      margin-bottom: clamp(8px, 1.5vw, 15px);
-      font-style: italic;
-    }
-
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -176,9 +157,9 @@
       </ul>
     </div>
 
-    <div class="awards-section">
-      <div class="awards-title">awards and festivals [Martyr's Guidebook]</div>
-      <ul class="awards-list">
+    <div>
+      <a href="#" class="nav-button" id="awards-button">awards and festivals</a>
+      <ul class="enemies-list" id="awards-list">
         <li>*Sundance Film Festival 2024 Official Selection*</li>
         <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
         <li>*OTTAWA Animation Festival Best Student Animation Prize*</li>
@@ -196,7 +177,6 @@
         <li>*HELSINKI INTERNATIONAL FILM FESTIVAL*</li>
         <li>*TOHORROR 2024 GRAND PRIZE*</li>
       </ul>
-      <p>& more.</p>
     </div>
   </div>
 
@@ -204,9 +184,8 @@
     const image = document.querySelector('.following-image');
     const navButtons = document.querySelectorAll('.nav-button');
     let mouseX = 0;
-    const fixedY = window.innerHeight / 2;
 
-    // Only enable cursor following on non-mobile devices
+    // Cursor following functionality
     if (window.innerWidth > 768) {
       document.addEventListener('mousemove', (e) => {
         mouseX = e.clientX;
@@ -220,24 +199,27 @@
       updatePosition();
     }
 
-    // Add hover events for nav buttons
+    // Button hover events
     navButtons.forEach(button => {
       button.addEventListener('mouseenter', () => {
         image.classList.add('move-right');
       });
-      
       button.addEventListener('mouseleave', () => {
         image.classList.remove('move-right');
       });
     });
 
-    // Enemies list toggle
-    const enemiesButton = document.getElementById('enemies-button');
-    const enemiesList = document.getElementById('enemies-list');
-    
-    enemiesButton.addEventListener('click', (e) => {
+    // Toggle lists
+    document.getElementById('enemies-button').addEventListener('click', (e) => {
       e.preventDefault();
+      const enemiesList = document.getElementById('enemies-list');
       enemiesList.style.display = enemiesList.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.getElementById('awards-button').addEventListener('click', (e) => {
+      e.preventDefault();
+      const awardsList = document.getElementById('awards-list');
+      awardsList.style.display = awardsList.style.display === 'block' ? 'none' : 'block';
     });
   </script>
 </body>
