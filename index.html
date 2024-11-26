@@ -73,9 +73,11 @@
       padding: clamp(20px, 4vw, 40px) clamp(15px, 3vw, 20px) clamp(50px, 8vw, 100px);
     }
 
-    h1, .nav-button, #enemies-button, #awards-button {
+    h1, .nav-button, #enemies-button, #awards-button, .enemies-list li {
       position: relative;
       z-index: 2;
+      font-weight: 600; /* Slightly bolden text */
+      transform: scale(1, 1.3); /* Stretch text height by 30% */
     }
 
     h1 {
@@ -89,15 +91,10 @@
       margin: clamp(15px, 2vw, 30px) 0;
       color: #333;
       text-decoration: none;
-      font-weight: 700;
     }
 
     .nav-button:hover {
       color: #666;
-    }
-
-    .nav-button, .enemies-list li {
-      cursor: none; /* Disable native cursor for hover targets */
     }
 
     #gifaniol {
@@ -147,20 +144,20 @@
       <ul class="enemies-list" id="awards-list">
         <li>*Sundance Film Festival 2024 Official Selection*</li>
         <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
-        <li>*OTTAWA Animation Festival AWARD WINNER*</li>
-        <li>*SPEKTRUM 2024 AWARD WINNER*</li>
+        <li>*OTTAWA Animation Festival Best Student Animation Prize*</li>
+        <li>*SPEKTRUM 2024 GRAND PRIZE*</li>
         <li>*New Horizons Festival 2024 Official Selection*</li>
         <li>*PICTOPLASMA 2024 Official Selection*</li>
         <li>*FEST New Directors 2024 Official Selection*</li>
         <li>*Rooftop Films 2024 Official Selection*</li>
-        <li>*Animator Festival 2024: AWARD WINNER*</li>
-        <li>*SFP Best Animated Films 2023, AWARD WINNER*</li>
+        <li>*Animator Festival 2024: II PRIZE*</li>
+        <li>*SFP Best Animated Films 2023, Best Student Film*</li>
         <li>*Kaboom Animation Festival 2024: Special Mention*</li>
-        <li>*ŻUBROFFKA 2024: AWARD WINNER*</li>
+        <li>*ŻUBROFFKA 2024: II Prize*</li>
         <li>*Salute Your Shorts Festival 2024 Official Selection*</li>
         <li>*Fest Anca 2024 Official Selection*</li>
         <li>*HELSINKI INTERNATIONAL FILM FESTIVAL*</li>
-        <li>*TOHORROR 2024 AWARD WINNER*</li>
+        <li>*TOHORROR 2024 GRAND PRIZE*</li>
       </ul>
     </div>
   </div>
