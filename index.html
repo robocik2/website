@@ -1,235 +1,549 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en">
+    <!-- Meta and Title -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maks Rz / Artist & Animator - Martyr's Guidebook</title>
+    <meta name="description" content="Explore the work of Maks Rzontkowski, an artist and animator known for 'Martyr's Guidebook'. Experience unique storytelling with subtle blends of sadness and awkwardness.">
+    <meta name="keywords" content="Maks Rzontkowski, Maks Rz, Martyr's Guidebook, artist, animator, animation, filmmaker, music producer">
+    <meta name="author" content="Maks Rzontkowski">
 
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text&display=swap" rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #f5f5f5;
-      font-family: 'Libre Caslon Text', serif;
-      color: #333;
-      min-height: 100vh;
-      overflow-y: scroll; /* Enable scrolling */
-      cursor: none; /* Hide the default cursor */
-    }
+    <!-- Open Graph / Facebook -->
+    <meta property="og:title" content="Maks Rzontkowski - Artist & Animator">
+    <meta property="og:description" content="Discover the award-winning work of Maks Rzontkowski, an artist and animator known for 'Martyr's Guidebook'.">
+    <meta property="og:image" content="path/to/featured-image.jpg">
+    <meta property="og:url" content="https://yourwebsite.com">
+    <meta property="og:type" content="website">
 
-    .custom-cursor {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 80px; /* Larger cursor */
-      height: 80px; /* Larger cursor */
-      pointer-events: none;
-      background: url('cursor1.png') no-repeat center center;
-      background-size: contain;
-      z-index: 9999;
-      transform-origin: center;
-      transition: transform 0.1s ease-out;
-    }
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Maks Rzontkowski - Artist & Animator">
+    <meta name="twitter:description" content="Award-winning artist and animator Maks Rzontkowski presents 'Martyr's Guidebook'.">
+    <meta name="twitter:image" content="path/to/featured-image.jpg">
 
-    .hover-target:hover ~ .custom-cursor {
-      background: url('cursor2.png') no-repeat center center;
-      background-size: contain;
+    <!-- Structured Data with JSON-LD for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Maks Rzontkowski",
+        "alternateName": "Maks Rz",
+        "jobTitle": "Artist, Animator, Filmmaker, Music Producer",
+        "url": "https://yourwebsite.com",
+        "sameAs": [
+            "https://www.instagram.com/robocik.2",
+            "https://www.vimeo.com/maksrz"
+        ],
+        "description": "Artist and animator known for 'Martyr's Guidebook', blending subtle sadness and awkwardness.",
+        "image": "path/to/featured-image.jpg"
     }
+    </script>
+<!-- Meta and Title -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>maks rz/robocik.2</title>
 
-    .following-image {
-      position: fixed;
-      width: min(735px, 90vw);
-      height: auto;
-      aspect-ratio: 735/862;
-      pointer-events: none;
-      transform-origin: center center;
-      z-index: 1000;
-      top: 50%;
-      animation: walk 0.5s infinite alternate ease-in-out;
-      transition: left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
+    <!-- Three.js and GLTFLoader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
-    .following-image.move-right {
-      left: calc(100vw - min(200px, 25vw)) !important;
-    }
+    <!-- Styles -->
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Helvetica, Arial, sans-serif;
+            cursor: url('cursor1.png') 16 16, none !important;
+            background-color: #a1725d; /* Updated sky color */
+        }
+        canvas {
+            display: block;
+        }
+        .overlay {
+            position: fixed;
+            color: white;
+            font-size: 24px;
+            padding: 10px;
+            z-index: 10;
+        }
+        #title { top: 10%; left: 50%; transform: translateX(-50%); }
+        #ig { top: 10%; right: 10%; }
+        #animation { top: 10%; left: 10%; }
+        #art { bottom: 10%; left: 10%; }
+        #contact { bottom: 10%; right: 10%; }
+        .overlay a {
+            color: white;
+            text-decoration: none;
+            cursor: url('cursorhover.png') 16 16, none !important;
+        }
+        #black-ellipse {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background-color: black;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: transform 1s ease;
+            z-index: 999;
+        }
+        #clicked-title {
+            position: fixed;
+            color: white;
+            font-size: 48px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 1001;
+        }
+        #close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 36px;
+            color: white;
+            opacity: 0;
+            cursor: url('cursorhover.png') 16 16, auto !important;
+            transition: opacity 0.5s ease;
+            z-index: 1001;
+        }
+        #clicked-content {
+            position: fixed;
+            color: white;
+            font-size: 16px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 1001;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 20px;
+            max-width: 80%;
+            max-height: 80vh;
+            margin: 0 auto;
+            overflow-y: auto;
+        }
+        #photo {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 10px;
+        }
+        #soup {
+            max-width: 100%;
+            max-height: 300px;
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+        }
+        .info-text {
+            flex: 1;
+            text-align: left;
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+        .info-container {
+            display: flex;
+            gap: 20px;
+        }
+        .bio, .awards {
+            flex: 1;
+        }
+        .awards ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .awards li {
+            font-style: italic;
+            margin-bottom: 5px;
+        }
 
-    @keyframes walk {
-      0% {
-        transform: translate(-50%, -50%) rotate(-2deg) translateY(-20px);
-      }
-      50% {
-        transform: translate(-50%, -50%) rotate(0deg) translateY(0px);
-      }
-      100% {
-        transform: translate(-50%, -50%) rotate(2deg) translateY(-20px);
-      }
-    }
-
-    .content {
-      max-width: 800px;
-      margin: 0 auto;
-      line-height: 1.8;
-      font-size: clamp(20px, 2.5vw, 24px); /* Larger font */
-      position: relative;
-      z-index: 1;
-      padding: clamp(20px, 4vw, 40px) clamp(15px, 3vw, 20px) clamp(50px, 8vw, 100px);
-    }
-
-    h1, .nav-button, #enemies-button, #awards-button, .enemies-list li {
-      position: relative;
-      z-index: 2;
-      font-weight: 600; /* Slightly bolden text */
-      transform: scale(1, 1.3); /* Stretch text height by 30% */
-    }
-
-    h1 {
-      font-size: clamp(40px, 5vw, 60px); /* Larger font size */
-      margin-bottom: 20px;
-    }
-
-    .nav-button {
-      display: block;
-      font-size: clamp(30px, 4vw, 36px); /* Larger font size */
-      margin: clamp(15px, 2vw, 30px) 0;
-      color: #333;
-      text-decoration: none;
-    }
-
-    .nav-button:hover {
-      color: #666;
-    }
-
-    #gifaniol {
-      display: none;
-      margin-top: 10px;
-      max-width: 100%;
-      height: auto;
-    }
-
-    .enemies-list {
-      display: none;
-      list-style: none;
-      padding: 0;
-      margin: 10px 0;
-    }
-
-    .enemies-list li {
-      font-size: clamp(20px, 3vw, 28px); /* Larger font size for list items */
-    }
-  </style>
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .overlay {
+                font-size: 18px;
+            }
+            #clicked-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            #photo {
+                max-width: 200px;
+                max-height: 200px;
+            }
+            .info-text {
+                font-size: 14px;
+            }
+            .info-container {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- A Man Image -->
-  <img src="a man.png" alt="A man" class="following-image">
+    <!-- Overlay Links -->
+    <div id="title" class="overlay"><a href="#" data-title="maks-info">maks rz</a></div>
+    <div id="animation" class="overlay"><a href="#" data-title="Animation">animation</a></div>
+    <div id="clicked-content"></div>
+    <div id="ig" class="overlay"><a href="#" data-title="Instagram">ig</a></div>
+    <div id="art" class="overlay"><a href="#" data-title="Art">art</a></div>
+    <div id="contact" class="overlay"><a href="#" data-title="Contact">contact</a></div>
 
-  <!-- Custom Cursor -->
-  <div class="custom-cursor"></div>
-  
-  <div class="content">
-    <h1 class="hover-target">maks rz</h1>
-    
-    <a href="https://vimeo.com/maksrz" class="nav-button hover-target" target="_blank">video</a>
-    <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">art</a>
-    <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">ig</a>
-    <a href="mailto:maksrzontkowski@gmail.com" class="nav-button hover-target">contact</a>
-    
-    <div>
-      <a href="#" class="nav-button hover-target" id="enemies-button">list of my enemies</a>
-      <ul class="enemies-list" id="enemies-list">
-        <li>1. damien</li>
-      </ul>
-    </div>
+    <!-- Transition Elements -->
+    <div id="black-ellipse"></div>
+    <div id="close-btn">✕</div>
 
-    <div>
-      <a href="#" class="nav-button hover-target" id="awards-button">awards and festivals</a>
-      <img src="gifaniol.gif" alt="Awards Angel" id="gifaniol">
-      <ul class="enemies-list" id="awards-list">
-        <li>*Sundance Film Festival 2024 Official Selection*</li>
-        <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
-        <li>*OTTAWA Animation Festival AWARD WINNER *</li>
-        <li>*SPEKTRUM 2024 GRAND PRIZE*</li>
-        <li>*New Horizons Festival 2024 Official Selection*</li>
-        <li>*PICTOPLASMA 2024 Official Selection*</li>
-        <li>*FEST New Directors 2024 Official Selection*</li>
-        <li>*Rooftop Films 2024 Official Selection*</li>
-        <li>*Animator Festival 2024: AWARD WINNER*</li>
-        <li>*SFP Best Animated Films 2023, AWARD WINNER*</li>
-        <li>*Kaboom Animation Festival 2024: Special Mention*</li>
-        <li>*ŻUBROFFKA 2024: AWARD WINNER*</li>
-        <li>*Salute Your Shorts Festival 2024 Official Selection*</li>
-        <li>*Fest Anca 2024 Official Selection*</li>
-        <li>*HELSINKI INTERNATIONAL FILM FESTIVAL*</li>
-        <li>*TOHORROR 2024 GRAND PRIZE*</li>
-      </ul>
-    </div>
-  </div>
+    <!-- Three.js Script -->
+    <script>
+        let scene, camera, renderer, model, terrain;
+        let targetPosition = new THREE.Vector3(0, 0, 0);
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
 
-  <script>
-    const cursor = document.querySelector('.custom-cursor');
-    const image = document.querySelector('.following-image');
-    const navButtons = document.querySelectorAll('.nav-button');
-    let lastX = 0, lastY = 0, mouseX = 0;
+        // Variables for stepped movement
+        let modelPosition = new THREE.Vector3();
+        let modelHeightOffset = 0;
+        let previousPosition = new THREE.Vector3();
 
-    // Custom Cursor Movement
-    document.addEventListener('mousemove', (e) => {
-      const deltaX = e.clientX - lastX;
-      const deltaY = e.clientY - lastY;
-      const speed = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+        // Variables for frame decay effect
+        let modelClones = [];
+        let lastCloneTime = 0;
+        const cloneInterval = 100; // Clone every 100ms
+        const cloneLifetime = 500; // Clones last for 500ms
 
-      // Update cursor position
-      cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        function init() {
+            scene = new THREE.Scene();
 
-      // Apply squish/stretch effect based on speed and direction
-      const scaleX = 1 + Math.min(speed / 200, 0.5);
-      const scaleY = 1 - Math.min(speed / 200, 0.5);
-      cursor.style.transform += ` scale(${scaleX}, ${scaleY})`;
+            // Set background color to the updated sky color
+            scene.background = new THREE.Color(0xa1725d);
 
-      lastX = e.clientX;
-      lastY = e.clientY;
-    });
+            camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
-    // A Man Movement
-    if (window.innerWidth > 768) {
-      document.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-      });
+            // Hilly terrain
+            const terrainWidth = 500;
+            const terrainDepth = 500;
+            const terrainSegments = 256;
+            const terrainGeometry = new THREE.PlaneGeometry(
+                terrainWidth,
+                terrainDepth,
+                terrainSegments,
+                terrainSegments
+            );
+            terrainGeometry.rotateX(-Math.PI / 2);
 
-      function updatePosition() {
-        requestAnimationFrame(updatePosition);
-        image.style.left = mouseX + 'px';
-      }
+            // Create hills by manipulating vertices
+            for (let i = 0; i < terrainGeometry.attributes.position.count; i++) {
+                const vertex = new THREE.Vector3();
+                vertex.fromBufferAttribute(terrainGeometry.attributes.position, i);
 
-      updatePosition();
-    }
+                // Adjusted to stretch hills over the larger terrain
+                const height = Math.sin(vertex.x * 0.05) * Math.cos(vertex.z * 0.05) * 5;
+                vertex.y = height;
 
-    // Button Hover Events
-    navButtons.forEach(button => {
-      button.addEventListener('mouseenter', () => {
-        image.classList.add('move-right');
-      });
-      button.addEventListener('mouseleave', () => {
-        image.classList.remove('move-right');
-      });
-    });
+                terrainGeometry.attributes.position.setY(i, vertex.y);
+            }
+            terrainGeometry.computeVertexNormals();
 
-    // Toggle Enemies and Awards Lists
-    document.getElementById('enemies-button').addEventListener('click', (e) => {
-      e.preventDefault();
-      const enemiesList = document.getElementById('enemies-list');
-      enemiesList.style.display = enemiesList.style.display === 'block' ? 'none' : 'block';
-    });
+            // Update terrain material to the new grass color
+            const terrainMaterial = new THREE.MeshBasicMaterial({ color: 0x445d3e });
+            terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+            scene.add(terrain);
 
-    document.getElementById('awards-button').addEventListener('click', (e) => {
-      e.preventDefault();
-      const awardsList = document.getElementById('awards-list');
-      const gifaniol = document.getElementById('gifaniol');
-      if (awardsList.style.display === 'block') {
-        awardsList.style.display = 'none';
-        gifaniol.style.display = 'none';
-      } else {
-        awardsList.style.display = 'block';
-        gifaniol.style.display = 'block';
-      }
-    });
-  </script>
+            // Load the model
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'kid2.glb',
+                function (gltf) {
+                    model = gltf.scene;
+                    model.scale.set(1.8, 1.8, 1.8); // Increase the model size
+                    modelPosition.copy(model.position);
+                    previousPosition.copy(model.position);
+
+                    // Calculate model's bounding box to get height offset
+                    const box = new THREE.Box3().setFromObject(model);
+                    const modelHeight = box.max.y - box.min.y;
+                    modelHeightOffset = modelHeight / 2;
+
+                    // Update materials to MeshBasicMaterial with dark grey color
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: 0x2C2C2C // Set color to even darker grey for better contrast
+                            });
+                        }
+                    });
+
+                                        
+                    scene.add(model);
+
+                    
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+                },
+                function (error) {
+                    console.error('An error happened', error);
+                }
+            );
+
+            camera.position.set(0, 10, 20);
+            camera.lookAt(0, 0, 0);
+
+            // Event Listeners
+            renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+            renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+
+            // Start animation
+            animate();
+        }
+
+        // Event Handlers
+        function onTouchStart(event) {
+            event.preventDefault();
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
+
+            updateTargetPosition(touchX, touchY);
+        }
+
+        function onTouchMove(event) {
+            event.preventDefault();
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
+
+            updateTargetPosition(touchX, touchY);
+        }
+
+        function onMouseMove(event) {
+            updateTargetPosition(event.clientX, event.clientY);
+        }
+
+        function updateTargetPosition(x, y) {
+            // Convert screen coordinates to world coordinates
+            mouse.x = (x / window.innerWidth) * 2 - 1;
+            mouse.y = -(y / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(terrain);
+            if (intersects.length > 0) {
+                targetPosition.copy(intersects[0].point);
+            }
+        }
+
+        function getTerrainHeightAt(x, z) {
+            const raycaster = new THREE.Raycaster(
+                new THREE.Vector3(x, 100, z),
+                new THREE.Vector3(0, -1, 0)
+            );
+            const intersects = raycaster.intersectObject(terrain);
+            if (intersects.length > 0) {
+                return intersects[0].point.y;
+            }
+            return 0;
+        }
+
+        function steppedMotion() {
+            const stepSize = 0.2; // Adjust step size as needed
+            const epsilon = 0.001; // Small threshold to stop movement when close enough
+
+            // Calculate the direction vector towards the target position
+            const direction = targetPosition.clone().sub(modelPosition);
+            const distance = direction.length();
+
+            if (distance > epsilon) {
+                let moveDistance = stepSize;
+                if (distance < stepSize) {
+                    moveDistance = distance;
+                }
+
+                direction.normalize().multiplyScalar(moveDistance);
+
+                // Move the model by one step
+                modelPosition.add(direction);
+
+                // Adjust Y position based on terrain
+                const terrainHeight = getTerrainHeightAt(modelPosition.x, modelPosition.z);
+                modelPosition.y = terrainHeight + modelHeightOffset;
+
+                // Update model's position
+                model.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
+
+                // Calculate actual movement
+                const actualMovement = modelPosition.clone().sub(previousPosition);
+                const actualDistance = actualMovement.length();
+
+                // Apply rotation only if the model has moved significantly
+                if (actualDistance > epsilon) {
+                    // Calculate rotation angle based on the distance moved
+                    const radius = 1; // Approximate radius of the model
+                    const angularDistance = actualDistance / radius; // θ = s / r
+
+                    // Determine the axis of rotation (perpendicular to the movement direction)
+                    const rotationAxis = new THREE.Vector3().crossVectors(
+                        new THREE.Vector3(0, 1, 0),
+                        actualMovement.normalize()
+                    ).normalize();
+
+                    // Rotate the model around the rotation axis
+                    model.rotateOnWorldAxis(rotationAxis, angularDistance);
+                }
+
+                // Update previous position
+                previousPosition.copy(modelPosition);
+            }
+        }
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+
+            if (model) {
+                // Implement stepped movement
+                steppedMotion();
+
+                // Frame decay effect
+                if (time - lastCloneTime > cloneInterval) {
+                    const clone = model.clone();
+
+                    // Copy position, rotation, and scale
+                    clone.position.copy(model.position);
+                    clone.rotation.copy(model.rotation);
+                    clone.scale.copy(model.scale);
+
+                    // Assign random greyish pastel color
+                    const colors = [
+                        0x3E402E, // Dark olive
+                        0x4F3D2E, // Dark brown
+                        0x5C3A24, // Deep orange-brown
+                        0x4B4A47, // Dark grey
+                        0x364732  // Dark green
+                    ];
+                    const randomColor = new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
+                    clone.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshBasicMaterial({ color: randomColor });
+                        }
+                    });
+
+                    // Assign timestamp
+                    clone.userData.timestamp = time;
+
+                    // Add to scene and array
+                    scene.add(clone);
+                    modelClones.push(clone);
+
+                    // Update last clone time
+                    lastCloneTime = time;
+                }
+
+                // Remove clones older than cloneLifetime
+                for (let i = modelClones.length - 1; i >= 0; i--) {
+                    const clone = modelClones[i];
+                    if (time - clone.userData.timestamp > cloneLifetime) {
+                        scene.remove(clone);
+                        modelClones.splice(i, 1);
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Resize Handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+
+        // Transition handling
+        const blackEllipse = document.getElementById('black-ellipse');
+        const clickedContent = document.getElementById('clicked-content');
+        const closeButton = document.getElementById('close-btn');
+
+        document.querySelectorAll('.overlay a').forEach((link) => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const title = this.getAttribute('data-title');
+                blackEllipse.style.left = `${this.getBoundingClientRect().left}px`;
+                blackEllipse.style.top = `${this.getBoundingClientRect().top}px`;
+
+                // Start the ellipse transition
+                blackEllipse.style.transform = 'scale(15)';
+                setTimeout(() => {
+                    if (title === 'Animation') {
+                        setTimeout(() => {
+                            window.location.href = 'https://www.vimeo.com/maksrz';
+                        }, 2000);
+                    } else if (title === 'Instagram') {
+                        setTimeout(() => {
+                            window.location.href = 'https://www.instagram.com/robocik.2';
+                        }, 2000);
+                    } else if (title === 'maks-info') {
+                        clickedContent.innerHTML = `
+                            <img id="soup" src="soup.png" alt="Maks Rzontkowski">
+                            <div class="info-container">
+                                <div class="bio">
+                                    <h2>Bio</h2>
+                                    <p>maks rzontkowski - filmmaker, designer, and music producer, crafts delicate stories characterized by a unique blend of sadness and awkwardness (inspired by self-observation at parties).</p>
+                                </div>
+                                <div class="awards">
+                                    <h2>Awards and Festivals (for Martyr's Gudiebook(</h2>
+                                    <ul>
+                                        <li>Sundance Film Festival 2024</li>
+                                        <li>ANNECY International Animation Festival 2024</li>
+                                        <li>OTTAWA Animation Festival Best Student Animation Prize</li>
+                                         <li>SPEKTRUM 2024 GRAND PRIZE</li>
+                                         <li>New Horizons Festival 2024</li>
+                                        <li>PICTOPLASMA 2024</li>
+                                        <li>FEST New Directors 2024</li>
+                                        <li>Rooftop Films 2024</li>
+                                        <li>Animator Festival 2024: II PRIZE</li>
+                                        <li>SFP Best Animated Films 2023, Best Student Film </li>
+                                        <li>Kaboom Animation Festival 2024: Special Mention</li>
+                                        <li>ŻUBROFFKA 2024: II Prize</li>
+                                        <li>Salute Your Shorts Festival 2024</li>
+                                        <li>Fest Anca 2024</li>
+                                        <li>HELSINKI INTERNATIONAL FILM FESTIVAL</li>
+                                        <li>TOHORROR 2024 GRAND PRIZE</li>
+                                    </ul>
+                                    <p>& more.</p>
+                                </div>
+                            </div>
+                        `;
+                        clickedContent.style.opacity = '1';
+                        closeButton.style.opacity = '1';
+                    } else {
+                        clickedContent.innerHTML = title;
+                        clickedContent.style.opacity = '1';
+                        closeButton.style.opacity = '1';
+                    }
+                }, 1000);
+            });
+        });
+
+        closeButton.addEventListener('click', () => {
+            // Reverse the transition
+            blackEllipse.style.transform = 'scale(0)';
+            clickedContent.style.opacity = '0';
+            closeButton.style.opacity = '0';
+        });
+    </script>
 </body>
 </html>
