@@ -1,97 +1,148 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <title>Planeta i Postać</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-        }
-        #planet-mask {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            clip-path: ellipse(60% 50% at 50% 50%);
-            pointer-events: none;
-            z-index: 10;
-        }
-        #planet-container {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #planet-image {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 300%; /* Zwiększona szerokość dla efektu tiled */
-            height: 300%; /* Zwiększona wysokość dla efektu tiled */
-            object-fit: cover;
-            transition: transform 0.05s linear; /* Szybsza i bardziej płynna transformacja */
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Animacja Planety i Postaci</title>
+  <style>
+    /* Reset oraz pełnoekranowy układ */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    /* Kontener z maską elipsy – pozostaje nieruchomy na środku */
+    .mask {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100vw;
+      height: 100vh;
+      transform: translate(-50%, -50%);
+      /* Tworzymy elipsę wpisaną w prostokąt viewportu */
+      clip-path: ellipse(50% 50% at 50% 50%);
+      overflow: hidden;
+    }
+    /* Tło z obrazem 1.png – obraz jest powtarzalny (tiled) i ma rozmiar okna */
+    .bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200%;
+      height: 200%;
+      background-image: url('1.png');
+      background-repeat: repeat;
+      /* Skalujemy obraz tak, aby jeden "tile" miał wymiary viewportu */
+      background-size: 100vw 100vh;
+      /* Początkowe pozycjonowanie – będzie aktualizowane przez JS */
+      background-position: 0px 0px;
+    }
+    /* Kontener postaci – umieszczony na dole strony z marginesami */
+    .character {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .character img {
+      width: 100px; /* Dostosuj rozmiar postaci według potrzeb */
+      height: auto;
+    }
+  </style>
 </head>
-<body class="bg-black">
-    <div id="planet-container">
-        <img 
-            id="planet-image" 
-            src="1.png" 
-            alt="Planeta" 
-        />
-        <div id="planet-mask"></div>
-    </div>
-    
-    <div class="absolute bottom-12 left-1/2 transform -translate-x-1/2">
-        <img 
-            id="character-image" 
-            src="3.png" 
-            alt="Postać" 
-            class="w-32 h-32 object-cover"
-        />
-    </div>
+<body>
+  <!-- Maska elipsy z tłem planety -->
+  <div class="mask">
+    <div class="bg" id="bg"></div>
+  </div>
+  <!-- Postać na dole strony -->
+  <div class="character" id="character">
+    <img src="2.png" id="characterImg" alt="Postać">
+  </div>
 
-    <script>
-        const planetImage = document.getElementById('planet-image');
-        const characterImage = document.getElementById('character-image');
-        const planetContainer = document.getElementById('planet-container');
+  <script>
+    // Aktualne rozmiary okna
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
 
-        let characterDirection = 1;
-        let characterFrame = 3;
+    // Element tła (planeta)
+    const bg = document.getElementById('bg');
+    // Przesunięcia tła – początkowo 0
+    let offsetX = 0;
+    let offsetY = 0;
 
-        planetContainer.addEventListener('mousemove', (e) => {
-            const rect = planetContainer.getBoundingClientRect();
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
+    // Element postaci oraz zmienne do animacji
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    let targetX = windowWidth / 2; // docelowa pozycja X postaci
+    let currentX = windowWidth / 2; // aktualna pozycja X postaci
+    let animationInterval = null;
+    let isAnimating = false;
+    let lastMouseX = windowWidth / 2;
+    let lastMouseTime = Date.now();
 
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+    // Obsługa ruchu myszy – aktualizujemy przesunięcie tła i cel ruchu postaci
+    document.addEventListener('mousemove', function(e) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      // Obliczamy różnicę między pozycją myszy a środkiem okna
+      const deltaX = (mouseX - windowWidth / 2) / windowWidth;
+      const deltaY = (mouseY - windowHeight / 2) / windowHeight;
+      // Współczynnik czułości – można go dostosować
+      const sensitivity = 50; // przesunięcie w pikselach
+      offsetX = -deltaX * sensitivity;
+      offsetY = -deltaY * sensitivity;
+      // Aktualizujemy pozycję tła – dzięki repeat efekt "nieskończonej pętli"
+      bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
 
-            // Szybszy i bardziej dynamiczny ruch planety
-            const offsetX = (mouseX - centerX) / centerX * 100;
-            const offsetY = (mouseY - centerY) / centerY * 100;
+      // Ustawiamy docelową pozycję postaci wg pozycji kursora
+      targetX = mouseX;
 
-            // Transformacja z efektem tiled
-            planetImage.style.transform = `translate(${-offsetX}%, ${-offsetY}%)`;
-            
-            // Kierunek postaci
-            characterDirection = mouseX > centerX ? 1 : -1;
-            characterImage.style.transform = `scaleX(${characterDirection})`;
+      // Sprawdzamy kierunek ruchu – porównujemy bieżącą pozycję z poprzednią
+      let direction = mouseX - lastMouseX; // dodatnia – ruch w prawo, ujemna – w lewo
+      lastMouseX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
+      }
+    });
 
-            // Zmiana klatek postaci
-            characterFrame = characterFrame === 3 ? 4 : 3;
-            characterImage.src = characterFrame === 3 ? '3.png' : '4.png';
-        });
+    // Płynne przesuwanie postaci metodą easing
+    function animateCharacter() {
+      currentX += (targetX - currentX) * 0.1;
+      character.style.left = currentX + 'px';
+      requestAnimationFrame(animateCharacter);
+    }
+    requestAnimationFrame(animateCharacter);
 
-        planetContainer.addEventListener('mouseleave', () => {
-            planetImage.style.transform = 'translate(0%, 0%)';
-        });
-    </script>
+    // Rozpoczynamy animację postaci – naprzemienne wyświetlanie obrazów 3.png i 4.png
+    function startCharacterAnimation() {
+      isAnimating = true;
+      let toggle = false;
+      animationInterval = setInterval(() => {
+        toggle = !toggle;
+        characterImg.src = toggle ? '3.png' : '4.png';
+        // Jeśli od ostatniego ruchu minęło więcej niż 200ms, zatrzymujemy animację
+        if (Date.now() - lastMouseTime > 200) {
+          stopCharacterAnimation();
+        }
+      }, 200);
+    }
+
+    function stopCharacterAnimation() {
+      clearInterval(animationInterval);
+      animationInterval = null;
+      isAnimating = false;
+      // Po zatrzymaniu animacji wracamy do domyślnego obrazu postaci
+      characterImg.src = '2.png';
+    }
+
+    // Aktualizacja wymiarów okna przy zmianie rozmiaru
+    window.addEventListener('resize', function() {
+      windowWidth = window.innerWidth;
+      windowHeight = window.innerHeight;
+    });
+  </script>
 </body>
 </html>
