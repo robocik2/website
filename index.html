@@ -69,7 +69,6 @@
     /* Dodajemy przecinek po każdym przycisku poza ostatnim */
     .nav-buttons a:not(:last-child)::after {
       content: ", ";
-      /* Dopasowanie rozmiaru przecinka – można zmienić */
       font-size: 0.5em;
     }
     .nav-button {
@@ -88,31 +87,16 @@
       margin-top: 5px;
       word-wrap: break-word;
     }
-    .enemies-list {
+    /* Stylizacja SVG z festiwalami – tekst na ścieżce elipsy */
+    #awards-svg {
       display: none;
-      list-style-type: none;
-      padding: 0;
-      margin: 5px 0;
-      background: none;
-      text-align: center;
+      width: 100%;
+      height: 120px; /* Możesz dostosować wysokość wg potrzeb */
     }
-    /* Stylizacja listy festiwali – większy tekst i "eliptyczny" obszar */
-    #awards-list {
-      display: none;
-      list-style-type: none;
-      padding: 20px;
-      margin: 5px auto;
-      background: none;
-      text-align: center;
+    #awards-svg text {
+      fill: #000;
       font-size: 2em;
-      width: 50vw; /* szerokość odpowiadająca średnicy elipsy */
-      clip-path: ellipse(50% 50% at 50% 50%);
-      overflow: hidden;
-    }
-    #gifaniol {
-      display: none;
-      max-width: 100px;
-      margin-top: 5px;
+      text-anchor: middle;
     }
   </style>
 </head>
@@ -120,7 +104,7 @@
   <!-- Kontener nawigacji -->
   <div class="nav-container">
     <div class="nav-buttons">
-      <!-- Nowy przycisk "maks rz" -->
+      <!-- Przycisk "maks rz" (bez zmieniania kolorów) -->
       <a href="#" class="nav-button hover-target" id="maks-button">maks rz</a>
       <!-- Video Button -->
       <a href="https://vimeo.com/maksrz" class="nav-button hover-target" target="_blank">video</a>
@@ -136,28 +120,36 @@
       <a href="#" class="nav-button hover-target" id="awards-button">awards and festivals</a>
     </div>
     <div class="nav-dropdowns">
-      <ul class="enemies-list" id="enemies-list">
+      <ul class="enemies-list" id="enemies-list" style="display:none;">
         <li>1. damien</li>
       </ul>
-      <img src="gifaniol.gif" alt="Awards Angel" id="gifaniol">
-      <ul class="enemies-list" id="awards-list">
-        <li>*Sundance Film Festival 2024 Official Selection*</li>
-        <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
-        <li>*OTTAWA Animation Festival AWARD WINNER *</li>
-        <li>*SPEKTRUM 2024 GRAND PRIZE*</li>
-        <li>*New Horizons Festival 2024 Official Selection*</li>
-        <li>*PICTOPLASMA 2024 Official Selection*</li>
-        <li>*FEST New Directors 2024 Official Selection*</li>
-        <li>*Rooftop Films 2024 Official Selection*</li>
-        <li>*Animator Festival 2024: AWARD WINNER*</li>
-        <li>*SFP Best Animated Films 2023, AWARD WINNER*</li>
-        <li>*Kaboom Animation Festival 2024: Special Mention*</li>
-        <li>*ŻUBROFFKA 2024: AWARD WINNER*</li>
-        <li>*Salute Your Shorts Festival 2024 Official Selection*</li>
-        <li>*Fest Anca 2024 Official Selection*</li>
-        <li>*HELSINKI INTERNATIONAL FILM FESTIVAL*</li>
-        <li>*TOHORROR 2024 GRAND PRIZE*</li>
-      </ul>
+      <!-- SVG dla tekstu festiwali wokół elipsy -->
+      <svg id="awards-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <!-- Ścieżka elipsy – większa niż maska, aby tekst układał się na zewnątrz -->
+          <path id="ellipsePath" d="M50,10 A40,40 0 1,1 49.99,10" />
+        </defs>
+        <text>
+          <textPath href="#ellipsePath" startOffset="50%">
+            *Sundance Film Festival 2024 Official Selection* • 
+            *ANNECY International Animation Festival 2024 Official Selection* • 
+            *OTTAWA Animation Festival AWARD WINNER* • 
+            *SPEKTRUM 2024 GRAND PRIZE* • 
+            *New Horizons Festival 2024 Official Selection* • 
+            *PICTOPLASMA 2024 Official Selection* • 
+            *FEST New Directors 2024 Official Selection* • 
+            *Rooftop Films 2024 Official Selection* • 
+            *Animator Festival 2024: AWARD WINNER* • 
+            *SFP Best Animated Films 2023, AWARD WINNER* • 
+            *Kaboom Animation Festival 2024: Special Mention* • 
+            *ŻUBROFFKA 2024: AWARD WINNER* • 
+            *Salute Your Shorts Festival 2024 Official Selection* • 
+            *Fest Anca 2024 Official Selection* • 
+            *HELSINKI INTERNATIONAL FILM FESTIVAL* • 
+            *TOHORROR 2024 GRAND PRIZE*
+          </textPath>
+        </text>
+      </svg>
     </div>
   </div>
 
@@ -171,17 +163,7 @@
   </div>
 
   <script>
-    // Nowy przycisk "maks rz" – zmiana tła na pastelowo-szary
-    document.getElementById('maks-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      const randomHue = Math.floor(Math.random() * 360);
-      // Używamy niskiego nasycenia i wysokiej jasności
-      const newColor = `hsl(${randomHue}, 20%, 90%)`;
-      // Usuwamy tło obrazkowe i ustawiamy nowy kolor w elemencie .bg
-      const bg = document.getElementById('bg');
-      bg.style.backgroundImage = 'none';
-      bg.style.backgroundColor = newColor;
-    });
+    // Funkcjonalność przycisku "maks rz" nie zmienia już tła – nie ma przypisanego event listenera
 
     // Przełączanie widoczności rozwijanych list
     document.getElementById('enemies-button').addEventListener('click', function(e) {
@@ -192,15 +174,8 @@
 
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
-      var awardsList = document.getElementById('awards-list');
-      var gifaniol = document.getElementById('gifaniol');
-      if (awardsList.style.display === 'block') {
-        awardsList.style.display = 'none';
-        gifaniol.style.display = 'none';
-      } else {
-        awardsList.style.display = 'block';
-        gifaniol.style.display = 'block';
-      }
+      var awardsSvg = document.getElementById('awards-svg');
+      awardsSvg.style.display = (awardsSvg.style.display === 'block') ? 'none' : 'block';
     });
 
     // Aktualne rozmiary okna
