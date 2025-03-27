@@ -2,17 +2,23 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>Maks Rz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animacja Globu, Postaci i Tekstowych Przycisków</title>
   <style>
-    /* Reset i pełnoekranowy układ */
+    /* Globalne style */
     html, body {
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow: hidden; /* Efekt pełnoekranowy */
       width: 100%;
       height: 100%;
+      background: #f5f5f5;
+      font-family: "Apple Garamond", serif;
+      color: #333;
+      cursor: none; /* Ukrywamy domyślny kursor */
     }
-    /* Maska elipsy  */
+    
+    /* Maska elipsy (zmniejszona o 50%) z tłem globu */
     .mask {
       position: absolute;
       top: 50%;
@@ -22,8 +28,8 @@
       transform: translate(-50%, -50%);
       clip-path: ellipse(25% 25% at 50% 50%);
       overflow: hidden;
+      z-index: 0;
     }
-    /* Tło z obrazem 1.png – tekstura powtarzalna (tiled) */
     .bg {
       position: absolute;
       top: 0;
@@ -32,68 +38,199 @@
       height: 200%;
       background-image: url('1.png');
       background-repeat: repeat;
-      /* Ustawiamy rozmiar tak, aby jeden "tile" miał rozmiar viewportu */
       background-size: 100vw 100vh;
       background-position: 0px 0px;
     }
-    /* Kontener postaci – umieszczony na dole strony z marginesem */
+    
+    /* Element postaci (animacja globu) */
     .character {
       position: absolute;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
+      z-index: 2;
     }
     .character img {
-      width: 150 px; /* Dostosuj rozmiar postaci według potrzeb */
+      width: 100px;
       height: auto;
+    }
+    
+    /* Custom Cursor */
+    .custom-cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 80px;
+      height: 80px;
+      pointer-events: none;
+      background: url('cursor1.png') no-repeat center center;
+      background-size: contain;
+      z-index: 9999;
+      transform-origin: center;
+      transition: transform 0.1s ease-out;
+    }
+    /* Zmiana kursora przy hoverze nad elementem z klasą hover-target */
+    .hover-target:hover ~ .custom-cursor {
+      background: url('cursor2.png') no-repeat center center;
+      background-size: contain;
+    }
+    
+    /* Obraz "A Man" – element poruszający się za kursorem */
+    .following-image {
+      position: fixed;
+      width: min(735px, 90vw);
+      height: auto;
+      aspect-ratio: 735/862;
+      pointer-events: none;
+      transform-origin: center center;
+      z-index: 1000;
+      top: 50%;
+      animation: walk 0.5s infinite alternate ease-in-out;
+      transition: left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .following-image.move-right {
+      left: calc(100vw - min(200px, 25vw)) !important;
+    }
+    @keyframes walk {
+      0% {
+        transform: translate(-50%, -50%) rotate(-2deg) translateY(-20px);
+      }
+      50% {
+        transform: translate(-50%, -50%) rotate(0deg) translateY(0px);
+      }
+      100% {
+        transform: translate(-50%, -50%) rotate(2deg) translateY(-20px);
+      }
+    }
+    
+    /* Kontener z treścią i przyciskami tekstowymi */
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.8;
+      font-size: clamp(20px, 2.5vw, 24px);
+      position: relative;
+      z-index: 2;
+      padding: clamp(20px, 4vw, 40px) clamp(15px, 3vw, 20px) clamp(50px, 8vw, 100px);
+    }
+    h1, .nav-button, #enemies-button, #awards-button, .enemies-list li {
+      position: relative;
+      z-index: 2;
+      font-weight: 600;
+      transform: scale(1, 1.3);
+    }
+    h1 {
+      font-size: clamp(40px, 5vw, 60px);
+      margin-bottom: 20px;
+    }
+    .nav-button {
+      display: block;
+      font-size: clamp(30px, 4vw, 36px);
+      margin: clamp(15px, 2vw, 30px) 0;
+      color: #333;
+      text-decoration: none;
+    }
+    .nav-button:hover {
+      color: #666;
+    }
+    #gifaniol {
+      display: none;
+      margin-top: 10px;
+      max-width: 100%;
+      height: auto;
+    }
+    .enemies-list {
+      display: none;
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+    }
+    .enemies-list li {
+      font-size: clamp(20px, 3vw, 28px);
     }
   </style>
 </head>
 <body>
-  <!-- Maska elipsy z tłem (glob) -->
+  <!-- Maska z tłem globu -->
   <div class="mask">
     <div class="bg" id="bg"></div>
   </div>
-  <!-- Postać na dole strony -->
+  
+  <!-- Element postaci (glob) -->
   <div class="character" id="character">
     <img src="2.png" id="characterImg" alt="Postać">
   </div>
-
+  
+  <!-- Custom cursor i obraz "A Man" -->
+  <img src="a man.png" alt="A man" class="following-image">
+  <div class="custom-cursor"></div>
+  
+  <!-- Kontener z przyciskami tekstowymi -->
+  <div class="content">
+    <h1 class="hover-target">maks rz</h1>
+    <a href="https://vimeo.com/maksrz" class="nav-button hover-target" target="_blank">video</a>
+    <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">art</a>
+    <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">ig</a>
+    <a href="mailto:maksrzontkowski@gmail.com" class="nav-button hover-target">contact</a>
+    <div>
+      <a href="#" class="nav-button hover-target" id="enemies-button">list of my enemies</a>
+      <ul class="enemies-list" id="enemies-list">
+        <li>1. damien</li>
+      </ul>
+    </div>
+    <div>
+      <a href="#" class="nav-button hover-target" id="awards-button">awards and festivals</a>
+      <img src="gifaniol.gif" alt="Awards Angel" id="gifaniol">
+      <ul class="enemies-list" id="awards-list">
+        <li>*Sundance Film Festival 2024 Official Selection*</li>
+        <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
+        <li>*OTTAWA Animation Festival AWARD WINNER *</li>
+        <li>*SPEKTRUM 2024 GRAND PRIZE*</li>
+        <li>*New Horizons Festival 2024 Official Selection*</li>
+        <li>*PICTOPLASMA 2024 Official Selection*</li>
+        <li>*FEST New Directors 2024 Official Selection*</li>
+        <li>*Rooftop Films 2024 Official Selection*</li>
+        <li>*Animator Festival 2024: AWARD WINNER*</li>
+        <li>*SFP Best Animated Films 2023, AWARD WINNER*</li>
+        <li>*Kaboom Animation Festival 2024: Special Mention*</li>
+        <li>*ŻUBROFFKA 2024: AWARD WINNER*</li>
+        <li>*Salute Your Shorts Festival 2024 Official Selection*</li>
+        <li>*Fest Anca 2024 Official Selection*</li>
+        <li>*HELSINKI INTERNATIONAL FILM FESTIVAL*</li>
+        <li>*TOHORROR 2024 GRAND PRIZE*</li>
+      </ul>
+    </div>
+  </div>
+  
   <script>
-    // Aktualne rozmiary okna
+    /* ----------------- Animacja tła (glob) i postaci ----------------- */
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
-
-    // Element tła (glob)
     const bg = document.getElementById('bg');
-    // Offsety tła
     let offsetX = 0, offsetY = 0;
-    // Prędkość przesuwania – zależy od pozycji kursora (zmieniana na podstawie mousemove)
     let speedX = 0, speedY = 0;
-
-    // Element postaci oraz zmienne do animacji
+    const maxSpeed = 10; // Prędkość ruchu tła
+    
+    // Element postaci (glob)
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
-    let targetX = windowWidth / 2; // docelowa pozycja X postaci
-    let currentX = windowWidth / 2; // aktualna pozycja X postaci
+    let targetX = windowWidth / 2;
+    let currentX = windowWidth / 2;
     let animationInterval = null;
     let isAnimating = false;
     let lastMouseX = windowWidth / 2;
     let lastMouseTime = Date.now();
-
-    // Obsługa ruchu myszy – ustawiamy prędkość przesuwania tła oraz pozycję postaci
+    
+    // Aktualizacja ruchu tła i pozycji postaci na podstawie pozycji kursora
     document.addEventListener('mousemove', function(e) {
       const mouseX = e.clientX;
       const mouseY = e.clientY;
-      // Normalizujemy odległość kursora od środka (zakres -1 do 1)
       const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
       const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
-      // Maksymalna prędkość przesunięcia (piksele na klatkę) – można dostosować
-      const maxSpeed = 20;
       speedX = deltaX * maxSpeed;
       speedY = deltaY * maxSpeed;
       
-      // Ustawiamy docelową pozycję postaci zgodnie z pozycją kursora
+      // Ustawienie docelowej pozycji postaci
       targetX = mouseX;
       lastMouseX = mouseX;
       lastMouseTime = Date.now();
@@ -101,8 +238,8 @@
         startCharacterAnimation();
       }
     });
-
-    // Płynna animacja tła – aktualizujemy offsety na podstawie ustalonej prędkości
+    
+    // Animacja tła – płynne przesuwanie offsetów
     function animateBackground() {
       offsetX += speedX;
       offsetY += speedY;
@@ -110,42 +247,88 @@
       requestAnimationFrame(animateBackground);
     }
     requestAnimationFrame(animateBackground);
-
-    // Płynne przesuwanie postaci metodą easing
+    
+    // Animacja pozycji postaci z efektem easing
     function animateCharacter() {
-      currentX += (targetX - currentX) * 0.1;
+      currentX += (targetX - currentX) * 0.2;
       character.style.left = currentX + 'px';
       requestAnimationFrame(animateCharacter);
     }
     requestAnimationFrame(animateCharacter);
-
-    // Animacja postaci – naprzemienne wyświetlanie obrazów 3.png i 4.png podczas ruchu
+    
+    // Animacja postaci – przełączanie obrazów 3.png / 4.png
     function startCharacterAnimation() {
       isAnimating = true;
       let toggle = false;
       animationInterval = setInterval(() => {
         toggle = !toggle;
         characterImg.src = toggle ? '3.png' : '4.png';
-        // Jeśli od ostatniego ruchu minęło więcej niż 200ms, zatrzymujemy animację
         if (Date.now() - lastMouseTime > 200) {
           stopCharacterAnimation();
         }
-      }, 70);
+      }, 100);
     }
-
+    
     function stopCharacterAnimation() {
       clearInterval(animationInterval);
       animationInterval = null;
       isAnimating = false;
-      // Przywracamy domyślny obraz postaci
       characterImg.src = '2.png';
     }
-
-    // Aktualizacja wymiarów okna przy zmianie rozmiaru
+    
     window.addEventListener('resize', function() {
       windowWidth = window.innerWidth;
       windowHeight = window.innerHeight;
     });
-  </script>
-</body>
-</html>
+    
+    /* ----------------- Custom Cursor i Following Image ----------------- */
+    const cursor = document.querySelector('.custom-cursor');
+    const image = document.querySelector('.following-image');
+    const navButtons = document.querySelectorAll('.nav-button');
+    let lastX = 0, lastY = 0;
+    let mouseXPos = 0;
+    
+    document.addEventListener('mousemove', (e) => {
+      const deltaX = e.clientX - lastX;
+      const deltaY = e.clientY - lastY;
+      const speed = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+      
+      // Aktualizacja pozycji kursora
+      cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+      // Efekt deformacji kursora w zależności od prędkości ruchu
+      const scaleX = 1 + Math.min(speed / 200, 0.5);
+      const scaleY = 1 - Math.min(speed / 200, 0.5);
+      cursor.style.transform += ` scale(${scaleX}, ${scaleY})`;
+      
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+    
+    // Ruch obrazu "A Man" – przesuwanie w poziomie w zależności od kursora
+    if (window.innerWidth > 768) {
+      document.addEventListener('mousemove', (e) => {
+        mouseXPos = e.clientX;
+      });
+      
+      function updatePosition() {
+        requestAnimationFrame(updatePosition);
+        image.style.left = mouseXPos + 'px';
+      }
+      updatePosition();
+    }
+    
+    // Animacja obrazu "A Man" przy hoverze na przyciskach
+    navButtons.forEach(button => {
+      button.addEventListener('mouseenter', () => {
+        image.classList.add('move-right');
+      });
+      button.addEventListener('mouseleave', () => {
+        image.classList.remove('move-right');
+      });
+    });
+    
+    // Przełączanie widoczności list (enemies, awards)
+    document.getElementById('enemies-button').addEventListener('click', (e) => {
+      e.preventDefault();
+      const enemiesList = document.getElementById('enemies-list');
+      enemies
