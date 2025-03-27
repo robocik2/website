@@ -12,30 +12,49 @@
             overflow: hidden;
         }
         #planet-mask {
-            clip-path: ellipse(50% 40% at 50% 50%);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            clip-path: ellipse(60% 50% at 50% 50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+        #planet-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #planet-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 300%; /* Zwiększona szerokość dla efektu tiled */
+            height: 300%; /* Zwiększona wysokość dla efektu tiled */
+            object-fit: cover;
+            transition: transform 0.05s linear; /* Szybsza i bardziej płynna transformacja */
         }
     </style>
 </head>
 <body class="bg-black">
-    <div class="relative w-full h-screen flex flex-col">
-        <div id="planet-container" class="flex-grow relative">
-            <img 
-                id="planet-image" 
-                src="1.png" 
-                alt="Planeta" 
-                class="absolute top-0 left-0 w-full h-full object-cover"
-                style="transition: transform 0.1s ease;"
-            />
-        </div>
-        
-        <div class="absolute bottom-12 left-1/2 transform -translate-x-1/2">
-            <img 
-                id="2.png" 
-                src="/api/placeholder/200/200" 
-                alt="Postać" 
-                class="w-32 h-32 object-cover"
-            />
-        </div>
+    <div id="planet-container">
+        <img 
+            id="planet-image" 
+            src="1.png" 
+            alt="Planeta" 
+        />
+        <div id="planet-mask"></div>
+    </div>
+    
+    <div class="absolute bottom-12 left-1/2 transform -translate-x-1/2">
+        <img 
+            id="character-image" 
+            src="3.png" 
+            alt="Postać" 
+            class="w-32 h-32 object-cover"
+        />
     </div>
 
     <script>
@@ -43,9 +62,8 @@
         const characterImage = document.getElementById('character-image');
         const planetContainer = document.getElementById('planet-container');
 
-        let planetOffset = { x: 0, y: 0 };
         let characterDirection = 1;
-        let characterFrame = 1;
+        let characterFrame = 3;
 
         planetContainer.addEventListener('mousemove', (e) => {
             const rect = planetContainer.getBoundingClientRect();
@@ -55,22 +73,24 @@
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            const offsetX = (mouseX - centerX) / centerX * 50;
-            const offsetY = (mouseY - centerY) / centerY * 50;
+            // Szybszy i bardziej dynamiczny ruch planety
+            const offsetX = (mouseX - centerX) / centerX * 100;
+            const offsetY = (mouseY - centerY) / centerY * 100;
 
-            planetImage.style.transform = `translate(${-offsetX}px, ${-offsetY}px)`;
+            // Transformacja z efektem tiled
+            planetImage.style.transform = `translate(${-offsetX}%, ${-offsetY}%)`;
             
             // Kierunek postaci
             characterDirection = mouseX > centerX ? 1 : -1;
             characterImage.style.transform = `scaleX(${characterDirection})`;
 
             // Zmiana klatek postaci
-            characterFrame = characterFrame === 1 ? 2 : 1;
-            characterImage.src = `/api/placeholder/200/200?text=Postać${characterFrame}`;
+            characterFrame = characterFrame === 3 ? 4 : 3;
+            characterImage.src = characterFrame === 3 ? '3.png' : '4.png';
         });
 
         planetContainer.addEventListener('mouseleave', () => {
-            planetImage.style.transform = 'translate(0px, 0px)';
+            planetImage.style.transform = 'translate(0%, 0%)';
         });
     </script>
 </body>
