@@ -101,3 +101,181 @@
     /* Kontener dla festiwali – poza obszarem elipsy */
     #awards-container {
       display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+    }
+    .festival {
+      position: absolute;
+      font-size: 2em;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <!-- Nawigacja -->
+  <div class="nav-container">
+    <div class="nav-buttons">
+      <a href="#" class="nav-button" id="maks-button">maks rz</a>
+      <a href="https://vimeo.com/maksrz" class="nav-button" target="_blank">video</a>
+      <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">art</a>
+      <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">ig</a>
+      <a href="mailto:maksrzontkowski@gmail.com" class="nav-button">contact</a>
+      <a href="#" class="nav-button" id="enemies-button">list of my enemies</a>
+      <a href="#" class="nav-button" id="awards-button">awards and festivals</a>
+    </div>
+    <div class="nav-dropdowns">
+      <ul class="enemies-list" id="enemies-list" style="display:none;">
+        <li>1. damien</li>
+      </ul>
+    </div>
+  </div>
+  <!-- Kontener festiwali – rozmieszczonych poza elipsą (na białym tle) -->
+  <div id="awards-container">
+    <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
+    <div class="festival">*ANNECY International Animation Festival 2024 Official Selection*</div>
+    <div class="festival">*OTTAWA Animation Festival AWARD WINNER*</div>
+    <div class="festival">*SPEKTRUM 2024 GRAND PRIZE*</div>
+    <div class="festival">*New Horizons Festival 2024 Official Selection*</div>
+    <div class="festival">*PICTOPLASMA 2024 Official Selection*</div>
+    <div class="festival">*FEST New Directors 2024 Official Selection*</div>
+    <div class="festival">*Rooftop Films 2024 Official Selection*</div>
+    <div class="festival">*Animator Festival 2024: AWARD WINNER*</div>
+    <div class="festival">*SFP Best Animated Films 2023, AWARD WINNER*</div>
+    <div class="festival">*Kaboom Animation Festival 2024: Special Mention*</div>
+    <div class="festival">*ŻUBROFFKA 2024: AWARD WINNER*</div>
+    <div class="festival">*Salute Your Shorts Festival 2024 Official Selection*</div>
+    <div class="festival">*Fest Anca 2024 Official Selection*</div>
+    <div class="festival">*HELSINKI INTERNATIONAL FILM FESTIVAL*</div>
+    <div class="festival">*TOHORROR 2024 GRAND PRIZE*</div>
+  </div>
+  <!-- Maska elipsy z obrazem 1.png -->
+  <div class="mask">
+    <div class="bg" id="bg"></div>
+  </div>
+  <!-- Postać (2.png) z animacją -->
+  <div class="character" id="character">
+    <img src="2.png" id="characterImg" alt="Postać">
+  </div>
+  <script>
+    // Toggle dla listy wrogów ("1. damien")
+    document.getElementById('enemies-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      var enemiesList = document.getElementById('enemies-list');
+      enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
+    });
+
+    // Toggle dla festiwali – przy ponownym kliknięciu schowane, przy pierwszym wyświetlone z rozmieszczeniem
+    document.getElementById('awards-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      var awardsContainer = document.getElementById('awards-container');
+      if (awardsContainer.style.display === 'block') {
+        awardsContainer.style.display = 'none';
+      } else {
+        arrangeFestivals();
+        awardsContainer.style.display = 'block';
+      }
+    });
+
+    // Funkcja rozmieszczająca festiwale równomiernie na okręgu poza elipsą
+    function arrangeFestivals() {
+      var awardsContainer = document.getElementById('awards-container');
+      var festivals = document.getElementsByClassName('festival');
+      var n = festivals.length;
+      // Środek ekranu
+      var cx = window.innerWidth / 2;
+      var cy = window.innerHeight / 2;
+      // Obliczamy promień jako 40% krótszego wymiaru, ale nie mniejszy niż 150px
+      var minDim = Math.min(window.innerWidth, window.innerHeight);
+      var r = Math.max(0.4 * minDim, 150);
+      // Kąt początkowy: 225° (co daje pozycję w lewym górnym rogu)
+      var angle0 = 225;
+      for (var i = 0; i < n; i++) {
+        var angle = angle0 + i * (360 / n);
+        var rad = angle * Math.PI / 180;
+        var x = cx + r * Math.cos(rad);
+        var y = cy + r * Math.sin(rad);
+        festivals[i].style.left = x + 'px';
+        festivals[i].style.top = y + 'px';
+      }
+    }
+
+    // Aktualizacja pozycji festiwali przy zmianie rozmiaru okna (jeśli są widoczne)
+    window.addEventListener('resize', function() {
+      windowWidth = window.innerWidth;
+      windowHeight = window.innerHeight;
+      // Jeśli festiwale są widoczne, aktualizujemy ich rozmieszczenie
+      var awardsContainer = document.getElementById('awards-container');
+      if (awardsContainer.style.display === 'block') {
+        arrangeFestivals();
+      }
+    });
+
+    // Animacja tła
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
+    const bg = document.getElementById('bg');
+    let offsetX = 0, offsetY = 0;
+    let speedX = 0, speedY = 0;
+    function animateBackground() {
+      offsetX += speedX;
+      offsetY += speedY;
+      bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
+      requestAnimationFrame(animateBackground);
+    }
+    requestAnimationFrame(animateBackground);
+
+    // Animacja postaci (2.png)
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    let targetX = windowWidth / 2;
+    let currentX = windowWidth / 2;
+    let animationInterval = null;
+    let isAnimating = false;
+    let lastMouseX = windowWidth / 2;
+    let lastMouseTime = Date.now();
+    function animateCharacter() {
+      currentX += (targetX - currentX) * 0.1;
+      character.style.left = currentX + 'px';
+      requestAnimationFrame(animateCharacter);
+    }
+    requestAnimationFrame(animateCharacter);
+    function startCharacterAnimation() {
+      isAnimating = true;
+      let toggle = false;
+      animationInterval = setInterval(() => {
+        toggle = !toggle;
+        characterImg.src = toggle ? '3.png' : '4.png';
+        if (Date.now() - lastMouseTime > 200) {
+          stopCharacterAnimation();
+        }
+      }, 70);
+    }
+    function stopCharacterAnimation() {
+      clearInterval(animationInterval);
+      animationInterval = null;
+      isAnimating = false;
+      characterImg.src = '2.png';
+    }
+    document.addEventListener('mousemove', function(e) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = mouseX;
+      lastMouseX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
+      }
+    });
+  </script>
+</body>
+</html>
