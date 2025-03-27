@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <title>Maks Rz</title>
   <style>
-    /* Globalne ustawienia, niestandardowy kursor */
+    /* Globalne ustawienia – biały background i niestandardowy kursor */
     html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
       width: 100%;
       height: 100%;
+      background-color: white;
       cursor: url('cursor1.png'), auto;
     }
     /* Maska elipsy – pokazuje obraz 1.png tylko wewnątrz elipsy */
@@ -23,8 +24,9 @@
       transform: translate(-50%, -50%);
       clip-path: ellipse(25% 25% at 50% 50%);
       overflow: hidden;
+      z-index: 1;
     }
-    /* Tło z obrazem 1.png – tekstura powtarzalna */
+    /* Tło z obrazem 1.png – powtarzalna tekstura */
     .bg {
       position: absolute;
       top: 0;
@@ -34,20 +36,21 @@
       background-image: url('1.png');
       background-repeat: repeat;
       background-size: 100vw 100vh;
-      background-position: 0px 0px;
+      background-position: 0 0;
     }
-    /* Kontener postaci – u dołu */
+    /* Kontener postaci – animowany element 2.png */
     .character {
       position: absolute;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
+      z-index: 3;
     }
     .character img {
       width: 150px;
       height: auto;
     }
-    /* Kontener nawigacji – u góry, wycentrowany tekst */
+    /* Kontener nawigacji – u góry, z podkreślaniem przy hoverze */
     .nav-container {
       position: absolute;
       top: 0;
@@ -59,14 +62,13 @@
       text-align: center;
       padding: 10px 0;
     }
-    /* Przyciski ułożone w jednym wierszu */
     .nav-buttons {
       display: flex;
       justify-content: center;
       gap: 10px;
       flex-wrap: wrap;
     }
-    /* Dodajemy przecinek po każdym przycisku poza ostatnim */
+    /* Przecinek po każdym przycisku poza ostatnim */
     .nav-buttons a:not(:last-child)::after {
       content: ", ";
       font-size: 0.5em;
@@ -80,22 +82,22 @@
       color: #000;
       font-size: 5em;
     }
-    /* Podkreślenie przy hoverze */
     .nav-button:hover {
       text-decoration: underline;
     }
-    /* Rozwijane treści */
+    /* Dropdowny – pozycjonowane nad białym tłem */
     .nav-dropdowns {
       max-width: 100%;
       text-align: center;
       margin-top: 5px;
       word-wrap: break-word;
+      z-index: 1000;
+      position: relative;
     }
-    /* Lista wrogów – ujednolicenie rozmiaru tekstu */
     .enemies-list li {
       font-size: 2em;
     }
-    /* Kontener dla festiwali – początkowo ukryty */
+    /* Kontener dla festiwali – rozmieszczonych poza elipsą */
     #awards-container {
       display: none;
       position: absolute;
@@ -103,73 +105,61 @@
       left: 0;
       width: 100%;
       height: 100%;
-      pointer-events: none; /* Elementy są tylko dekoracyjne */
+      z-index: 2;
     }
-    /* Każdy festiwal jako osobny element – pozycjonujemy absolutnie */
     .festival {
       position: absolute;
       font-size: 2em;
       line-height: 1.2;
       white-space: nowrap;
-      pointer-events: auto;
     }
   </style>
 </head>
 <body>
-  <!-- Kontener nawigacji -->
+  <!-- Nawigacja -->
   <div class="nav-container">
     <div class="nav-buttons">
-      <!-- Przycisk "maks rz" -->
       <a href="#" class="nav-button" id="maks-button">maks rz</a>
-      <!-- Video Button -->
       <a href="https://vimeo.com/maksrz" class="nav-button" target="_blank">video</a>
-      <!-- Art Button -->
       <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">art</a>
-      <!-- IG Button -->
       <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">ig</a>
-      <!-- Contact Button -->
       <a href="mailto:maksrzontkowski@gmail.com" class="nav-button">contact</a>
-      <!-- List of My Enemies Button -->
       <a href="#" class="nav-button" id="enemies-button">list of my enemies</a>
-      <!-- Awards and Festivals Button -->
       <a href="#" class="nav-button" id="awards-button">awards and festivals</a>
     </div>
     <div class="nav-dropdowns">
       <ul class="enemies-list" id="enemies-list" style="display:none;">
         <li>1. damien</li>
       </ul>
-      <!-- Kontener dla festiwali -->
-      <div id="awards-container">
-        <!-- Pierwszy festiwal (Sundance) zawsze pierwszy – umieszczony jako pierwszy -->
-        <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
-        <div class="festival">*ANNECY International Animation Festival 2024 Official Selection*</div>
-        <div class="festival">*OTTAWA Animation Festival AWARD WINNER*</div>
-        <div class="festival">*SPEKTRUM 2024 GRAND PRIZE*</div>
-        <div class="festival">*New Horizons Festival 2024 Official Selection*</div>
-        <div class="festival">*PICTOPLASMA 2024 Official Selection*</div>
-        <div class="festival">*FEST New Directors 2024 Official Selection*</div>
-        <div class="festival">*Rooftop Films 2024 Official Selection*</div>
-        <div class="festival">*Animator Festival 2024: AWARD WINNER*</div>
-        <div class="festival">*SFP Best Animated Films 2023, AWARD WINNER*</div>
-        <div class="festival">*Kaboom Animation Festival 2024: Special Mention*</div>
-        <div class="festival">*ŻUBROFFKA 2024: AWARD WINNER*</div>
-        <div class="festival">*Salute Your Shorts Festival 2024 Official Selection*</div>
-        <div class="festival">*Fest Anca 2024 Official Selection*</div>
-        <div class="festival">*HELSINKI INTERNATIONAL FILM FESTIVAL*</div>
-        <div class="festival">*TOHORROR 2024 GRAND PRIZE*</div>
-      </div>
     </div>
   </div>
-
-  <!-- Maska elipsy z tłem -->
+  <!-- Kontener festiwali – poza elipsą (na białym tle) -->
+  <div id="awards-container">
+    <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
+    <div class="festival">*ANNECY International Animation Festival 2024 Official Selection*</div>
+    <div class="festival">*OTTAWA Animation Festival AWARD WINNER*</div>
+    <div class="festival">*SPEKTRUM 2024 GRAND PRIZE*</div>
+    <div class="festival">*New Horizons Festival 2024 Official Selection*</div>
+    <div class="festival">*PICTOPLASMA 2024 Official Selection*</div>
+    <div class="festival">*FEST New Directors 2024 Official Selection*</div>
+    <div class="festival">*Rooftop Films 2024 Official Selection*</div>
+    <div class="festival">*Animator Festival 2024: AWARD WINNER*</div>
+    <div class="festival">*SFP Best Animated Films 2023, AWARD WINNER*</div>
+    <div class="festival">*Kaboom Animation Festival 2024: Special Mention*</div>
+    <div class="festival">*ŻUBROFFKA 2024: AWARD WINNER*</div>
+    <div class="festival">*Salute Your Shorts Festival 2024 Official Selection*</div>
+    <div class="festival">*Fest Anca 2024 Official Selection*</div>
+    <div class="festival">*HELSINKI INTERNATIONAL FILM FESTIVAL*</div>
+    <div class="festival">*TOHORROR 2024 GRAND PRIZE*</div>
+  </div>
+  <!-- Maska z obrazem 1.png (elipsa) -->
   <div class="mask">
     <div class="bg" id="bg"></div>
   </div>
-  <!-- Postać na dole strony -->
+  <!-- Postać (2.png) -->
   <div class="character" id="character">
     <img src="2.png" id="characterImg" alt="Postać">
   </div>
-
   <script>
     // Przełączanie widoczności listy wrogów
     document.getElementById('enemies-button').addEventListener('click', function(e) {
@@ -178,9 +168,8 @@
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
 
-    // Funkcja rozmieszczająca festiwale równomiernie na okręgu, poza obszarem elipsy.
-    // Sundance (pierwszy) zawsze pojawi się jako pierwszy w górnej lewej części okręgu.
-    function scatterFestivals() {
+    // Funkcja rozmieszczająca festiwale na okręgu poza elipsą
+    function arrangeFestivals() {
       var awardsContainer = document.getElementById('awards-container');
       awardsContainer.style.display = 'block';
       var festivals = document.getElementsByClassName('festival');
@@ -188,11 +177,91 @@
       // Środek ekranu
       var cx = window.innerWidth / 2;
       var cy = window.innerHeight / 2;
-      // Promień okręgu – wybieramy połowę krótszego boku, żeby elementy były poza elipsą
-      var r = 0.5 * Math.min(window.innerWidth, window.innerHeight);
-      // Ustalamy kąt początkowy tak, aby pierwszy element (Sundance) był w górnej lewej części
-      var angle0 = 225; // stopnie – w systemie ekranowym 0° to prawo, 90° dół, więc 225° to lewy górny róg
+      // Wybieramy promień większy niż promienie elipsy (elipsa: 0.25*width, 0.25*height)
+      var r = 0.4 * Math.min(window.innerWidth, window.innerHeight);
+      // Kąt początkowy: 225° daje pozycję w lewym górnym rogu
+      var angle0 = 225;
       for (var i = 0; i < n; i++) {
         var angle = angle0 + i * (360 / n);
         var rad = angle * Math.PI / 180;
-        var x =
+        var x = cx + r * Math.cos(rad);
+        var y = cy + r * Math.sin(rad);
+        festivals[i].style.left = x + 'px';
+        festivals[i].style.top = y + 'px';
+      }
+    }
+
+    // Po kliknięciu przycisku "awards and festivals" rozmieszczamy festiwale
+    document.getElementById('awards-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      arrangeFestivals();
+    });
+
+    // Animacja tła
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
+    const bg = document.getElementById('bg');
+    let offsetX = 0, offsetY = 0;
+    let speedX = 0, speedY = 0;
+    function animateBackground() {
+      offsetX += speedX;
+      offsetY += speedY;
+      bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
+      requestAnimationFrame(animateBackground);
+    }
+    requestAnimationFrame(animateBackground);
+
+    // Animacja postaci (2.png)
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    let targetX = windowWidth / 2;
+    let currentX = windowWidth / 2;
+    let animationInterval = null;
+    let isAnimating = false;
+    let lastMouseX = windowWidth / 2;
+    let lastMouseTime = Date.now();
+    function animateCharacter() {
+      currentX += (targetX - currentX) * 0.1;
+      character.style.left = currentX + 'px';
+      requestAnimationFrame(animateCharacter);
+    }
+    requestAnimationFrame(animateCharacter);
+    function startCharacterAnimation() {
+      isAnimating = true;
+      let toggle = false;
+      animationInterval = setInterval(() => {
+        toggle = !toggle;
+        characterImg.src = toggle ? '3.png' : '4.png';
+        if (Date.now() - lastMouseTime > 200) {
+          stopCharacterAnimation();
+        }
+      }, 70);
+    }
+    function stopCharacterAnimation() {
+      clearInterval(animationInterval);
+      animationInterval = null;
+      isAnimating = false;
+      characterImg.src = '2.png';
+    }
+    document.addEventListener('mousemove', function(e) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = mouseX;
+      lastMouseX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
+      }
+    });
+    window.addEventListener('resize', function() {
+      windowWidth = window.innerWidth;
+      windowHeight = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
