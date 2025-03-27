@@ -98,7 +98,7 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Kontener dla festiwali – dwie kolumny; górny odstęp zwiększony, aby nie nachodził na przyciski */
+    /* Kontener dla festiwali – dwie kolumny; początkowo ukryty */
     #awards-container {
       display: none;
       position: absolute;
@@ -107,9 +107,8 @@
       width: 100%;
       height: 100%;
       z-index: 2;
-      padding-top: 150px; /* zwiększony odstęp od góry */
+      padding-top: 150px; /* zwiększony odstęp, aby nie nachodził na przyciski */
       box-sizing: border-box;
-      display: flex;
       justify-content: space-between;
       padding-left: 50px;
       padding-right: 50px;
@@ -192,11 +191,17 @@
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
 
-    // Toggle festiwali – przy kliknięciu schowaj/wyświetl kontener festiwali
+    // Toggle festiwali – przy kliknięciu schowaj/wyświetl kontener festiwali;
+    // przy wyświetleniu ustawiamy display: flex
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       var awardsContainer = document.getElementById('awards-container');
-      awardsContainer.style.display = (awardsContainer.style.display === 'block') ? 'none' : 'block';
+      if (awardsContainer.style.display === 'flex') {
+        awardsContainer.style.display = 'none';
+      } else {
+        arrangeFestivals();
+        awardsContainer.style.display = 'flex';
+      }
     });
 
     // Animacja tła
@@ -270,7 +275,8 @@
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
       "Błażej", "Mieczysław", "Zbigniew", "Witold", "Bronisław", "Czesław", "Lech", "Stanisław", "Wacław", "Kazimierz",
-      "Agnieszka", "Barbara", "Czesława", "Danuta", "Elżbieta", "Grażyna", "Halina", "Irena", "Jadwiga", "Krystyna", "Łucja", "Małgorzata", "Natalia", "Olga", "Patrycja"
+      "Agnieszka", "Barbara", "Czesława", "Danuta", "Elżbieta", "Grażyna", "Halina", "Irena", "Jadwiga", "Krystyna", "Łucja", "Małgorzata", "Natalia", "Olga", "Patrycja",
+      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula"
     ];
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
