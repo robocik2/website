@@ -4,15 +4,16 @@
   <meta charset="UTF-8">
   <title>Maks Rz</title>
   <style>
-    /* Reset i pełnoekranowy układ */
+    /* Ustawienia globalne i własny kursor */
     html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
       width: 100%;
       height: 100%;
+      cursor: url('cursor1.png'), auto;
     }
-    /* Maska elipsy – pokazuje 1.png tylko w obrębie elipsy */
+    /* Maska elipsy – pokazuje obraz 1.png tylko wewnątrz elipsy */
     .mask {
       position: absolute;
       top: 50%;
@@ -23,7 +24,7 @@
       clip-path: ellipse(25% 25% at 50% 50%);
       overflow: hidden;
     }
-    /* Tło z obrazem 1.png – tekstura powtarzalna (tiled) */
+    /* Tło z obrazem 1.png – tekstura powtarzalna */
     .bg {
       position: absolute;
       top: 0;
@@ -79,37 +80,31 @@
       color: #000;
       font-size: 5em;
     }
-    /* Rozwijane treści – automatyczne zawijanie tekstu */
+    /* Podkreślenie przy hoverze */
+    .nav-button:hover {
+      text-decoration: underline;
+    }
+    /* Rozwijane treści – ogólne ustawienia */
     .nav-dropdowns {
       max-width: 100%;
       text-align: center;
       margin-top: 5px;
       word-wrap: break-word;
     }
-    /* Ujednolicenie rozmiaru tekstu w liście wrogów */
+    /* Lista wrogów */
     .enemies-list li {
       font-size: 2em;
     }
-    /* Kontener z tekstem festiwali */
-    .awards-text {
+    /* Kontener dla festiwali – początkowo ukryty */
+    #awards-container {
       display: none;
+    }
+    /* Każdy festiwal jako osobny element – pozycjonujemy absolutnie */
+    .festival {
+      position: absolute;
       font-size: 2em;
       line-height: 1.2;
-      position: relative;
-      margin: 20px;
-    }
-    /* Pseudo-element tworzący wykluczony obszar (elipsa) – tekst opływa ten obszar */
-    .awards-text::before {
-      content: "";
-      float: left;
-      width: 50vw;   /* szerokość elipsy – 50% szerokości viewportu */
-      height: 50vh;  /* wysokość elipsy – 50% wysokości viewportu */
-      /* aby wycentrować pseudo-element: */
-      margin-left: calc(50% - 25vw);
-      /* Definiujemy kształt elipsy – radiusy odpowiadają połowie szerokości/wysokości */
-      shape-outside: ellipse(25vw 25vh at 25vw 25vh);
-      /* Dla celów debugowania możesz tymczasowo dodać tło, np.: */
-      /* background: rgba(255,0,0,0.2); */
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -129,33 +124,31 @@
       <a href="mailto:maksrzontkowski@gmail.com" class="nav-button">contact</a>
       <!-- List of My Enemies Button with Toggle List -->
       <a href="#" class="nav-button" id="enemies-button">list of my enemies</a>
-      <!-- Awards and Festivals Button with Content -->
+      <!-- Awards and Festivals Button with scatter effect -->
       <a href="#" class="nav-button" id="awards-button">awards and festivals</a>
     </div>
     <div class="nav-dropdowns">
       <ul class="enemies-list" id="enemies-list" style="display:none;">
         <li>1. damien</li>
       </ul>
-      <!-- Kontener z tekstem festiwali – zawijanie odbywa się dzięki ::before -->
-      <div class="awards-text" id="awards-text">
-        <p>
-          *Sundance Film Festival 2024 Official Selection* • 
-          *ANNECY International Animation Festival 2024 Official Selection* • 
-          *OTTAWA Animation Festival AWARD WINNER* • 
-          *SPEKTRUM 2024 GRAND PRIZE* • 
-          *New Horizons Festival 2024 Official Selection* • 
-          *PICTOPLASMA 2024 Official Selection* • 
-          *FEST New Directors 2024 Official Selection* • 
-          *Rooftop Films 2024 Official Selection* • 
-          *Animator Festival 2024: AWARD WINNER* • 
-          *SFP Best Animated Films 2023, AWARD WINNER* • 
-          *Kaboom Animation Festival 2024: Special Mention* • 
-          *ŻUBROFFKA 2024: AWARD WINNER* • 
-          *Salute Your Shorts Festival 2024 Official Selection* • 
-          *Fest Anca 2024 Official Selection* • 
-          *HELSINKI INTERNATIONAL FILM FESTIVAL* • 
-          *TOHORROR 2024 GRAND PRIZE*
-        </p>
+      <!-- Kontener dla festiwali -->
+      <div id="awards-container">
+        <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
+        <div class="festival">*ANNECY International Animation Festival 2024 Official Selection*</div>
+        <div class="festival">*OTTAWA Animation Festival AWARD WINNER*</div>
+        <div class="festival">*SPEKTRUM 2024 GRAND PRIZE*</div>
+        <div class="festival">*New Horizons Festival 2024 Official Selection*</div>
+        <div class="festival">*PICTOPLASMA 2024 Official Selection*</div>
+        <div class="festival">*FEST New Directors 2024 Official Selection*</div>
+        <div class="festival">*Rooftop Films 2024 Official Selection*</div>
+        <div class="festival">*Animator Festival 2024: AWARD WINNER*</div>
+        <div class="festival">*SFP Best Animated Films 2023, AWARD WINNER*</div>
+        <div class="festival">*Kaboom Animation Festival 2024: Special Mention*</div>
+        <div class="festival">*ŻUBROFFKA 2024: AWARD WINNER*</div>
+        <div class="festival">*Salute Your Shorts Festival 2024 Official Selection*</div>
+        <div class="festival">*Fest Anca 2024 Official Selection*</div>
+        <div class="festival">*HELSINKI INTERNATIONAL FILM FESTIVAL*</div>
+        <div class="festival">*TOHORROR 2024 GRAND PRIZE*</div>
       </div>
     </div>
   </div>
@@ -170,26 +163,44 @@
   </div>
 
   <script>
-    // Przycisk "maks rz" nie zmienia tła
+    // Przełączanie widoczności listy wrogów
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
       var enemiesList = document.getElementById('enemies-list');
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
 
+    // Funkcja rozsypująca festiwale na ekranie losowo
+    function scatterFestivals() {
+      var awardsContainer = document.getElementById('awards-container');
+      awardsContainer.style.display = 'block';
+      var festivals = document.getElementsByClassName('festival');
+      for (var i = 0; i < festivals.length; i++) {
+        // Obliczamy losowe pozycje, upewniając się, że element nie wychodzi poza viewport
+        var fest = festivals[i];
+        var festWidth = fest.offsetWidth;
+        var festHeight = fest.offsetHeight;
+        var maxLeft = window.innerWidth - festWidth;
+        var maxTop = window.innerHeight - festHeight;
+        fest.style.left = Math.random() * maxLeft + 'px';
+        fest.style.top = Math.random() * maxTop + 'px';
+      }
+    }
+
+    // Po kliknięciu przycisku "awards and festivals" rozsypujemy festiwale
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
-      var awardsText = document.getElementById('awards-text');
-      awardsText.style.display = (awardsText.style.display === 'block') ? 'none' : 'block';
+      scatterFestivals();
     });
 
+    // Animacja tła
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
-
     const bg = document.getElementById('bg');
     let offsetX = 0, offsetY = 0;
     let speedX = 0, speedY = 0;
-
+    
+    // Animacja postaci
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
     let targetX = windowWidth / 2;
