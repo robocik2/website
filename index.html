@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Maks Rz</title>
   <style>
-    /* Globalne ustawienia – biały background, niestandardowy kursor */
+    /* Global settings – white background, custom cursor */
     html, body {
       margin: 0;
       padding: 0;
@@ -14,7 +14,7 @@
       background-color: white;
       cursor: url('cursor1.png'), auto;
     }
-    /* Maska elipsy – pokazuje obraz 1.png tylko wewnątrz elipsy */
+    /* Ellipse mask – shows 1.png only inside the ellipse */
     .mask {
       position: absolute;
       top: 50%;
@@ -26,7 +26,7 @@
       overflow: hidden;
       z-index: 1;
     }
-    /* Tło z obrazem 1.png – powtarzalna tekstura */
+    /* Background with 1.png texture */
     .bg {
       position: absolute;
       top: 0;
@@ -38,7 +38,7 @@
       background-size: 100vw 100vh;
       background-position: 0 0;
     }
-    /* Kontener postaci – animowany element 2.png */
+    /* Character container (2.png) with animation */
     .character {
       position: absolute;
       bottom: 20px;
@@ -50,7 +50,7 @@
       width: 150px;
       height: auto;
     }
-    /* Kontener nawigacji – u góry, wycentrowany tekst */
+    /* Navigation container at the top */
     .nav-container {
       position: absolute;
       top: 0;
@@ -68,7 +68,7 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    /* Dodajemy przecinek po każdym przycisku poza ostatnim */
+    /* Add comma after each button except the last */
     .nav-buttons a:not(:last-child)::after {
       content: ", ";
       font-size: 0.5em;
@@ -82,11 +82,11 @@
       color: #000;
       font-size: 5em;
     }
-    /* Podkreślenie przy hoverze */
+    /* Underline on hover */
     .nav-button:hover {
       text-decoration: underline;
     }
-    /* Dropdowny – ustawione relatywnie, aby przyciski były nad białym tłem */
+    /* Dropdowns – positioned relative so nav buttons remain on top */
     .nav-dropdowns {
       max-width: 100%;
       text-align: center;
@@ -98,7 +98,7 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Kontener festiwali – dwie kolumny; początkowo ukryty; górny odstęp ustawiony na 20vh */
+    /* Awards container – two columns; initially hidden; top padding 20vh */
     #awards-container {
       display: none;
       position: absolute;
@@ -107,7 +107,7 @@
       width: 100%;
       height: 100%;
       z-index: 2;
-      padding-top: 20vh; /* 20% wysokości widoku */
+      padding-top: 20vh; /* 20% of viewport height */
       box-sizing: border-box;
       justify-content: space-between;
       padding-left: 50px;
@@ -121,7 +121,7 @@
       font-size: 2em;
       white-space: nowrap;
     }
-    /* Potencjalny visitor name – w dolnym prawym rogu */
+    /* Potential visitor name – bottom right corner */
     #visitorName {
       position: absolute;
       bottom: 10px;
@@ -130,7 +130,7 @@
       color: #000;
       z-index: 1001;
     }
-    /* Media query dla lepszego dopasowania na urządzeniach mobilnych */
+    /* Media query for a better mobile experience */
     @media (max-width: 600px) {
       .nav-button {
         font-size: 3em;
@@ -145,7 +145,7 @@
   </style>
 </head>
 <body>
-  <!-- Nawigacja -->
+  <!-- Navigation -->
   <div class="nav-container">
     <div class="nav-buttons">
       <a href="#" class="nav-button" id="maks-button">maks rz</a>
@@ -162,7 +162,7 @@
       </ul>
     </div>
   </div>
-  <!-- Kontener festiwali – dwie kolumny -->
+  <!-- Awards container – two columns -->
   <div id="awards-container">
     <div class="festival-column left">
       <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
@@ -185,32 +185,32 @@
       <div class="festival">*TOHORROR 2024 GRAND PRIZE*</div>
     </div>
   </div>
-  <!-- Maska elipsy z obrazem 1.png -->
+  <!-- Ellipse mask with background image (1.png) -->
   <div class="mask">
     <div class="bg" id="bg"></div>
   </div>
-  <!-- Postać (2.png) z animacją -->
+  <!-- Character (2.png) with animation -->
   <div class="character" id="character">
     <img src="2.png" id="characterImg" alt="Postać">
   </div>
-  <!-- Potencjalny visitor name -->
+  <!-- Potential visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Toggle listy wrogów ("1. damien")
+    // Toggle enemy list ("1. damien")
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
       var enemiesList = document.getElementById('enemies-list');
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
-
-    // Toggle festiwali – przy kliknięciu pokazujemy lub ukrywamy kontener festiwali (jako flex)
+    
+    // Toggle awards container – on click, show/hide (using flex for display when shown)
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       var awardsContainer = document.getElementById('awards-container');
       awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
     });
-
-    // Animacja tła
+    
+    // Animate background
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -223,8 +223,8 @@
       requestAnimationFrame(animateBackground);
     }
     requestAnimationFrame(animateBackground);
-
-    // Animacja postaci (2.png)
+    
+    // Animate character (2.png)
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
     let targetX = windowWidth / 2;
@@ -271,8 +271,11 @@
         startCharacterAnimation();
       }
     });
-    // Obsługa dotyku dla urządzeń mobilnych
+    
+    // Touch handler for mobile: if touch is NOT on a button, then update movement
     function handleTouch(e) {
+      // Allow default behavior if touch is on a nav-button so buttons can be tapped
+      if (e.target.closest('.nav-button')) return;
       e.preventDefault();
       const touch = e.touches[0];
       const touchX = touch.clientX;
@@ -290,12 +293,13 @@
     }
     document.addEventListener('touchstart', handleTouch, {passive: false});
     document.addEventListener('touchmove', handleTouch, {passive: false});
+    
     window.addEventListener('resize', function() {
       windowWidth = window.innerWidth;
       windowHeight = window.innerHeight;
     });
-
-    // Losowe imię dla potencjalnego odwiedzającego – rozbudowana lista imion
+    
+    // Random visitor name from an expanded list
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
