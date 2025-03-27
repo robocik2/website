@@ -1,235 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text&display=swap" rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #f5f5f5;
-      font-family: 'Libre Caslon Text', serif;
-      color: #333;
-      min-height: 100vh;
-      overflow-y: scroll; /* Enable scrolling */
-      cursor: none; /* Hide the default cursor */
-    }
-
-    .custom-cursor {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 80px; /* Larger cursor */
-      height: 80px; /* Larger cursor */
-      pointer-events: none;
-      background: url('cursor1.png') no-repeat center center;
-      background-size: contain;
-      z-index: 9999;
-      transform-origin: center;
-      transition: transform 0.1s ease-out;
-    }
-
-    .hover-target:hover ~ .custom-cursor {
-      background: url('cursor2.png') no-repeat center center;
-      background-size: contain;
-    }
-
-    .following-image {
-      position: fixed;
-      width: min(735px, 90vw);
-      height: auto;
-      aspect-ratio: 735/862;
-      pointer-events: none;
-      transform-origin: center center;
-      z-index: 1000;
-      top: 50%;
-      animation: walk 0.5s infinite alternate ease-in-out;
-      transition: left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-
-    .following-image.move-right {
-      left: calc(100vw - min(200px, 25vw)) !important;
-    }
-
-    @keyframes walk {
-      0% {
-        transform: translate(-50%, -50%) rotate(-2deg) translateY(-20px);
-      }
-      50% {
-        transform: translate(-50%, -50%) rotate(0deg) translateY(0px);
-      }
-      100% {
-        transform: translate(-50%, -50%) rotate(2deg) translateY(-20px);
-      }
-    }
-
-    .content {
-      max-width: 800px;
-      margin: 0 auto;
-      line-height: 1.8;
-      font-size: clamp(20px, 2.5vw, 24px); /* Larger font */
-      position: relative;
-      z-index: 1;
-      padding: clamp(20px, 4vw, 40px) clamp(15px, 3vw, 20px) clamp(50px, 8vw, 100px);
-    }
-
-    h1, .nav-button, #enemies-button, #awards-button, .enemies-list li {
-      position: relative;
-      z-index: 2;
-      font-weight: 600; /* Slightly bolden text */
-      transform: scale(1, 1.3); /* Stretch text height by 30% */
-    }
-
-    h1 {
-      font-size: clamp(40px, 5vw, 60px); /* Larger font size */
-      margin-bottom: 20px;
-    }
-
-    .nav-button {
-      display: block;
-      font-size: clamp(30px, 4vw, 36px); /* Larger font size */
-      margin: clamp(15px, 2vw, 30px) 0;
-      color: #333;
-      text-decoration: none;
-    }
-
-    .nav-button:hover {
-      color: #666;
-    }
-
-    #gifaniol {
-      display: none;
-      margin-top: 10px;
-      max-width: 100%;
-      height: auto;
-    }
-
-    .enemies-list {
-      display: none;
-      list-style: none;
-      padding: 0;
-      margin: 10px 0;
-    }
-
-    .enemies-list li {
-      font-size: clamp(20px, 3vw, 28px); /* Larger font size for list items */
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Planeta i Postać</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        #planet-mask {
+            clip-path: ellipse(50% 40% at 50% 50%);
+        }
+    </style>
 </head>
-<body>
-  <!-- A Man Image -->
-  <img src="a man.png" alt="A man" class="following-image">
-
-  <!-- Custom Cursor -->
-  <div class="custom-cursor"></div>
-  
-  <div class="content">
-    <h1 class="hover-target">maks rz</h1>
-    
-    <a href="https://vimeo.com/maksrz" class="nav-button hover-target" target="_blank">video</a>
-    <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">art</a>
-    <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">ig</a>
-    <a href="mailto:maksrzontkowski@gmail.com" class="nav-button hover-target">contact</a>
-    
-    <div>
-      <a href="#" class="nav-button hover-target" id="enemies-button">list of my enemies</a>
-      <ul class="enemies-list" id="enemies-list">
-        <li>1. damien</li>
-      </ul>
+<body class="bg-black">
+    <div class="relative w-full h-screen flex flex-col">
+        <div id="planet-container" class="flex-grow relative">
+            <img 
+                id="planet-image" 
+                src="/api/placeholder/1600/900" 
+                alt="Planeta" 
+                class="absolute top-0 left-0 w-full h-full object-cover"
+                style="transition: transform 0.1s ease;"
+            />
+        </div>
+        
+        <div class="absolute bottom-12 left-1/2 transform -translate-x-1/2">
+            <img 
+                id="character-image" 
+                src="/api/placeholder/200/200" 
+                alt="Postać" 
+                class="w-32 h-32 object-cover"
+            />
+        </div>
     </div>
 
-    <div>
-      <a href="#" class="nav-button hover-target" id="awards-button">awards and festivals</a>
-      <img src="gifaniol.gif" alt="Awards Angel" id="gifaniol">
-      <ul class="enemies-list" id="awards-list">
-        <li>*Sundance Film Festival 2024 Official Selection*</li>
-        <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
-        <li>*OTTAWA Animation Festival AWARD WINNER *</li>
-        <li>*SPEKTRUM 2024 GRAND PRIZE*</li>
-        <li>*New Horizons Festival 2024 Official Selection*</li>
-        <li>*PICTOPLASMA 2024 Official Selection*</li>
-        <li>*FEST New Directors 2024 Official Selection*</li>
-        <li>*Rooftop Films 2024 Official Selection*</li>
-        <li>*Animator Festival 2024: AWARD WINNER*</li>
-        <li>*SFP Best Animated Films 2023, AWARD WINNER*</li>
-        <li>*Kaboom Animation Festival 2024: Special Mention*</li>
-        <li>*ŻUBROFFKA 2024: AWARD WINNER*</li>
-        <li>*Salute Your Shorts Festival 2024 Official Selection*</li>
-        <li>*Fest Anca 2024 Official Selection*</li>
-        <li>*HELSINKI INTERNATIONAL FILM FESTIVAL*</li>
-        <li>*TOHORROR 2024 GRAND PRIZE*</li>
-      </ul>
-    </div>
-  </div>
+    <script>
+        const planetImage = document.getElementById('planet-image');
+        const characterImage = document.getElementById('character-image');
+        const planetContainer = document.getElementById('planet-container');
 
-  <script>
-    const cursor = document.querySelector('.custom-cursor');
-    const image = document.querySelector('.following-image');
-    const navButtons = document.querySelectorAll('.nav-button');
-    let lastX = 0, lastY = 0, mouseX = 0;
+        let planetOffset = { x: 0, y: 0 };
+        let characterDirection = 1;
+        let characterFrame = 1;
 
-    // Custom Cursor Movement
-    document.addEventListener('mousemove', (e) => {
-      const deltaX = e.clientX - lastX;
-      const deltaY = e.clientY - lastY;
-      const speed = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+        planetContainer.addEventListener('mousemove', (e) => {
+            const rect = planetContainer.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
 
-      // Update cursor position
-      cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
 
-      // Apply squish/stretch effect based on speed and direction
-      const scaleX = 1 + Math.min(speed / 200, 0.5);
-      const scaleY = 1 - Math.min(speed / 200, 0.5);
-      cursor.style.transform += ` scale(${scaleX}, ${scaleY})`;
+            const offsetX = (mouseX - centerX) / centerX * 50;
+            const offsetY = (mouseY - centerY) / centerY * 50;
 
-      lastX = e.clientX;
-      lastY = e.clientY;
-    });
+            planetImage.style.transform = `translate(${-offsetX}px, ${-offsetY}px)`;
+            
+            // Kierunek postaci
+            characterDirection = mouseX > centerX ? 1 : -1;
+            characterImage.style.transform = `scaleX(${characterDirection})`;
 
-    // A Man Movement
-    if (window.innerWidth > 768) {
-      document.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-      });
+            // Zmiana klatek postaci
+            characterFrame = characterFrame === 1 ? 2 : 1;
+            characterImage.src = `/api/placeholder/200/200?text=Postać${characterFrame}`;
+        });
 
-      function updatePosition() {
-        requestAnimationFrame(updatePosition);
-        image.style.left = mouseX + 'px';
-      }
-
-      updatePosition();
-    }
-
-    // Button Hover Events
-    navButtons.forEach(button => {
-      button.addEventListener('mouseenter', () => {
-        image.classList.add('move-right');
-      });
-      button.addEventListener('mouseleave', () => {
-        image.classList.remove('move-right');
-      });
-    });
-
-    // Toggle Enemies and Awards Lists
-    document.getElementById('enemies-button').addEventListener('click', (e) => {
-      e.preventDefault();
-      const enemiesList = document.getElementById('enemies-list');
-      enemiesList.style.display = enemiesList.style.display === 'block' ? 'none' : 'block';
-    });
-
-    document.getElementById('awards-button').addEventListener('click', (e) => {
-      e.preventDefault();
-      const awardsList = document.getElementById('awards-list');
-      const gifaniol = document.getElementById('gifaniol');
-      if (awardsList.style.display === 'block') {
-        awardsList.style.display = 'none';
-        gifaniol.style.display = 'none';
-      } else {
-        awardsList.style.display = 'block';
-        gifaniol.style.display = 'block';
-      }
-    });
-  </script>
+        planetContainer.addEventListener('mouseleave', () => {
+            planetImage.style.transform = 'translate(0px, 0px)';
+        });
+    </script>
 </body>
 </html>
