@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Maks Rz</title>
   <style>
-    /* Ustawienia globalne i własny kursor */
+    /* Globalne ustawienia, niestandardowy kursor */
     html, body {
       margin: 0;
       padding: 0;
@@ -47,7 +47,7 @@
       width: 150px;
       height: auto;
     }
-    /* Kontener nawigacji – pełna szerokość u góry, wycentrowany tekst */
+    /* Kontener nawigacji – u góry, wycentrowany tekst */
     .nav-container {
       position: absolute;
       top: 0;
@@ -59,7 +59,7 @@
       text-align: center;
       padding: 10px 0;
     }
-    /* Przyciski w jednym wierszu */
+    /* Przyciski ułożone w jednym wierszu */
     .nav-buttons {
       display: flex;
       justify-content: center;
@@ -84,20 +84,26 @@
     .nav-button:hover {
       text-decoration: underline;
     }
-    /* Rozwijane treści – ogólne ustawienia */
+    /* Rozwijane treści */
     .nav-dropdowns {
       max-width: 100%;
       text-align: center;
       margin-top: 5px;
       word-wrap: break-word;
     }
-    /* Lista wrogów */
+    /* Lista wrogów – ujednolicenie rozmiaru tekstu */
     .enemies-list li {
       font-size: 2em;
     }
     /* Kontener dla festiwali – początkowo ukryty */
     #awards-container {
       display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* Elementy są tylko dekoracyjne */
     }
     /* Każdy festiwal jako osobny element – pozycjonujemy absolutnie */
     .festival {
@@ -105,6 +111,7 @@
       font-size: 2em;
       line-height: 1.2;
       white-space: nowrap;
+      pointer-events: auto;
     }
   </style>
 </head>
@@ -122,9 +129,9 @@
       <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">ig</a>
       <!-- Contact Button -->
       <a href="mailto:maksrzontkowski@gmail.com" class="nav-button">contact</a>
-      <!-- List of My Enemies Button with Toggle List -->
+      <!-- List of My Enemies Button -->
       <a href="#" class="nav-button" id="enemies-button">list of my enemies</a>
-      <!-- Awards and Festivals Button with scatter effect -->
+      <!-- Awards and Festivals Button -->
       <a href="#" class="nav-button" id="awards-button">awards and festivals</a>
     </div>
     <div class="nav-dropdowns">
@@ -133,6 +140,7 @@
       </ul>
       <!-- Kontener dla festiwali -->
       <div id="awards-container">
+        <!-- Pierwszy festiwal (Sundance) zawsze pierwszy – umieszczony jako pierwszy -->
         <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
         <div class="festival">*ANNECY International Animation Festival 2024 Official Selection*</div>
         <div class="festival">*OTTAWA Animation Festival AWARD WINNER*</div>
@@ -170,101 +178,21 @@
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
 
-    // Funkcja rozsypująca festiwale na ekranie losowo
+    // Funkcja rozmieszczająca festiwale równomiernie na okręgu, poza obszarem elipsy.
+    // Sundance (pierwszy) zawsze pojawi się jako pierwszy w górnej lewej części okręgu.
     function scatterFestivals() {
       var awardsContainer = document.getElementById('awards-container');
       awardsContainer.style.display = 'block';
       var festivals = document.getElementsByClassName('festival');
-      for (var i = 0; i < festivals.length; i++) {
-        // Obliczamy losowe pozycje, upewniając się, że element nie wychodzi poza viewport
-        var fest = festivals[i];
-        var festWidth = fest.offsetWidth;
-        var festHeight = fest.offsetHeight;
-        var maxLeft = window.innerWidth - festWidth;
-        var maxTop = window.innerHeight - festHeight;
-        fest.style.left = Math.random() * maxLeft + 'px';
-        fest.style.top = Math.random() * maxTop + 'px';
-      }
-    }
-
-    // Po kliknięciu przycisku "awards and festivals" rozsypujemy festiwale
-    document.getElementById('awards-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      scatterFestivals();
-    });
-
-    // Animacja tła
-    let windowWidth = window.innerWidth;
-    let windowHeight = window.innerHeight;
-    const bg = document.getElementById('bg');
-    let offsetX = 0, offsetY = 0;
-    let speedX = 0, speedY = 0;
-    
-    // Animacja postaci
-    const character = document.getElementById('character');
-    const characterImg = document.getElementById('characterImg');
-    let targetX = windowWidth / 2;
-    let currentX = windowWidth / 2;
-    let animationInterval = null;
-    let isAnimating = false;
-    let lastMouseX = windowWidth / 2;
-    let lastMouseTime = Date.now();
-
-    document.addEventListener('mousemove', function(e) {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
-      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      
-      targetX = mouseX;
-      lastMouseX = mouseX;
-      lastMouseTime = Date.now();
-      if (!isAnimating) {
-        startCharacterAnimation();
-      }
-    });
-
-    function animateBackground() {
-      offsetX += speedX;
-      offsetY += speedY;
-      bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
-      requestAnimationFrame(animateBackground);
-    }
-    requestAnimationFrame(animateBackground);
-
-    function animateCharacter() {
-      currentX += (targetX - currentX) * 0.1;
-      character.style.left = currentX + 'px';
-      requestAnimationFrame(animateCharacter);
-    }
-    requestAnimationFrame(animateCharacter);
-
-    function startCharacterAnimation() {
-      isAnimating = true;
-      let toggle = false;
-      animationInterval = setInterval(() => {
-        toggle = !toggle;
-        characterImg.src = toggle ? '3.png' : '4.png';
-        if (Date.now() - lastMouseTime > 200) {
-          stopCharacterAnimation();
-        }
-      }, 70);
-    }
-
-    function stopCharacterAnimation() {
-      clearInterval(animationInterval);
-      animationInterval = null;
-      isAnimating = false;
-      characterImg.src = '2.png';
-    }
-
-    window.addEventListener('resize', function() {
-      windowWidth = window.innerWidth;
-      windowHeight = window.innerHeight;
-    });
-  </script>
-</body>
-</html>
+      var n = festivals.length;
+      // Środek ekranu
+      var cx = window.innerWidth / 2;
+      var cy = window.innerHeight / 2;
+      // Promień okręgu – wybieramy połowę krótszego boku, żeby elementy były poza elipsą
+      var r = 0.5 * Math.min(window.innerWidth, window.innerHeight);
+      // Ustalamy kąt początkowy tak, aby pierwszy element (Sundance) był w górnej lewej części
+      var angle0 = 225; // stopnie – w systemie ekranowym 0° to prawo, 90° dół, więc 225° to lewy górny róg
+      for (var i = 0; i < n; i++) {
+        var angle = angle0 + i * (360 / n);
+        var rad = angle * Math.PI / 180;
+        var x =
