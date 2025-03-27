@@ -53,10 +53,13 @@
       top: 10px;
       left: 10px;
       z-index: 1000;
+      font-family: "Apple Garamond", serif;
+    }
+    /* Kontener przycisków – ustawione w jednym wierszu */
+    .nav-buttons {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       gap: 5px;
-      font-family: sans-serif;
     }
     .nav-button {
       background: rgba(255, 255, 255, 0.8);
@@ -65,6 +68,10 @@
       cursor: pointer;
       text-decoration: none;
       color: #000;
+    }
+    /* Kontener rozwijanych treści */
+    .nav-dropdowns {
+      margin-top: 5px;
     }
     .enemies-list,
     #awards-list {
@@ -84,45 +91,44 @@
 <body>
   <!-- Kontener nawigacji -->
   <div class="nav-container">
-    <!-- Video Button -->
-    <a href="https://vimeo.com/maksrz" class="nav-button hover-target" target="_blank">video</a>
-
-    <!-- Art Button -->
-    <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">art</a>
-
-    <!-- IG Button -->
-    <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">ig</a>
-
-    <!-- Contact Button -->
-    <a href="mailto:maksrzontkowski@gmail.com" class="nav-button hover-target">contact</a>
-
-    <!-- List of My Enemies Button with Toggle List -->
-    <a href="#" class="nav-button hover-target" id="enemies-button">list of my enemies</a>
-    <ul class="enemies-list" id="enemies-list">
-      <li>1. damien</li>
-    </ul>
-
-    <!-- Awards and Festivals Button with Content -->
-    <a href="#" class="nav-button hover-target" id="awards-button">awards and festivals</a>
-    <img src="gifaniol.gif" alt="Awards Angel" id="gifaniol">
-    <ul class="enemies-list" id="awards-list">
-      <li>*Sundance Film Festival 2024 Official Selection*</li>
-      <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
-      <li>*OTTAWA Animation Festival AWARD WINNER *</li>
-      <li>*SPEKTRUM 2024 GRAND PRIZE*</li>
-      <li>*New Horizons Festival 2024 Official Selection*</li>
-      <li>*PICTOPLASMA 2024 Official Selection*</li>
-      <li>*FEST New Directors 2024 Official Selection*</li>
-      <li>*Rooftop Films 2024 Official Selection*</li>
-      <li>*Animator Festival 2024: AWARD WINNER*</li>
-      <li>*SFP Best Animated Films 2023, AWARD WINNER*</li>
-      <li>*Kaboom Animation Festival 2024: Special Mention*</li>
-      <li>*ŻUBROFFKA 2024: AWARD WINNER*</li>
-      <li>*Salute Your Shorts Festival 2024 Official Selection*</li>
-      <li>*Fest Anca 2024 Official Selection*</li>
-      <li>*HELSINKI INTERNATIONAL FILM FESTIVAL*</li>
-      <li>*TOHORROR 2024 GRAND PRIZE*</li>
-    </ul>
+    <div class="nav-buttons">
+      <!-- Video Button -->
+      <a href="https://vimeo.com/maksrz" class="nav-button hover-target" target="_blank">video</a>
+      <!-- Art Button -->
+      <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">art</a>
+      <!-- IG Button -->
+      <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">ig</a>
+      <!-- Contact Button -->
+      <a href="mailto:maksrzontkowski@gmail.com" class="nav-button hover-target">contact</a>
+      <!-- List of My Enemies Button with Toggle List -->
+      <a href="#" class="nav-button hover-target" id="enemies-button">list of my enemies</a>
+      <!-- Awards and Festivals Button with Content -->
+      <a href="#" class="nav-button hover-target" id="awards-button">awards and festivals</a>
+    </div>
+    <div class="nav-dropdowns">
+      <ul class="enemies-list" id="enemies-list">
+        <li>1. damien</li>
+      </ul>
+      <img src="gifaniol.gif" alt="Awards Angel" id="gifaniol">
+      <ul class="enemies-list" id="awards-list">
+        <li>*Sundance Film Festival 2024 Official Selection*</li>
+        <li>*ANNECY International Animation Festival 2024 Official Selection*</li>
+        <li>*OTTAWA Animation Festival AWARD WINNER *</li>
+        <li>*SPEKTRUM 2024 GRAND PRIZE*</li>
+        <li>*New Horizons Festival 2024 Official Selection*</li>
+        <li>*PICTOPLASMA 2024 Official Selection*</li>
+        <li>*FEST New Directors 2024 Official Selection*</li>
+        <li>*Rooftop Films 2024 Official Selection*</li>
+        <li>*Animator Festival 2024: AWARD WINNER*</li>
+        <li>*SFP Best Animated Films 2023, AWARD WINNER*</li>
+        <li>*Kaboom Animation Festival 2024: Special Mention*</li>
+        <li>*ŻUBROFFKA 2024: AWARD WINNER*</li>
+        <li>*Salute Your Shorts Festival 2024 Official Selection*</li>
+        <li>*Fest Anca 2024 Official Selection*</li>
+        <li>*HELSINKI INTERNATIONAL FILM FESTIVAL*</li>
+        <li>*TOHORROR 2024 GRAND PRIZE*</li>
+      </ul>
+    </div>
   </div>
 
   <!-- Maska elipsy z tłem (glob) -->
