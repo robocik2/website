@@ -98,16 +98,16 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Kontener dla festiwali – dwie kolumny; początkowo ukryty */
+    /* Kontener festiwali – dwie kolumny; początkowo ukryty; górny odstęp ustawiony na 20vh */
     #awards-container {
-      display: none; /* początkowo ukryty */
+      display: none;
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       z-index: 2;
-      padding-top: 150px; /* odstęp od przycisków */
+      padding-top: 20vh; /* 20% wysokości widoku */
       box-sizing: border-box;
       justify-content: space-between;
       padding-left: 50px;
@@ -129,6 +129,18 @@
       font-size: 1.5em;
       color: #000;
       z-index: 1001;
+    }
+    /* Media query dla lepszego dopasowania na urządzeniach mobilnych */
+    @media (max-width: 600px) {
+      .nav-button {
+        font-size: 3em;
+      }
+      .festival {
+        font-size: 1.5em;
+      }
+      #visitorName {
+        font-size: 1.2em;
+      }
     }
   </style>
 </head>
@@ -191,7 +203,7 @@
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
 
-    // Toggle festiwali – przy kliknięciu pokazujemy lub ukrywamy kontener festiwali
+    // Toggle festiwali – przy kliknięciu pokazujemy lub ukrywamy kontener festiwali (jako flex)
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       var awardsContainer = document.getElementById('awards-container');
@@ -259,12 +271,31 @@
         startCharacterAnimation();
       }
     });
+    // Obsługa dotyku dla urządzeń mobilnych
+    function handleTouch(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const touchX = touch.clientX;
+      const touchY = touch.clientY;
+      const deltaX = (touchX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (touchY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = touchX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
+      }
+    }
+    document.addEventListener('touchstart', handleTouch, {passive: false});
+    document.addEventListener('touchmove', handleTouch, {passive: false});
     window.addEventListener('resize', function() {
       windowWidth = window.innerWidth;
       windowHeight = window.innerHeight;
     });
 
-    // Losowe imię dla potencjalnego odwiedzającego – rozbudowana lista imion (męskie i żeńskie, angielskie i polskie)
+    // Losowe imię dla potencjalnego odwiedzającego – rozbudowana lista imion
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
