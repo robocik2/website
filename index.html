@@ -12,7 +12,7 @@
       width: 100%;
       height: 100%;
     }
-    /* Maska elipsy  */
+    /* Maska elipsy */
     .mask {
       position: absolute;
       top: 50%;
@@ -32,11 +32,11 @@
       height: 200%;
       background-image: url('1.png');
       background-repeat: repeat;
-      /* Ustawiamy rozmiar tak, aby jeden "tile" miał rozmiar viewportu */
+      /* Jeden "tile" ma rozmiar viewportu */
       background-size: 100vw 100vh;
       background-position: 0px 0px;
     }
-    /* Kontener postaci – umieszczony na dole strony z marginesem */
+    /* Kontener postaci – u dołu */
     .character {
       position: absolute;
       bottom: 20px;
@@ -44,42 +44,52 @@
       transform: translateX(-50%);
     }
     .character img {
-      width: 150px; /* Dostosuj rozmiar postaci według potrzeb */
+      width: 150px;
       height: auto;
     }
-    /* Kontener nawigacji */
+    /* Kontener nawigacji – pełna szerokość u góry, wycentrowany tekst */
     .nav-container {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 0;
+      left: 0;
+      width: 100%;
       z-index: 1000;
       font-family: "Apple Garamond", serif;
+      font-stretch: expanded;
+      text-align: center;
+      padding: 10px 0;
     }
-    /* Kontener przycisków – ustawione w jednym wierszu */
+    /* Przyciski w jednym wierszu */
     .nav-buttons {
       display: flex;
-      flex-direction: row;
-      gap: 5px;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
     .nav-button {
-      background: rgba(255, 255, 255, 0.8);
+      background: none;
       border: none;
       padding: 5px 10px;
       cursor: pointer;
       text-decoration: none;
       color: #000;
+      font-size: 1.2em;
     }
-    /* Kontener rozwijanych treści */
+    /* Rozwijane treści – automatyczne zawijanie tekstu */
     .nav-dropdowns {
+      max-width: 100%;
+      text-align: center;
       margin-top: 5px;
+      word-wrap: break-word;
     }
     .enemies-list,
     #awards-list {
       display: none;
       list-style-type: none;
-      padding-left: 20px;
+      padding: 0;
       margin: 5px 0;
-      background: rgba(255, 255, 255, 0.8);
+      background: none;
+      text-align: center;
     }
     #gifaniol {
       display: none;
@@ -131,7 +141,7 @@
     </div>
   </div>
 
-  <!-- Maska elipsy z tłem (glob) -->
+  <!-- Maska elipsy z tłem -->
   <div class="mask">
     <div class="bg" id="bg"></div>
   </div>
@@ -141,7 +151,7 @@
   </div>
 
   <script>
-    // Funkcjonalność przełączania widoczności list
+    // Przełączanie widoczności rozwijanych list
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
       var enemiesList = document.getElementById('enemies-list');
@@ -167,34 +177,29 @@
 
     // Element tła (glob)
     const bg = document.getElementById('bg');
-    // Offsety tła
     let offsetX = 0, offsetY = 0;
-    // Prędkość przesuwania – zależy od pozycji kursora (zmieniana na podstawie mousemove)
     let speedX = 0, speedY = 0;
 
     // Element postaci oraz zmienne do animacji
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
-    let targetX = windowWidth / 2; // docelowa pozycja X postaci
-    let currentX = windowWidth / 2; // aktualna pozycja X postaci
+    let targetX = windowWidth / 2;
+    let currentX = windowWidth / 2;
     let animationInterval = null;
     let isAnimating = false;
     let lastMouseX = windowWidth / 2;
     let lastMouseTime = Date.now();
 
-    // Obsługa ruchu myszy – ustawiamy prędkość przesuwania tła oraz pozycję postaci
+    // Ruch myszy – ustawianie prędkości tła i pozycji postaci
     document.addEventListener('mousemove', function(e) {
       const mouseX = e.clientX;
       const mouseY = e.clientY;
-      // Normalizujemy odległość kursora od środka (zakres -1 do 1)
       const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
       const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
-      // Maksymalna prędkość przesunięcia (piksele na klatkę) – można dostosować
       const maxSpeed = 20;
       speedX = deltaX * maxSpeed;
       speedY = deltaY * maxSpeed;
       
-      // Ustawiamy docelową pozycję postaci zgodnie z pozycją kursora
       targetX = mouseX;
       lastMouseX = mouseX;
       lastMouseTime = Date.now();
@@ -203,7 +208,7 @@
       }
     });
 
-    // Płynna animacja tła – aktualizujemy offsety na podstawie ustalonej prędkości
+    // Animacja tła
     function animateBackground() {
       offsetX += speedX;
       offsetY += speedY;
@@ -212,7 +217,7 @@
     }
     requestAnimationFrame(animateBackground);
 
-    // Płynne przesuwanie postaci metodą easing
+    // Przesuwanie postaci metodą easing
     function animateCharacter() {
       currentX += (targetX - currentX) * 0.1;
       character.style.left = currentX + 'px';
@@ -220,14 +225,13 @@
     }
     requestAnimationFrame(animateCharacter);
 
-    // Animacja postaci – naprzemienne wyświetlanie obrazów 3.png i 4.png podczas ruchu
+    // Animacja postaci – przełączanie obrazów
     function startCharacterAnimation() {
       isAnimating = true;
       let toggle = false;
       animationInterval = setInterval(() => {
         toggle = !toggle;
         characterImg.src = toggle ? '3.png' : '4.png';
-        // Jeśli od ostatniego ruchu minęło więcej niż 200ms, zatrzymujemy animację
         if (Date.now() - lastMouseTime > 200) {
           stopCharacterAnimation();
         }
@@ -238,11 +242,10 @@
       clearInterval(animationInterval);
       animationInterval = null;
       isAnimating = false;
-      // Przywracamy domyślny obraz postaci
       characterImg.src = '2.png';
     }
 
-    // Aktualizacja wymiarów okna przy zmianie rozmiaru
+    // Aktualizacja rozmiarów przy zmianie okna
     window.addEventListener('resize', function() {
       windowWidth = window.innerWidth;
       windowHeight = window.innerHeight;
