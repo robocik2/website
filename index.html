@@ -98,7 +98,7 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Kontener dla festiwali – poza obszarem elipsy */
+    /* Kontener dla festiwali – rozmieszczonych poza elipsą (na białym tle) */
     #awards-container {
       display: none;
       position: absolute;
@@ -134,7 +134,7 @@
       </ul>
     </div>
   </div>
-  <!-- Kontener festiwali – rozmieszczonych poza elipsą (na białym tle) -->
+  <!-- Kontener festiwali – rozmieszczonych poza elipsą -->
   <div id="awards-container">
     <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
     <div class="festival">*ANNECY International Animation Festival 2024 Official Selection*</div>
@@ -162,14 +162,14 @@
     <img src="2.png" id="characterImg" alt="Postać">
   </div>
   <script>
-    // Toggle dla listy wrogów ("1. damien")
+    // Toggle listy wrogów ("1. damien")
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
       var enemiesList = document.getElementById('enemies-list');
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
 
-    // Toggle dla festiwali – przy ponownym kliknięciu schowane, przy pierwszym wyświetlone z rozmieszczeniem
+    // Toggle festiwali – przy ponownym kliknięciu ukrywamy, przy pierwszym rozmieszczamy i pokazujemy
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       var awardsContainer = document.getElementById('awards-container');
@@ -181,18 +181,22 @@
       }
     });
 
-    // Funkcja rozmieszczająca festiwale równomiernie na okręgu poza elipsą
+    // Rozmieszczanie festiwali równomiernie na okręgu poza elipsą i poza górną strefą (gdzie są przyciski)
     function arrangeFestivals() {
+      var navHeight = document.querySelector('.nav-container').offsetHeight;
       var awardsContainer = document.getElementById('awards-container');
       var festivals = document.getElementsByClassName('festival');
       var n = festivals.length;
-      // Środek ekranu
+      // Środek poziomy ekranu
       var cx = window.innerWidth / 2;
-      var cy = window.innerHeight / 2;
-      // Obliczamy promień jako 40% krótszego wymiaru, ale nie mniejszy niż 150px
+      // Ustawiamy środek okręgu tak, aby jego górna krawędź (cy - r) nie była mniejsza niż wysokość nawigacji
       var minDim = Math.min(window.innerWidth, window.innerHeight);
       var r = Math.max(0.4 * minDim, 150);
-      // Kąt początkowy: 225° (co daje pozycję w lewym górnym rogu)
+      var cy = window.innerHeight / 2;
+      if (cy - r < navHeight) {
+        cy = navHeight + r;
+      }
+      // Kąt początkowy: 225° – pierwszy element (Sundance) będzie po lewej górnej stronie
       var angle0 = 225;
       for (var i = 0; i < n; i++) {
         var angle = angle0 + i * (360 / n);
@@ -208,7 +212,6 @@
     window.addEventListener('resize', function() {
       windowWidth = window.innerWidth;
       windowHeight = window.innerHeight;
-      // Jeśli festiwale są widoczne, aktualizujemy ich rozmieszczenie
       var awardsContainer = document.getElementById('awards-container');
       if (awardsContainer.style.display === 'block') {
         arrangeFestivals();
