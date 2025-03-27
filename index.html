@@ -12,7 +12,7 @@
       width: 100%;
       height: 100%;
     }
-    /* Maska elipsy */
+    /* Maska elipsy – pokazuje 1.png tylko w obrębie elipsy */
     .mask {
       position: absolute;
       top: 50%;
@@ -32,7 +32,6 @@
       height: 200%;
       background-image: url('1.png');
       background-repeat: repeat;
-      /* Jeden "tile" ma rozmiar viewportu */
       background-size: 100vw 100vh;
       background-position: 0px 0px;
     }
@@ -87,16 +86,30 @@
       margin-top: 5px;
       word-wrap: break-word;
     }
-    /* Stylizacja SVG z festiwalami – tekst na ścieżce elipsy */
-    #awards-svg {
-      display: none;
-      width: 100%;
-      height: 120px; /* Możesz dostosować wysokość wg potrzeb */
-    }
-    #awards-svg text {
-      fill: #000;
+    /* Ujednolicenie rozmiaru tekstu w liście wrogów */
+    .enemies-list li {
       font-size: 2em;
-      text-anchor: middle;
+    }
+    /* Kontener z tekstem festiwali */
+    .awards-text {
+      display: none;
+      font-size: 2em;
+      line-height: 1.2;
+      position: relative;
+      margin: 20px;
+    }
+    /* Pseudo-element tworzący wykluczony obszar (elipsa) – tekst opływa ten obszar */
+    .awards-text::before {
+      content: "";
+      float: left;
+      width: 50vw;   /* szerokość elipsy – 50% szerokości viewportu */
+      height: 50vh;  /* wysokość elipsy – 50% wysokości viewportu */
+      /* aby wycentrować pseudo-element: */
+      margin-left: calc(50% - 25vw);
+      /* Definiujemy kształt elipsy – radiusy odpowiadają połowie szerokości/wysokości */
+      shape-outside: ellipse(25vw 25vh at 25vw 25vh);
+      /* Dla celów debugowania możesz tymczasowo dodać tło, np.: */
+      /* background: rgba(255,0,0,0.2); */
     }
   </style>
 </head>
@@ -104,52 +117,46 @@
   <!-- Kontener nawigacji -->
   <div class="nav-container">
     <div class="nav-buttons">
-      <!-- Przycisk "maks rz" (bez zmieniania kolorów) -->
-      <a href="#" class="nav-button hover-target" id="maks-button">maks rz</a>
+      <!-- Przycisk "maks rz" -->
+      <a href="#" class="nav-button" id="maks-button">maks rz</a>
       <!-- Video Button -->
-      <a href="https://vimeo.com/maksrz" class="nav-button hover-target" target="_blank">video</a>
+      <a href="https://vimeo.com/maksrz" class="nav-button" target="_blank">video</a>
       <!-- Art Button -->
-      <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">art</a>
+      <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">art</a>
       <!-- IG Button -->
-      <a href="https://instagram.com/robocik.2" class="nav-button hover-target" target="_blank">ig</a>
+      <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">ig</a>
       <!-- Contact Button -->
-      <a href="mailto:maksrzontkowski@gmail.com" class="nav-button hover-target">contact</a>
+      <a href="mailto:maksrzontkowski@gmail.com" class="nav-button">contact</a>
       <!-- List of My Enemies Button with Toggle List -->
-      <a href="#" class="nav-button hover-target" id="enemies-button">list of my enemies</a>
+      <a href="#" class="nav-button" id="enemies-button">list of my enemies</a>
       <!-- Awards and Festivals Button with Content -->
-      <a href="#" class="nav-button hover-target" id="awards-button">awards and festivals</a>
+      <a href="#" class="nav-button" id="awards-button">awards and festivals</a>
     </div>
     <div class="nav-dropdowns">
       <ul class="enemies-list" id="enemies-list" style="display:none;">
         <li>1. damien</li>
       </ul>
-      <!-- SVG dla tekstu festiwali wokół elipsy -->
-      <svg id="awards-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <!-- Ścieżka elipsy – większa niż maska, aby tekst układał się na zewnątrz -->
-          <path id="ellipsePath" d="M50,10 A40,40 0 1,1 49.99,10" />
-        </defs>
-        <text>
-          <textPath href="#ellipsePath" startOffset="50%">
-            *Sundance Film Festival 2024 Official Selection* • 
-            *ANNECY International Animation Festival 2024 Official Selection* • 
-            *OTTAWA Animation Festival AWARD WINNER* • 
-            *SPEKTRUM 2024 GRAND PRIZE* • 
-            *New Horizons Festival 2024 Official Selection* • 
-            *PICTOPLASMA 2024 Official Selection* • 
-            *FEST New Directors 2024 Official Selection* • 
-            *Rooftop Films 2024 Official Selection* • 
-            *Animator Festival 2024: AWARD WINNER* • 
-            *SFP Best Animated Films 2023, AWARD WINNER* • 
-            *Kaboom Animation Festival 2024: Special Mention* • 
-            *ŻUBROFFKA 2024: AWARD WINNER* • 
-            *Salute Your Shorts Festival 2024 Official Selection* • 
-            *Fest Anca 2024 Official Selection* • 
-            *HELSINKI INTERNATIONAL FILM FESTIVAL* • 
-            *TOHORROR 2024 GRAND PRIZE*
-          </textPath>
-        </text>
-      </svg>
+      <!-- Kontener z tekstem festiwali – zawijanie odbywa się dzięki ::before -->
+      <div class="awards-text" id="awards-text">
+        <p>
+          *Sundance Film Festival 2024 Official Selection* • 
+          *ANNECY International Animation Festival 2024 Official Selection* • 
+          *OTTAWA Animation Festival AWARD WINNER* • 
+          *SPEKTRUM 2024 GRAND PRIZE* • 
+          *New Horizons Festival 2024 Official Selection* • 
+          *PICTOPLASMA 2024 Official Selection* • 
+          *FEST New Directors 2024 Official Selection* • 
+          *Rooftop Films 2024 Official Selection* • 
+          *Animator Festival 2024: AWARD WINNER* • 
+          *SFP Best Animated Films 2023, AWARD WINNER* • 
+          *Kaboom Animation Festival 2024: Special Mention* • 
+          *ŻUBROFFKA 2024: AWARD WINNER* • 
+          *Salute Your Shorts Festival 2024 Official Selection* • 
+          *Fest Anca 2024 Official Selection* • 
+          *HELSINKI INTERNATIONAL FILM FESTIVAL* • 
+          *TOHORROR 2024 GRAND PRIZE*
+        </p>
+      </div>
     </div>
   </div>
 
@@ -163,9 +170,7 @@
   </div>
 
   <script>
-    // Funkcjonalność przycisku "maks rz" nie zmienia już tła – nie ma przypisanego event listenera
-
-    // Przełączanie widoczności rozwijanych list
+    // Przycisk "maks rz" nie zmienia tła
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
       var enemiesList = document.getElementById('enemies-list');
@@ -174,20 +179,17 @@
 
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
-      var awardsSvg = document.getElementById('awards-svg');
-      awardsSvg.style.display = (awardsSvg.style.display === 'block') ? 'none' : 'block';
+      var awardsText = document.getElementById('awards-text');
+      awardsText.style.display = (awardsText.style.display === 'block') ? 'none' : 'block';
     });
 
-    // Aktualne rozmiary okna
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
 
-    // Element tła (glob)
     const bg = document.getElementById('bg');
     let offsetX = 0, offsetY = 0;
     let speedX = 0, speedY = 0;
 
-    // Element postaci oraz zmienne do animacji
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
     let targetX = windowWidth / 2;
@@ -197,7 +199,6 @@
     let lastMouseX = windowWidth / 2;
     let lastMouseTime = Date.now();
 
-    // Ruch myszy – ustawianie prędkości tła i pozycji postaci
     document.addEventListener('mousemove', function(e) {
       const mouseX = e.clientX;
       const mouseY = e.clientY;
@@ -215,7 +216,6 @@
       }
     });
 
-    // Animacja tła
     function animateBackground() {
       offsetX += speedX;
       offsetY += speedY;
@@ -224,7 +224,6 @@
     }
     requestAnimationFrame(animateBackground);
 
-    // Przesuwanie postaci metodą easing
     function animateCharacter() {
       currentX += (targetX - currentX) * 0.1;
       character.style.left = currentX + 'px';
@@ -232,7 +231,6 @@
     }
     requestAnimationFrame(animateCharacter);
 
-    // Animacja postaci – przełączanie obrazów
     function startCharacterAnimation() {
       isAnimating = true;
       let toggle = false;
@@ -252,7 +250,6 @@
       characterImg.src = '2.png';
     }
 
-    // Aktualizacja rozmiarów przy zmianie okna
     window.addEventListener('resize', function() {
       windowWidth = window.innerWidth;
       windowHeight = window.innerHeight;
