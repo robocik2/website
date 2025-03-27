@@ -66,6 +66,12 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+    /* Dodajemy przecinek po każdym przycisku poza ostatnim */
+    .nav-buttons a:not(:last-child)::after {
+      content: ", ";
+      /* Dopasowanie rozmiaru przecinka – można zmienić */
+      font-size: 0.5em;
+    }
     .nav-button {
       background: none;
       border: none;
@@ -82,14 +88,26 @@
       margin-top: 5px;
       word-wrap: break-word;
     }
-    .enemies-list,
-    #awards-list {
+    .enemies-list {
       display: none;
       list-style-type: none;
       padding: 0;
       margin: 5px 0;
       background: none;
       text-align: center;
+    }
+    /* Stylizacja listy festiwali – większy tekst i "eliptyczny" obszar */
+    #awards-list {
+      display: none;
+      list-style-type: none;
+      padding: 20px;
+      margin: 5px auto;
+      background: none;
+      text-align: center;
+      font-size: 2em;
+      width: 50vw; /* szerokość odpowiadająca średnicy elipsy */
+      clip-path: ellipse(50% 50% at 50% 50%);
+      overflow: hidden;
     }
     #gifaniol {
       display: none;
@@ -102,6 +120,8 @@
   <!-- Kontener nawigacji -->
   <div class="nav-container">
     <div class="nav-buttons">
+      <!-- Nowy przycisk "maks rz" -->
+      <a href="#" class="nav-button hover-target" id="maks-button">maks rz</a>
       <!-- Video Button -->
       <a href="https://vimeo.com/maksrz" class="nav-button hover-target" target="_blank">video</a>
       <!-- Art Button -->
@@ -151,6 +171,18 @@
   </div>
 
   <script>
+    // Nowy przycisk "maks rz" – zmiana tła na pastelowo-szary
+    document.getElementById('maks-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      const randomHue = Math.floor(Math.random() * 360);
+      // Używamy niskiego nasycenia i wysokiej jasności
+      const newColor = `hsl(${randomHue}, 20%, 90%)`;
+      // Usuwamy tło obrazkowe i ustawiamy nowy kolor w elemencie .bg
+      const bg = document.getElementById('bg');
+      bg.style.backgroundImage = 'none';
+      bg.style.backgroundColor = newColor;
+    });
+
     // Przełączanie widoczności rozwijanych list
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
