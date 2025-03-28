@@ -357,6 +357,14 @@
       hideHoverImage();
       hoverImageDiv.style.backgroundSize = "contain";
     });
+     document.getElementById('video-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "60% auto";
+      showHoverImage('art.png');
+     });
+     document.getElementById('art-button').addEventListener('mouseleave', function() {
+      hideHoverImage();
+      hoverImageDiv.style.backgroundSize = "contain";
+    });
     
     document.getElementById('contact-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
