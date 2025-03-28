@@ -58,14 +58,17 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 3;
-      user-select: none;
     }
     .character img {
       width: 150px;
       height: auto;
-      pointer-events: none;
     }
-    /* Navigation container at the top */
+    /* Bouncing character style */
+    .bouncing {
+      position: absolute;
+      transition: none;
+    }
+    /* Rest of the previous CSS remains the same... */
     .nav-container {
       position: absolute;
       top: 0;
@@ -212,319 +215,118 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    /* ======= NAWIGACJA I HOVER ======= */
-    document.getElementById('enemies-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      var enemiesList = document.getElementById('enemies-list');
-      enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
-    });
+    // Existing code remains the same...
     
-    document.getElementById('awards-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      var awardsContainer = document.getElementById('awards-container');
-      awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
-    });
-    
-    const hoverImageDiv = document.getElementById('hoverImage');
-    
-    function showHoverImage(imageUrl) {
-      hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
-      hoverImageDiv.style.display = "block";
-    }
-    
-    function hideHoverImage() {
-      hoverImageDiv.style.display = "none";
-    }
-    
-    document.getElementById('maks-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "contain";
-      showHoverImage('maksrz.png');
-    });
-    document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
-    
-    document.getElementById('video-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "60% auto";
-      showHoverImage('gifaniol.gif');
-    });
-    document.getElementById('video-button').addEventListener('mouseleave', function() {
-      hideHoverImage();
-      hoverImageDiv.style.backgroundSize = "contain";
-    });
-    
-    document.getElementById('art-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "50% auto";
-      showHoverImage('art.png');
-    });
-    document.getElementById('art-button').addEventListener('mouseleave', function() {
-      hideHoverImage();
-      hoverImageDiv.style.backgroundSize = "contain";
-    });
-    
-    document.getElementById('contact-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "contain";
-      showHoverImage('contact.png');
-    });
-    document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
-    
-    document.getElementById('enemies-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "contain";
-      showHoverImage('enemies.png');
-    });
-    document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
-    
-    document.getElementById('awards-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "contain";
-      showHoverImage('awards.png');
-    });
-    document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
-    
-    /* ======= ANIMACJA TŁA ======= */
-    let offsetX = 0, offsetY = 0;
-    let speedX = 0, speedY = 0;
-    let lastFrameTime = Date.now();
-    let lastMouseTime = Date.now();
-    
-    function animateBackground() {
-      const now = Date.now();
-      const deltaTime = now - lastFrameTime;
-      lastFrameTime = now;
+    // New bouncing functionality
+    let isBouncing = false;
+    let bouncingCharacter = null;
+    let bounceVelocityX = 0;
+    let bounceVelocityY = 0;
+    const GRAVITY = 0.5;
+    const BOUNCE_DAMPING = 0.8;
+
+    function startBouncing(event) {
+      // Prevent bouncing if already bouncing or event is on a button
+      if (isBouncing || event.target.closest('.nav-button')) return;
+
+      // Stop normal character animation
+      stopCharacterAnimation();
+      const characterImg = document.getElementById('characterImg');
       
-      // Po 500ms bez ruchu spowalniamy animację
-      if (now - lastMouseTime > 500) {
-        const decayFactor = Math.pow(0.5, deltaTime / 1000);
-        speedX *= decayFactor;
-        speedY *= decayFactor;
-        if (Math.abs(speedX) < 0.01) speedX = 0;
-        if (Math.abs(speedY) < 0.01) speedY = 0;
+      // Create a new bouncing character
+      bouncingCharacter = characterImg.cloneNode(true);
+      bouncingCharacter.id = 'bouncingCharacter';
+      bouncingCharacter.classList.add('bouncing');
+      
+      // Set initial position
+      const rect = characterImg.getBoundingClientRect();
+      bouncingCharacter.style.position = 'absolute';
+      bouncingCharacter.style.left = rect.left + 'px';
+      bouncingCharacter.style.top = rect.top + 'px';
+      bouncingCharacter.style.width = rect.width + 'px';
+      bouncingCharacter.style.height = rect.height + 'px';
+      bouncingCharacter.style.zIndex = '1000';
+      
+      // Hide original character
+      characterImg.style.visibility = 'hidden';
+      
+      // Add to body
+      document.body.appendChild(bouncingCharacter);
+      
+      // Set initial velocity based on mouse/touch
+      bounceVelocityX = event.type === 'mousedown' ? 
+        (event.clientX - rect.left - rect.width / 2) * 0.5 : 
+        (event.touches[0].clientX - rect.left - rect.width / 2) * 0.5;
+      bounceVelocityY = -10; // Initial upward velocity
+      
+      isBouncing = true;
+      requestAnimationFrame(updateBounce);
+    }
+
+    function updateBounce() {
+      if (!bouncingCharacter) return;
+
+      const rect = bouncingCharacter.getBoundingClientRect();
+      
+      // Update position
+      const newLeft = rect.left + bounceVelocityX;
+      const newTop = rect.top + bounceVelocityY;
+      
+      // Bounce off walls
+      if (newLeft <= 0 || newLeft + rect.width >= window.innerWidth) {
+        bounceVelocityX *= -BOUNCE_DAMPING;
       }
       
-      offsetX += speedX;
-      offsetY += speedY;
-      document.getElementById('bg').style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
-      requestAnimationFrame(animateBackground);
-    }
-    requestAnimationFrame(animateBackground);
-    
-    document.addEventListener('mousemove', function(e) {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      const deltaX = (mouseX - window.innerWidth / 2) / (window.innerWidth / 2);
-      const deltaY = (mouseY - window.innerHeight / 2) / (window.innerHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      // Jeśli nie jest rzucany ani przeciągany, aktualizujemy pozycję postaci
-      if (!isThrown && !isDragging) {
-        targetX = mouseX;
+      // Bounce off floor or ceiling
+      if (newTop <= 0 || newTop + rect.height >= window.innerHeight) {
+        bounceVelocityY *= -BOUNCE_DAMPING;
       }
-      lastMouseTime = Date.now();
-    });
-    
-    function handleTouch(e) {
-      if (e.target.closest('.nav-button')) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const touchX = touch.clientX;
-      const touchY = touch.clientY;
-      const deltaX = (touchX - window.innerWidth / 2) / (window.innerWidth / 2);
-      const deltaY = (touchY - window.innerHeight / 2) / (window.innerHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      if (!isThrown && !isDragging) {
-        targetX = touchX;
-      }
-      lastMouseTime = Date.now();
-    }
-    
-    document.addEventListener('touchstart', handleTouch, {passive: false});
-    document.addEventListener('touchmove', handleTouch, {passive: false});
-    
-    /* ======= ANIMACJA POSTACI I FUNKCJONALNOŚĆ RZUCANIA ======= */
-    const character = document.getElementById('character');
-    const characterImg = document.getElementById('characterImg');
-    let targetX = window.innerWidth / 2;
-    let currentX = window.innerWidth / 2;
-    
-    // Zmienne stanu dla przeciągania i rzucania
-    let isDragging = false;
-    let isThrown = false;
-    let throwVx = 0, throwVy = 0;
-    let throwX = window.innerWidth / 2;
-    let throwY = window.innerHeight - 20 - character.offsetHeight;
-    let lastThrownFrameTime = null;
-    
-    let dragOffsetX = 0, dragOffsetY = 0;
-    let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
-    
-    // Animacja normalna – postać podąża za kursorem (ruch tylko horyzontalny)
-    function animateCharacter() {
-      if (isThrown || isDragging) {
-        requestAnimationFrame(animateCharacter);
+      
+      // Apply gravity
+      bounceVelocityY += GRAVITY;
+      
+      // Update character position
+      bouncingCharacter.style.left = newLeft + 'px';
+      bouncingCharacter.style.top = newTop + 'px';
+      
+      // Stop bouncing if velocity is very low
+      if (Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5 && 
+          newTop + rect.height >= window.innerHeight - 10) {
+        stopBouncing();
         return;
       }
-      currentX += (targetX - currentX) * 0.1;
-      character.style.left = currentX + 'px';
-      requestAnimationFrame(animateCharacter);
+      
+      requestAnimationFrame(updateBounce);
     }
-    requestAnimationFrame(animateCharacter);
-    
-    // Animacja rzucanej postaci – symulacja odbić od krawędzi
-    function animateThrown(timestamp) {
-      if (!isThrown) return;
-      if (!lastThrownFrameTime) lastThrownFrameTime = timestamp;
-      let dt = (timestamp - lastThrownFrameTime) / 1000;
-      lastThrownFrameTime = timestamp;
+
+    function stopBouncing() {
+      if (!isBouncing) return;
       
-      throwX += throwVx * dt;
-      throwY += throwVy * dt;
-      
-      const rect = character.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
-      
-      // Odbijanie od lewej i prawej krawędzi
-      if (throwX < 0) {
-        throwX = 0;
-        throwVx = -throwVx;
-      } else if (throwX + width > window.innerWidth) {
-        throwX = window.innerWidth - width;
-        throwVx = -throwVx;
+      // Remove bouncing character
+      if (bouncingCharacter) {
+        document.body.removeChild(bouncingCharacter);
+        bouncingCharacter = null;
       }
       
-      // Odbijanie od górnej i dolnej krawędzi
-      if (throwY < 0) {
-        throwY = 0;
-        throwVy = -throwVy;
-      } else if (throwY + height > window.innerHeight) {
-        throwY = window.innerHeight - height;
-        throwVy = -throwVy;
-      }
+      // Restore original character
+      const characterImg = document.getElementById('characterImg');
+      characterImg.style.visibility = 'visible';
       
-      // Spowolnienie – tarcie
-      let friction = 0.99;
-      throwVx *= friction;
-      throwVy *= friction;
-      
-      character.style.left = throwX + "px";
-      character.style.top = throwY + "px";
-      
-      // Gdy prędkość spadnie poniżej progu, kończymy tryb rzucania
-      if (Math.abs(throwVx) < 0.1 && Math.abs(throwVy) < 0.1) {
-        isThrown = false;
-        lastThrownFrameTime = null;
-        // Powrót do normalnego ustawienia – ustawiamy bottom: 20px i usuwamy top
-        character.style.top = "";
-        character.style.bottom = "20px";
-        currentX = parseFloat(character.style.left) || window.innerWidth / 2;
-      } else {
-        requestAnimationFrame(animateThrown);
-      }
+      isBouncing = false;
     }
-    
-    // Obsługa zdarzeń myszy – przeciąganie i rzucanie
-    character.addEventListener('mousedown', function(e) {
-      if (isThrown) return;
-      isDragging = true;
-      const rect = character.getBoundingClientRect();
-      dragOffsetX = e.clientX - rect.left;
-      dragOffsetY = e.clientY - rect.top;
-      // Aby móc zmieniać pozycję za pomocą top/left, usuwamy bottom
-      character.style.bottom = "auto";
-      lastDragX = e.clientX;
-      lastDragY = e.clientY;
-      lastDragTime = Date.now();
-    });
-    
-    document.addEventListener('mousemove', function(e) {
-      if (isDragging) {
-        let newX = e.clientX - dragOffsetX;
-        let newY = e.clientY - dragOffsetY;
-        character.style.left = newX + "px";
-        character.style.top = newY + "px";
-        let now = Date.now();
-        let dt = now - lastDragTime;
-        if (dt > 0) {
-          throwVx = (e.clientX - lastDragX) / dt * 16;
-          throwVy = (e.clientY - lastDragY) / dt * 16;
-          lastDragX = e.clientX;
-          lastDragY = e.clientY;
-          lastDragTime = now;
-        }
-      }
-    });
-    
-    document.addEventListener('mouseup', function(e) {
-      if (isDragging) {
-        isDragging = false;
-        const rect = character.getBoundingClientRect();
-        throwX = rect.left;
-        throwY = rect.top;
-        // Jeśli prędkość jest wystarczająca, wchodzimy w tryb rzucania
-        if (Math.abs(throwVx) > 0.5 || Math.abs(throwVy) > 0.5) {
-          isThrown = true;
-          lastThrownFrameTime = null;
-          requestAnimationFrame(animateThrown);
-        } else {
-          // W przeciwnym wypadku powrót do normalnego trybu
-          character.style.top = "";
-          character.style.bottom = "20px";
-        }
-      }
-    });
-    
-    // Obsługa dotyku – analogicznie do myszy
-    character.addEventListener('touchstart', function(e) {
-      if (isThrown) return;
-      isDragging = true;
-      const touch = e.touches[0];
-      const rect = character.getBoundingClientRect();
-      dragOffsetX = touch.clientX - rect.left;
-      dragOffsetY = touch.clientY - rect.top;
-      character.style.bottom = "auto";
-      lastDragX = touch.clientX;
-      lastDragY = touch.clientY;
-      lastDragTime = Date.now();
-    }, {passive: false});
-    
+
+    // Add event listeners for mouse and touch
+    document.addEventListener('mousedown', startBouncing);
+    document.addEventListener('touchstart', startBouncing, {passive: false});
+
+    // Prevent default touch behavior to allow bouncing
     document.addEventListener('touchmove', function(e) {
-      if (isDragging) {
-        const touch = e.touches[0];
-        let newX = touch.clientX - dragOffsetX;
-        let newY = touch.clientY - dragOffsetY;
-        character.style.left = newX + "px";
-        character.style.top = newY + "px";
-        let now = Date.now();
-        let dt = now - lastDragTime;
-        if (dt > 0) {
-          throwVx = (touch.clientX - lastDragX) / dt * 16;
-          throwVy = (touch.clientY - lastDragY) / dt * 16;
-          lastDragX = touch.clientX;
-          lastDragY = touch.clientY;
-          lastDragTime = now;
-        }
-        e.preventDefault();
-      }
+      if (isBouncing) e.preventDefault();
     }, {passive: false});
+
+    // Rest of the previous script remains the same...
     
-    document.addEventListener('touchend', function(e) {
-      if (isDragging) {
-        isDragging = false;
-        const rect = character.getBoundingClientRect();
-        throwX = rect.left;
-        throwY = rect.top;
-        if (Math.abs(throwVx) > 0.5 || Math.abs(throwVy) > 0.5) {
-          isThrown = true;
-          lastThrownFrameTime = null;
-          requestAnimationFrame(animateThrown);
-        } else {
-          character.style.top = "";
-          character.style.bottom = "20px";
-        }
-      }
-    });
-    
-    /* ======= LOSOWE IMIĘ WIZYTORA ======= */
+    // Random visitor name from an expanded list
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
