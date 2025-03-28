@@ -203,30 +203,18 @@
     <div class="bg" id="bg"></div>
     <div id="hoverImage"></div>
   </div>
-  <!-- Character (2.png) with animation -->
+  <!-- Character (2.png) with animation and fizyka -->
   <div class="character" id="character">
     <img src="2.png" id="characterImg" alt="Postać">
   </div>
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Toggle enemies list ("1. damien")
-    document.getElementById('enemies-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      var enemiesList = document.getElementById('enemies-list');
-      enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
-    });
-    
-    // Toggle awards container – show/hide (display: flex when shown)
-    document.getElementById('awards-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      var awardsContainer = document.getElementById('awards-container');
-      awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
-    });
-    
-    // Background animation with deceleration after 500ms of inactivity
+    // USTAWIENIA GLOBALNE
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
+    
+    // Animacja tła z deceleracją
     const bg = document.getElementById('bg');
     let offsetX = 0, offsetY = 0;
     let speedX = 0, speedY = 0;
@@ -238,7 +226,6 @@
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
       
-      // After 500ms of inactivity, apply decay (ease out)
       if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
@@ -246,7 +233,6 @@
         if (Math.abs(speedX) < 0.01) speedX = 0;
         if (Math.abs(speedY) < 0.01) speedY = 0;
       }
-      
       offsetX += speedX;
       offsetY += speedY;
       bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
@@ -254,88 +240,13 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Character animation (2.png)
-    const character = document.getElementById('character');
-    const characterImg = document.getElementById('characterImg');
-    let targetX = windowWidth / 2;
-    let currentX = windowWidth / 2;
-    let animationInterval = null;
-    let isAnimating = false;
-    let lastMouseX = windowWidth / 2;
-    
-    function animateCharacter() {
-      currentX += (targetX - currentX) * 0.1;
-      character.style.left = currentX + 'px';
-      requestAnimationFrame(animateCharacter);
-    }
-    requestAnimationFrame(animateCharacter);
-    
-    function startCharacterAnimation() {
-      isAnimating = true;
-      let toggle = false;
-      animationInterval = setInterval(() => {
-        toggle = !toggle;
-        characterImg.src = toggle ? '3.png' : '4.png';
-        // Stop character animation if more than 200ms have passed since last movement
-        if (Date.now() - lastMouseTime > 200) {
-          stopCharacterAnimation();
-        }
-      }, 70);
-    }
-    
-    function stopCharacterAnimation() {
-      clearInterval(animationInterval);
-      animationInterval = null;
-      isAnimating = false;
-      characterImg.src = '2.png';
-    }
-    
-    document.addEventListener('mousemove', function(e) {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
-      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      targetX = mouseX;
-      lastMouseX = mouseX;
-      lastMouseTime = Date.now();
-      if (!isAnimating) {
-        startCharacterAnimation();
-      }
-    });
-    
-    // Touch handler for mobile devices (ignore buttons)
-    function handleTouch(e) {
-      if (e.target.closest('.nav-button')) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const touchX = touch.clientX;
-      const touchY = touch.clientY;
-      const deltaX = (touchX - windowWidth / 2) / (windowWidth / 2);
-      const deltaY = (touchY - windowHeight / 2) / (windowHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      targetX = touchX;
-      lastMouseTime = Date.now();
-      if (!isAnimating) {
-        startCharacterAnimation();
-      }
-    }
-    
-    document.addEventListener('touchstart', handleTouch, {passive: false});
-    document.addEventListener('touchmove', handleTouch, {passive: false});
-    
-    // Hover overlay functionality for navigation buttons
+    // NAWIGACJA I HOVER OVERLAY
     const hoverImageDiv = document.getElementById('hoverImage');
     
     function showHoverImage(imageUrl) {
       hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
       hoverImageDiv.style.display = "block";
     }
-    
     function hideHoverImage() {
       hoverImageDiv.style.display = "none";
     }
@@ -346,7 +257,6 @@
     });
     document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
     
-    // For video button: show aniol.gif at 60% size
     document.getElementById('video-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "60% auto";
       showHoverImage('gifaniol.gif');
@@ -356,7 +266,6 @@
       hoverImageDiv.style.backgroundSize = "contain";
     });
     
-    // For art button: show art.png at 20% smaller than before (50% auto)
     document.getElementById('art-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "50% auto";
       showHoverImage('art.png');
@@ -384,7 +293,21 @@
     });
     document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
     
-    // Random visitor name from an expanded list
+    // Przełączanie widoczności listy wrogów
+    document.getElementById('enemies-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      var enemiesList = document.getElementById('enemies-list');
+      enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
+    });
+    
+    // Przełączanie widoczności kontenera z nagrodami
+    document.getElementById('awards-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      var awardsContainer = document.getElementById('awards-container');
+      awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
+    });
+    
+    // LOSOWA NAZWA ODWIEDZAJĄCEGO
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
@@ -394,6 +317,204 @@
     ];
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
+    
+    // OBSŁUGA ANIMACJI POSTACI ORAZ FIZYKI PRZECIĄGANIA
+    const characterEl = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    
+    // Dla normalnej animacji (tylko poziom)
+    let targetX = windowWidth / 2;
+    let currentX = windowWidth / 2;
+    
+    // Zmienne dla trybu drag & physics
+    let isDragging = false;
+    let isPhysicsActive = false;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    let physicsPosX = 0, physicsPosY = 0;
+    let physicsVelocityX = 0, physicsVelocityY = 0;
+    let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
+    let lastDragDeltaX = 0, lastDragDeltaY = 0;
+    
+    // Pozycja startowa postaci (bazując na aktualnym rozmiarze okna)
+    let startPosX = window.innerWidth / 2 - characterEl.offsetWidth / 2;
+    let startPosY = window.innerHeight - characterEl.offsetHeight - 20;
+    
+    // Normalna animacja – gdy nie trwa przeciąganie ani symulacja fizyki
+    function animateCharacter() {
+      if (!isDragging && !isPhysicsActive) {
+        currentX += (targetX - currentX) * 0.1;
+        characterEl.style.left = currentX + 'px';
+        characterEl.style.top = startPosY + 'px';
+      }
+      requestAnimationFrame(animateCharacter);
+    }
+    requestAnimationFrame(animateCharacter);
+    
+    // Animacja zmiany obrazka (dla efektu ruchu)
+    let animationInterval = null;
+    let isAnimating = false;
+    function startCharacterAnimation() {
+      isAnimating = true;
+      let toggle = false;
+      animationInterval = setInterval(() => {
+        toggle = !toggle;
+        characterImg.src = toggle ? '3.png' : '4.png';
+        if (Date.now() - lastMouseTime > 200) {
+          stopCharacterAnimation();
+        }
+      }, 70);
+    }
+    function stopCharacterAnimation() {
+      clearInterval(animationInterval);
+      animationInterval = null;
+      isAnimating = false;
+      characterImg.src = '2.png';
+    }
+    
+    // Obsługa ruchu myszy – aktualizacja tła, pozycji docelowej oraz start animacji (jeśli nie trwa drag/physics)
+    document.addEventListener('mousemove', function(e) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating && !isDragging && !isPhysicsActive) {
+        startCharacterAnimation();
+      }
+    });
+    
+    // Obsługa dotyku dla urządzeń mobilnych (pomijamy przyciski)
+    function handleTouch(e) {
+      if (e.target.closest('.nav-button')) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const touchX = touch.clientX;
+      const touchY = touch.clientY;
+      const deltaX = (touchX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (touchY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = touchX;
+      lastMouseTime = Date.now();
+      if (!isAnimating && !isDragging && !isPhysicsActive) {
+        startCharacterAnimation();
+      }
+    }
+    document.addEventListener('touchstart', handleTouch, {passive: false});
+    document.addEventListener('touchmove', handleTouch, {passive: false});
+    
+    // --- DRAG & PHYSICS – PRZECIĄGANIE OBRAZKA 2.png PRAWYM PRZYCISKIEM MYSZY ---
+    
+    // Rozpoczęcie przeciągania – naciśnięcie prawego przycisku myszy na postaci
+    characterEl.addEventListener('mousedown', function(e) {
+      if (e.button === 2) {
+        e.preventDefault();
+        isDragging = true;
+        isPhysicsActive = false;
+        const rect = characterEl.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        lastDragX = e.clientX;
+        lastDragY = e.clientY;
+        lastDragTime = Date.now();
+      }
+    });
+    // Zapobieganie pojawieniu się menu kontekstowego
+    characterEl.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+    
+    // Aktualizacja pozycji postaci podczas przeciągania i obliczanie prędkości ruchu
+    document.addEventListener('mousemove', function(e) {
+      if (isDragging) {
+        const newX = e.clientX - dragOffsetX;
+        const newY = e.clientY - dragOffsetY;
+        characterEl.style.left = newX + 'px';
+        characterEl.style.top = newY + 'px';
+        const now = Date.now();
+        const dt = now - lastDragTime;
+        if (dt > 0) {
+          lastDragDeltaX = (e.clientX - lastDragX) / dt;
+          lastDragDeltaY = (e.clientY - lastDragY) / dt;
+          lastDragX = e.clientX;
+          lastDragY = e.clientY;
+          lastDragTime = now;
+        }
+      }
+    });
+    
+    // Zakończenie przeciągania – puszczenie prawego przycisku i start symulacji fizyki
+    document.addEventListener('mouseup', function(e) {
+      if (isDragging && e.button === 2) {
+        isDragging = false;
+        physicsVelocityX = lastDragDeltaX * 50;
+        physicsVelocityY = lastDragDeltaY * 50;
+        const rect = characterEl.getBoundingClientRect();
+        physicsPosX = rect.left;
+        physicsPosY = rect.top;
+        isPhysicsActive = true;
+        simulatePhysics();
+      }
+    });
+    
+    // Funkcja symulująca fizykę – grawitacja, ruch oraz odbicia od 4 krawędzi
+    function simulatePhysics() {
+      if (!isPhysicsActive) return;
+      const gravity = 0.5;
+      const restitution = 0.7;
+      
+      physicsVelocityY += gravity;
+      physicsPosX += physicsVelocityX;
+      physicsPosY += physicsVelocityY;
+      
+      const charW = characterEl.offsetWidth;
+      const charH = characterEl.offsetHeight;
+      
+      // Odbicie od lewej krawędzi
+      if (physicsPosX < 0) {
+        physicsPosX = 0;
+        physicsVelocityX = -physicsVelocityX * restitution;
+      }
+      // Odbicie od prawej krawędzi
+      if (physicsPosX + charW > window.innerWidth) {
+        physicsPosX = window.innerWidth - charW;
+        physicsVelocityX = -physicsVelocityX * restitution;
+      }
+      // Odbicie od górnej krawędzi
+      if (physicsPosY < 0) {
+        physicsPosY = 0;
+        physicsVelocityY = -physicsVelocityY * restitution;
+      }
+      // Odbicie od dolnej krawędzi
+      if (physicsPosY + charH > window.innerHeight) {
+        physicsPosY = window.innerHeight - charH;
+        physicsVelocityY = -physicsVelocityY * restitution;
+        if (Math.abs(physicsVelocityY) < 1 && Math.abs(physicsPosY - startPosY) < 5) {
+          isPhysicsActive = false;
+          characterEl.style.left = startPosX + 'px';
+          characterEl.style.top = startPosY + 'px';
+          return;
+        }
+      }
+      
+      characterEl.style.left = physicsPosX + 'px';
+      characterEl.style.top = physicsPosY + 'px';
+      
+      requestAnimationFrame(simulatePhysics);
+    }
+    
+    // Aktualizacja pozycji startowej przy zmianie rozmiaru okna
+    window.addEventListener('resize', function() {
+      windowWidth = window.innerWidth;
+      windowHeight = window.innerHeight;
+      startPosX = window.innerWidth / 2 - characterEl.offsetWidth / 2;
+      startPosY = window.innerHeight - characterEl.offsetHeight - 20;
+    });
   </script>
 </body>
 </html>
