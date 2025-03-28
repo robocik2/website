@@ -68,7 +68,7 @@
       position: absolute;
       transition: none;
     }
-    /* Rest of the previous CSS remains the same... */
+    /* Navigation container at the top */
     .nav-container {
       position: absolute;
       top: 0;
@@ -215,7 +215,123 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Existing code remains the same...
+    // Toggle enemies list ("1. damien")
+    document.getElementById('enemies-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      var enemiesList = document.getElementById('enemies-list');
+      enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
+    });
+    
+    // Toggle awards container – show/hide (display: flex when shown)
+    document.getElementById('awards-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      var awardsContainer = document.getElementById('awards-container');
+      awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
+    });
+    
+    // Background animation with deceleration after 500ms of inactivity
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
+    const bg = document.getElementById('bg');
+    let offsetX = 0, offsetY = 0;
+    let speedX = 0, speedY = 0;
+    let lastFrameTime = Date.now();
+    let lastMouseTime = Date.now();
+    
+    function animateBackground() {
+      const now = Date.now();
+      const deltaTime = now - lastFrameTime;
+      lastFrameTime = now;
+      
+      // After 500ms of inactivity, apply decay (ease out)
+      if (now - lastMouseTime > 500) {
+        const decayFactor = Math.pow(0.5, deltaTime / 1000);
+        speedX *= decayFactor;
+        speedY *= decayFactor;
+        if (Math.abs(speedX) < 0.01) speedX = 0;
+        if (Math.abs(speedY) < 0.01) speedY = 0;
+      }
+      
+      offsetX += speedX;
+      offsetY += speedY;
+      bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
+      requestAnimationFrame(animateBackground);
+    }
+    requestAnimationFrame(animateBackground);
+    
+    // Character animation (2.png)
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    let targetX = windowWidth / 2;
+    let currentX = windowWidth / 2;
+    let animationInterval = null;
+    let isAnimating = false;
+    let lastMouseX = windowWidth / 2;
+    
+    function animateCharacter() {
+      currentX += (targetX - currentX) * 0.1;
+      character.style.left = currentX + 'px';
+      requestAnimationFrame(animateCharacter);
+    }
+    requestAnimationFrame(animateCharacter);
+    
+    function startCharacterAnimation() {
+      isAnimating = true;
+      let toggle = false;
+      animationInterval = setInterval(() => {
+        toggle = !toggle;
+        characterImg.src = toggle ? '3.png' : '4.png';
+        // Stop character animation if more than 200ms have passed since last movement
+        if (Date.now() - lastMouseTime > 200) {
+          stopCharacterAnimation();
+        }
+      }, 70);
+    }
+    
+    function stopCharacterAnimation() {
+      clearInterval(animationInterval);
+      animationInterval = null;
+      isAnimating = false;
+      characterImg.src = '2.png';
+    }
+    
+    document.addEventListener('mousemove', function(e) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = mouseX;
+      lastMouseX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
+      }
+    });
+    
+    // Touch handler for mobile devices (ignore buttons)
+    function handleTouch(e) {
+      if (e.target.closest('.nav-button')) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const touchX = touch.clientX;
+      const touchY = touch.clientY;
+      const deltaX = (touchX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (touchY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = touchX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
+      }
+    }
+    
+    document.addEventListener('touchstart', handleTouch, {passive: false});
+    document.addEventListener('touchmove', handleTouch, {passive: false});
     
     // New bouncing functionality
     let isBouncing = false;
@@ -323,8 +439,62 @@
     document.addEventListener('touchmove', function(e) {
       if (isBouncing) e.preventDefault();
     }, {passive: false});
-
-    // Rest of the previous script remains the same...
+    
+    // Hover overlay functionality for navigation buttons
+    const hoverImageDiv = document.getElementById('hoverImage');
+    
+    function showHoverImage(imageUrl) {
+      hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
+      hoverImageDiv.style.display = "block";
+    }
+    
+    function hideHoverImage() {
+      hoverImageDiv.style.display = "none";
+    }
+    
+    document.getElementById('maks-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "contain";
+      showHoverImage('maksrz.png');
+    });
+    document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
+    
+    // For video button: show aniol.gif at 60% size
+    document.getElementById('video-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "60% auto";
+      showHoverImage('gifaniol.gif');
+    });
+    document.getElementById('video-button').addEventListener('mouseleave', function() {
+      hideHoverImage();
+      hoverImageDiv.style.backgroundSize = "contain";
+    });
+    
+    // For art button: show art.png at 20% smaller than before (50% auto)
+    document.getElementById('art-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "50% auto";
+      showHoverImage('art.png');
+    });
+    document.getElementById('art-button').addEventListener('mouseleave', function() {
+      hideHoverImage();
+      hoverImageDiv.style.backgroundSize = "contain";
+    });
+    
+    document.getElementById('contact-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "contain";
+      showHoverImage('contact.png');
+    });
+    document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
+    
+    document.getElementById('enemies-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "contain";
+      showHoverImage('enemies.png');
+    });
+    document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
+    
+    document.getElementById('awards-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "contain";
+      showHoverImage('awards.png');
+    });
+    document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
     
     // Random visitor name from an expanded list
     const names = [
