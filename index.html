@@ -210,13 +210,29 @@
       awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
     });
     
-    // Animate background
+    // Animate background with deceleration after 2 seconds of inactivity
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
     let offsetX = 0, offsetY = 0;
     let speedX = 0, speedY = 0;
+    let lastFrameTime = Date.now();
+    let lastMouseTime = Date.now();
+    
     function animateBackground() {
+      const now = Date.now();
+      const deltaTime = now - lastFrameTime;
+      lastFrameTime = now;
+      
+      // Jeśli od ostatniego ruchu minęły 2000 ms, stosujemy wygaszanie (ease out)
+      if (now - lastMouseTime > 2000) {
+        const decayFactor = Math.pow(0.5, deltaTime / 1000);
+        speedX *= decayFactor;
+        speedY *= decayFactor;
+        if (Math.abs(speedX) < 0.01) speedX = 0;
+        if (Math.abs(speedY) < 0.01) speedY = 0;
+      }
+      
       offsetX += speedX;
       offsetY += speedY;
       bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
@@ -232,30 +248,34 @@
     let animationInterval = null;
     let isAnimating = false;
     let lastMouseX = windowWidth / 2;
-    let lastMouseTime = Date.now();
+    
     function animateCharacter() {
       currentX += (targetX - currentX) * 0.1;
       character.style.left = currentX + 'px';
       requestAnimationFrame(animateCharacter);
     }
     requestAnimationFrame(animateCharacter);
+    
     function startCharacterAnimation() {
       isAnimating = true;
       let toggle = false;
       animationInterval = setInterval(() => {
         toggle = !toggle;
         characterImg.src = toggle ? '3.png' : '4.png';
+        // Jeśli brak ruchu przez ponad 200 ms, zatrzymujemy animację postaci
         if (Date.now() - lastMouseTime > 200) {
           stopCharacterAnimation();
         }
       }, 70);
     }
+    
     function stopCharacterAnimation() {
       clearInterval(animationInterval);
       animationInterval = null;
       isAnimating = false;
       characterImg.src = '2.png';
     }
+    
     document.addEventListener('mousemove', function(e) {
       const mouseX = e.clientX;
       const mouseY = e.clientY;
@@ -272,9 +292,8 @@
       }
     });
     
-    // Touch handler for mobile: if touch is NOT on a button, then update movement
+    // Touch handler for mobile: jeśli dotyk nie nastąpi na przyciskach, aktualizujemy ruch
     function handleTouch(e) {
-      // Allow default behavior if touch is on a nav-button so buttons can be tapped
       if (e.target.closest('.nav-button')) return;
       e.preventDefault();
       const touch = e.touches[0];
@@ -291,6 +310,7 @@
         startCharacterAnimation();
       }
     }
+    
     document.addEventListener('touchstart', handleTouch, {passive: false});
     document.addEventListener('touchmove', handleTouch, {passive: false});
     
@@ -305,7 +325,7 @@
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
       "Błażej", "Mieczysław", "Zbigniew", "Witold", "Bronisław", "Czesław", "Lech", "Stanisław", "Wacław", "Kazimierz",
       "Agnieszka", "Barbara", "Czesława", "Danuta", "Elżbieta", "Grażyna", "Halina", "Irena", "Jadwiga", "Krystyna", "Łucja", "Małgorzata", "Natalia", "Olga", "Patrycja",
-      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula"
+      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula", "Maksio", "Julia", "Chris", "Maddie", "Jan", "Maciek", "Marcelina", "Michael", "Mikołaj", "Jasio", "Grzegorz", "John", "Peter Smith" 
     ];
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
