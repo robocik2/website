@@ -58,10 +58,12 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 3;
+      user-select: none;
     }
     .character img {
       width: 150px;
       height: auto;
+      pointer-events: none;
     }
     /* Navigation container at the top */
     .nav-container {
@@ -203,50 +205,33 @@
     <div class="bg" id="bg"></div>
     <div id="hoverImage"></div>
   </div>
-  <!-- Character (2.png) with animation and fizyka -->
+  <!-- Character (2.png) with animation -->
   <div class="character" id="character">
     <img src="2.png" id="characterImg" alt="Postać">
   </div>
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // USTAWIENIA GLOBALNE
-    let windowWidth = window.innerWidth;
-    let windowHeight = window.innerHeight;
+    /* ======= NAWIGACJA I HOVER ======= */
+    document.getElementById('enemies-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      var enemiesList = document.getElementById('enemies-list');
+      enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
+    });
     
-    // Animacja tła z deceleracją
-    const bg = document.getElementById('bg');
-    let offsetX = 0, offsetY = 0;
-    let speedX = 0, speedY = 0;
-    let lastFrameTime = Date.now();
-    let lastMouseTime = Date.now();
+    document.getElementById('awards-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      var awardsContainer = document.getElementById('awards-container');
+      awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
+    });
     
-    function animateBackground() {
-      const now = Date.now();
-      const deltaTime = now - lastFrameTime;
-      lastFrameTime = now;
-      
-      if (now - lastMouseTime > 500) {
-        const decayFactor = Math.pow(0.5, deltaTime / 1000);
-        speedX *= decayFactor;
-        speedY *= decayFactor;
-        if (Math.abs(speedX) < 0.01) speedX = 0;
-        if (Math.abs(speedY) < 0.01) speedY = 0;
-      }
-      offsetX += speedX;
-      offsetY += speedY;
-      bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
-      requestAnimationFrame(animateBackground);
-    }
-    requestAnimationFrame(animateBackground);
-    
-    // NAWIGACJA I HOVER OVERLAY
     const hoverImageDiv = document.getElementById('hoverImage');
     
     function showHoverImage(imageUrl) {
       hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
       hoverImageDiv.style.display = "block";
     }
+    
     function hideHoverImage() {
       hoverImageDiv.style.display = "none";
     }
@@ -293,21 +278,253 @@
     });
     document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
     
-    // Przełączanie widoczności listy wrogów
-    document.getElementById('enemies-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      var enemiesList = document.getElementById('enemies-list');
-      enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
+    /* ======= ANIMACJA TŁA ======= */
+    let offsetX = 0, offsetY = 0;
+    let speedX = 0, speedY = 0;
+    let lastFrameTime = Date.now();
+    let lastMouseTime = Date.now();
+    
+    function animateBackground() {
+      const now = Date.now();
+      const deltaTime = now - lastFrameTime;
+      lastFrameTime = now;
+      
+      // Po 500ms bez ruchu spowalniamy animację
+      if (now - lastMouseTime > 500) {
+        const decayFactor = Math.pow(0.5, deltaTime / 1000);
+        speedX *= decayFactor;
+        speedY *= decayFactor;
+        if (Math.abs(speedX) < 0.01) speedX = 0;
+        if (Math.abs(speedY) < 0.01) speedY = 0;
+      }
+      
+      offsetX += speedX;
+      offsetY += speedY;
+      document.getElementById('bg').style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
+      requestAnimationFrame(animateBackground);
+    }
+    requestAnimationFrame(animateBackground);
+    
+    document.addEventListener('mousemove', function(e) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - window.innerWidth / 2) / (window.innerWidth / 2);
+      const deltaY = (mouseY - window.innerHeight / 2) / (window.innerHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      // Jeśli nie jest rzucany ani przeciągany, aktualizujemy pozycję postaci
+      if (!isThrown && !isDragging) {
+        targetX = mouseX;
+      }
+      lastMouseTime = Date.now();
     });
     
-    // Przełączanie widoczności kontenera z nagrodami
-    document.getElementById('awards-button').addEventListener('click', function(e) {
+    function handleTouch(e) {
+      if (e.target.closest('.nav-button')) return;
       e.preventDefault();
-      var awardsContainer = document.getElementById('awards-container');
-      awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
+      const touch = e.touches[0];
+      const touchX = touch.clientX;
+      const touchY = touch.clientY;
+      const deltaX = (touchX - window.innerWidth / 2) / (window.innerWidth / 2);
+      const deltaY = (touchY - window.innerHeight / 2) / (window.innerHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      if (!isThrown && !isDragging) {
+        targetX = touchX;
+      }
+      lastMouseTime = Date.now();
+    }
+    
+    document.addEventListener('touchstart', handleTouch, {passive: false});
+    document.addEventListener('touchmove', handleTouch, {passive: false});
+    
+    /* ======= ANIMACJA POSTACI I FUNKCJONALNOŚĆ RZUCANIA ======= */
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    let targetX = window.innerWidth / 2;
+    let currentX = window.innerWidth / 2;
+    
+    // Zmienne stanu dla przeciągania i rzucania
+    let isDragging = false;
+    let isThrown = false;
+    let throwVx = 0, throwVy = 0;
+    let throwX = window.innerWidth / 2;
+    let throwY = window.innerHeight - 20 - character.offsetHeight;
+    let lastThrownFrameTime = null;
+    
+    let dragOffsetX = 0, dragOffsetY = 0;
+    let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
+    
+    // Animacja normalna – postać podąża za kursorem (ruch tylko horyzontalny)
+    function animateCharacter() {
+      if (isThrown || isDragging) {
+        requestAnimationFrame(animateCharacter);
+        return;
+      }
+      currentX += (targetX - currentX) * 0.1;
+      character.style.left = currentX + 'px';
+      requestAnimationFrame(animateCharacter);
+    }
+    requestAnimationFrame(animateCharacter);
+    
+    // Animacja rzucanej postaci – symulacja odbić od krawędzi
+    function animateThrown(timestamp) {
+      if (!isThrown) return;
+      if (!lastThrownFrameTime) lastThrownFrameTime = timestamp;
+      let dt = (timestamp - lastThrownFrameTime) / 1000;
+      lastThrownFrameTime = timestamp;
+      
+      throwX += throwVx * dt;
+      throwY += throwVy * dt;
+      
+      const rect = character.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      
+      // Odbijanie od lewej i prawej krawędzi
+      if (throwX < 0) {
+        throwX = 0;
+        throwVx = -throwVx;
+      } else if (throwX + width > window.innerWidth) {
+        throwX = window.innerWidth - width;
+        throwVx = -throwVx;
+      }
+      
+      // Odbijanie od górnej i dolnej krawędzi
+      if (throwY < 0) {
+        throwY = 0;
+        throwVy = -throwVy;
+      } else if (throwY + height > window.innerHeight) {
+        throwY = window.innerHeight - height;
+        throwVy = -throwVy;
+      }
+      
+      // Spowolnienie – tarcie
+      let friction = 0.99;
+      throwVx *= friction;
+      throwVy *= friction;
+      
+      character.style.left = throwX + "px";
+      character.style.top = throwY + "px";
+      
+      // Gdy prędkość spadnie poniżej progu, kończymy tryb rzucania
+      if (Math.abs(throwVx) < 0.1 && Math.abs(throwVy) < 0.1) {
+        isThrown = false;
+        lastThrownFrameTime = null;
+        // Powrót do normalnego ustawienia – ustawiamy bottom: 20px i usuwamy top
+        character.style.top = "";
+        character.style.bottom = "20px";
+        currentX = parseFloat(character.style.left) || window.innerWidth / 2;
+      } else {
+        requestAnimationFrame(animateThrown);
+      }
+    }
+    
+    // Obsługa zdarzeń myszy – przeciąganie i rzucanie
+    character.addEventListener('mousedown', function(e) {
+      if (isThrown) return;
+      isDragging = true;
+      const rect = character.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left;
+      dragOffsetY = e.clientY - rect.top;
+      // Aby móc zmieniać pozycję za pomocą top/left, usuwamy bottom
+      character.style.bottom = "auto";
+      lastDragX = e.clientX;
+      lastDragY = e.clientY;
+      lastDragTime = Date.now();
     });
     
-    // LOSOWA NAZWA ODWIEDZAJĄCEGO
+    document.addEventListener('mousemove', function(e) {
+      if (isDragging) {
+        let newX = e.clientX - dragOffsetX;
+        let newY = e.clientY - dragOffsetY;
+        character.style.left = newX + "px";
+        character.style.top = newY + "px";
+        let now = Date.now();
+        let dt = now - lastDragTime;
+        if (dt > 0) {
+          throwVx = (e.clientX - lastDragX) / dt * 16;
+          throwVy = (e.clientY - lastDragY) / dt * 16;
+          lastDragX = e.clientX;
+          lastDragY = e.clientY;
+          lastDragTime = now;
+        }
+      }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+      if (isDragging) {
+        isDragging = false;
+        const rect = character.getBoundingClientRect();
+        throwX = rect.left;
+        throwY = rect.top;
+        // Jeśli prędkość jest wystarczająca, wchodzimy w tryb rzucania
+        if (Math.abs(throwVx) > 0.5 || Math.abs(throwVy) > 0.5) {
+          isThrown = true;
+          lastThrownFrameTime = null;
+          requestAnimationFrame(animateThrown);
+        } else {
+          // W przeciwnym wypadku powrót do normalnego trybu
+          character.style.top = "";
+          character.style.bottom = "20px";
+        }
+      }
+    });
+    
+    // Obsługa dotyku – analogicznie do myszy
+    character.addEventListener('touchstart', function(e) {
+      if (isThrown) return;
+      isDragging = true;
+      const touch = e.touches[0];
+      const rect = character.getBoundingClientRect();
+      dragOffsetX = touch.clientX - rect.left;
+      dragOffsetY = touch.clientY - rect.top;
+      character.style.bottom = "auto";
+      lastDragX = touch.clientX;
+      lastDragY = touch.clientY;
+      lastDragTime = Date.now();
+    }, {passive: false});
+    
+    document.addEventListener('touchmove', function(e) {
+      if (isDragging) {
+        const touch = e.touches[0];
+        let newX = touch.clientX - dragOffsetX;
+        let newY = touch.clientY - dragOffsetY;
+        character.style.left = newX + "px";
+        character.style.top = newY + "px";
+        let now = Date.now();
+        let dt = now - lastDragTime;
+        if (dt > 0) {
+          throwVx = (touch.clientX - lastDragX) / dt * 16;
+          throwVy = (touch.clientY - lastDragY) / dt * 16;
+          lastDragX = touch.clientX;
+          lastDragY = touch.clientY;
+          lastDragTime = now;
+        }
+        e.preventDefault();
+      }
+    }, {passive: false});
+    
+    document.addEventListener('touchend', function(e) {
+      if (isDragging) {
+        isDragging = false;
+        const rect = character.getBoundingClientRect();
+        throwX = rect.left;
+        throwY = rect.top;
+        if (Math.abs(throwVx) > 0.5 || Math.abs(throwVy) > 0.5) {
+          isThrown = true;
+          lastThrownFrameTime = null;
+          requestAnimationFrame(animateThrown);
+        } else {
+          character.style.top = "";
+          character.style.bottom = "20px";
+        }
+      }
+    });
+    
+    /* ======= LOSOWE IMIĘ WIZYTORA ======= */
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
@@ -317,204 +534,6 @@
     ];
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
-    
-    // OBSŁUGA ANIMACJI POSTACI ORAZ FIZYKI PRZECIĄGANIA
-    const characterEl = document.getElementById('character');
-    const characterImg = document.getElementById('characterImg');
-    
-    // Dla normalnej animacji (tylko poziom)
-    let targetX = windowWidth / 2;
-    let currentX = windowWidth / 2;
-    
-    // Zmienne dla trybu drag & physics
-    let isDragging = false;
-    let isPhysicsActive = false;
-    let dragOffsetX = 0, dragOffsetY = 0;
-    let physicsPosX = 0, physicsPosY = 0;
-    let physicsVelocityX = 0, physicsVelocityY = 0;
-    let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
-    let lastDragDeltaX = 0, lastDragDeltaY = 0;
-    
-    // Pozycja startowa postaci (bazując na aktualnym rozmiarze okna)
-    let startPosX = window.innerWidth / 2 - characterEl.offsetWidth / 2;
-    let startPosY = window.innerHeight - characterEl.offsetHeight - 20;
-    
-    // Normalna animacja – gdy nie trwa przeciąganie ani symulacja fizyki
-    function animateCharacter() {
-      if (!isDragging && !isPhysicsActive) {
-        currentX += (targetX - currentX) * 0.1;
-        characterEl.style.left = currentX + 'px';
-        characterEl.style.top = startPosY + 'px';
-      }
-      requestAnimationFrame(animateCharacter);
-    }
-    requestAnimationFrame(animateCharacter);
-    
-    // Animacja zmiany obrazka (dla efektu ruchu)
-    let animationInterval = null;
-    let isAnimating = false;
-    function startCharacterAnimation() {
-      isAnimating = true;
-      let toggle = false;
-      animationInterval = setInterval(() => {
-        toggle = !toggle;
-        characterImg.src = toggle ? '3.png' : '4.png';
-        if (Date.now() - lastMouseTime > 200) {
-          stopCharacterAnimation();
-        }
-      }, 70);
-    }
-    function stopCharacterAnimation() {
-      clearInterval(animationInterval);
-      animationInterval = null;
-      isAnimating = false;
-      characterImg.src = '2.png';
-    }
-    
-    // Obsługa ruchu myszy – aktualizacja tła, pozycji docelowej oraz start animacji (jeśli nie trwa drag/physics)
-    document.addEventListener('mousemove', function(e) {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
-      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      targetX = mouseX;
-      lastMouseTime = Date.now();
-      if (!isAnimating && !isDragging && !isPhysicsActive) {
-        startCharacterAnimation();
-      }
-    });
-    
-    // Obsługa dotyku dla urządzeń mobilnych (pomijamy przyciski)
-    function handleTouch(e) {
-      if (e.target.closest('.nav-button')) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const touchX = touch.clientX;
-      const touchY = touch.clientY;
-      const deltaX = (touchX - windowWidth / 2) / (windowWidth / 2);
-      const deltaY = (touchY - windowHeight / 2) / (windowHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      targetX = touchX;
-      lastMouseTime = Date.now();
-      if (!isAnimating && !isDragging && !isPhysicsActive) {
-        startCharacterAnimation();
-      }
-    }
-    document.addEventListener('touchstart', handleTouch, {passive: false});
-    document.addEventListener('touchmove', handleTouch, {passive: false});
-    
-    // --- DRAG & PHYSICS – PRZECIĄGANIE OBRAZKA 2.png PRAWYM PRZYCISKIEM MYSZY ---
-    
-    // Rozpoczęcie przeciągania – naciśnięcie prawego przycisku myszy na postaci
-    characterEl.addEventListener('mousedown', function(e) {
-      if (e.button === 2) {
-        e.preventDefault();
-        isDragging = true;
-        isPhysicsActive = false;
-        const rect = characterEl.getBoundingClientRect();
-        dragOffsetX = e.clientX - rect.left;
-        dragOffsetY = e.clientY - rect.top;
-        lastDragX = e.clientX;
-        lastDragY = e.clientY;
-        lastDragTime = Date.now();
-      }
-    });
-    // Zapobieganie pojawieniu się menu kontekstowego
-    characterEl.addEventListener('contextmenu', function(e) {
-      e.preventDefault();
-    });
-    
-    // Aktualizacja pozycji postaci podczas przeciągania i obliczanie prędkości ruchu
-    document.addEventListener('mousemove', function(e) {
-      if (isDragging) {
-        const newX = e.clientX - dragOffsetX;
-        const newY = e.clientY - dragOffsetY;
-        characterEl.style.left = newX + 'px';
-        characterEl.style.top = newY + 'px';
-        const now = Date.now();
-        const dt = now - lastDragTime;
-        if (dt > 0) {
-          lastDragDeltaX = (e.clientX - lastDragX) / dt;
-          lastDragDeltaY = (e.clientY - lastDragY) / dt;
-          lastDragX = e.clientX;
-          lastDragY = e.clientY;
-          lastDragTime = now;
-        }
-      }
-    });
-    
-    // Zakończenie przeciągania – puszczenie prawego przycisku i start symulacji fizyki
-    document.addEventListener('mouseup', function(e) {
-      if (isDragging && e.button === 2) {
-        isDragging = false;
-        physicsVelocityX = lastDragDeltaX * 50;
-        physicsVelocityY = lastDragDeltaY * 50;
-        const rect = characterEl.getBoundingClientRect();
-        physicsPosX = rect.left;
-        physicsPosY = rect.top;
-        isPhysicsActive = true;
-        simulatePhysics();
-      }
-    });
-    
-    // Funkcja symulująca fizykę – grawitacja, ruch oraz odbicia od 4 krawędzi
-    function simulatePhysics() {
-      if (!isPhysicsActive) return;
-      const gravity = 0.5;
-      const restitution = 0.7;
-      
-      physicsVelocityY += gravity;
-      physicsPosX += physicsVelocityX;
-      physicsPosY += physicsVelocityY;
-      
-      const charW = characterEl.offsetWidth;
-      const charH = characterEl.offsetHeight;
-      
-      // Odbicie od lewej krawędzi
-      if (physicsPosX < 0) {
-        physicsPosX = 0;
-        physicsVelocityX = -physicsVelocityX * restitution;
-      }
-      // Odbicie od prawej krawędzi
-      if (physicsPosX + charW > window.innerWidth) {
-        physicsPosX = window.innerWidth - charW;
-        physicsVelocityX = -physicsVelocityX * restitution;
-      }
-      // Odbicie od górnej krawędzi
-      if (physicsPosY < 0) {
-        physicsPosY = 0;
-        physicsVelocityY = -physicsVelocityY * restitution;
-      }
-      // Odbicie od dolnej krawędzi
-      if (physicsPosY + charH > window.innerHeight) {
-        physicsPosY = window.innerHeight - charH;
-        physicsVelocityY = -physicsVelocityY * restitution;
-        if (Math.abs(physicsVelocityY) < 1 && Math.abs(physicsPosY - startPosY) < 5) {
-          isPhysicsActive = false;
-          characterEl.style.left = startPosX + 'px';
-          characterEl.style.top = startPosY + 'px';
-          return;
-        }
-      }
-      
-      characterEl.style.left = physicsPosX + 'px';
-      characterEl.style.top = physicsPosY + 'px';
-      
-      requestAnimationFrame(simulatePhysics);
-    }
-    
-    // Aktualizacja pozycji startowej przy zmianie rozmiaru okna
-    window.addEventListener('resize', function() {
-      windowWidth = window.innerWidth;
-      windowHeight = window.innerHeight;
-      startPosX = window.innerWidth / 2 - characterEl.offsetWidth / 2;
-      startPosY = window.innerHeight - characterEl.offsetHeight - 20;
-    });
   </script>
 </body>
 </html>
