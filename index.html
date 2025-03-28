@@ -259,4 +259,133 @@
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
     let targetX = windowWidth / 2;
-    let currentX = windowWidth /
+    let currentX = windowWidth / 2;
+    let animationInterval = null;
+    let isAnimating = false;
+    let lastMouseX = windowWidth / 2;
+    
+    function animateCharacter() {
+      currentX += (targetX - currentX) * 0.1;
+      character.style.left = currentX + 'px';
+      requestAnimationFrame(animateCharacter);
+    }
+    requestAnimationFrame(animateCharacter);
+    
+    function startCharacterAnimation() {
+      isAnimating = true;
+      let toggle = false;
+      animationInterval = setInterval(() => {
+        toggle = !toggle;
+        characterImg.src = toggle ? '3.png' : '4.png';
+        // Zatrzymujemy animację postaci, gdy od ostatniego ruchu minęło ponad 200 ms
+        if (Date.now() - lastMouseTime > 200) {
+          stopCharacterAnimation();
+        }
+      }, 70);
+    }
+    
+    function stopCharacterAnimation() {
+      clearInterval(animationInterval);
+      animationInterval = null;
+      isAnimating = false;
+      characterImg.src = '2.png';
+    }
+    
+    document.addEventListener('mousemove', function(e) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = mouseX;
+      lastMouseX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
+      }
+    });
+    
+    // Obsługa dotyku dla urządzeń mobilnych (pomijamy przyciski)
+    function handleTouch(e) {
+      if (e.target.closest('.nav-button')) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const touchX = touch.clientX;
+      const touchY = touch.clientY;
+      const deltaX = (touchX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (touchY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = touchX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
+      }
+    }
+    
+    document.addEventListener('touchstart', handleTouch, {passive: false});
+    document.addEventListener('touchmove', handleTouch, {passive: false});
+    
+    // Funkcjonalność nakładki hover dla przycisków nawigacji
+    const hoverImageDiv = document.getElementById('hoverImage');
+    
+    function showHoverImage(imageUrl) {
+      hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
+      hoverImageDiv.style.display = "block";
+    }
+    
+    function hideHoverImage() {
+      hoverImageDiv.style.display = "none";
+    }
+    
+    document.getElementById('maks-button').addEventListener('mouseenter', function() {
+      // domyślna wielkość (contain)
+      hoverImageDiv.style.backgroundSize = "contain";
+      showHoverImage('maksrz.png');
+    });
+    document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
+    
+    // Dla przycisku video chcemy mniejszy obraz (40% mniejszy, czyli 60% rozmiaru)
+    document.getElementById('video-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "60% auto";
+      showHoverImage('aniol.gif');
+    });
+    document.getElementById('video-button').addEventListener('mouseleave', function() {
+      hideHoverImage();
+      hoverImageDiv.style.backgroundSize = "contain";
+    });
+    
+    document.getElementById('contact-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "contain";
+      showHoverImage('contact.png');
+    });
+    document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
+    
+    document.getElementById('enemies-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "contain";
+      showHoverImage('enemies.png');
+    });
+    document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
+    
+    document.getElementById('awards-button').addEventListener('mouseenter', function() {
+      hoverImageDiv.style.backgroundSize = "contain";
+      showHoverImage('awards.png');
+    });
+    document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
+    
+    // Losowa nazwa potencjalnego odwiedzającego
+    const names = [
+      "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
+      "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
+      "Błażej", "Mieczysław", "Zbigniew", "Witold", "Bronisław", "Czesław", "Lech", "Stanisław", "Wacław", "Kazimierz",
+      "Agnieszka", "Barbara", "Czesława", "Danuta", "Elżbieta", "Grażyna", "Halina", "Irena", "Jadwiga", "Krystyna", "Łucja", "Małgorzata", "Natalia", "Olga", "Patrycja",
+      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula"
+    ];
+    const randomName = names[Math.floor(Math.random() * names.length)];
+    document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
+  </script>
+</body>
+</html>
