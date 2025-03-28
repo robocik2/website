@@ -210,11 +210,20 @@
   </div>
   <!-- Character (2.png) with animation -->
   <div class="character" id="character">
-    <img src="2.png" id="characterImg" alt="Postać">
+    <img src="2.png" id="characterImg" alt="Postać"
+         draggable="false"
+         ondragstart="return false;"
+         oncontextmenu="return false;"
+         style="-webkit-user-drag: none;">
   </div>
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
+    // Blokada przeciągania i menu kontekstowego dla obrazu 2.png
+    const characterImg = document.getElementById('characterImg');
+    characterImg.addEventListener('dragstart', e => e.preventDefault());
+    characterImg.addEventListener('contextmenu', e => e.preventDefault());
+    
     // Toggle enemies list ("1. damien")
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
@@ -261,7 +270,6 @@
     
     // Character animation (2.png)
     const character = document.getElementById('character');
-    const characterImg = document.getElementById('characterImg');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
     let animationInterval = null;
@@ -502,7 +510,7 @@
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
       "Błażej", "Mieczysław", "Zbigniew", "Witold", "Bronisław", "Czesław", "Lech", "Stanisław", "Wacław", "Kazimierz",
       "Agnieszka", "Barbara", "Czesława", "Danuta", "Elżbieta", "Grażyna", "Halina", "Irena", "Jadwiga", "Krystyna", "Łucja", "Małgorzata", "Natalia", "Olga", "Patrycja",
-      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula", "Janusz", "Darek", "Kasia", "John", "Maks", "Julia", "Maddie", "Chris"
+      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula"
     ];
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
