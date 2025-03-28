@@ -14,7 +14,7 @@
       background-color: white;
       cursor: url('cursor1.png'), auto;
     }
-    /* Ellipse mask – shows 1.png only inside the ellipse */
+    /* Ellipse mask – pokazuje zawartość tylko wewnątrz elipsy */
     .mask {
       position: absolute;
       top: 50%;
@@ -26,7 +26,7 @@
       overflow: hidden;
       z-index: 1;
     }
-    /* Background with 1.png texture */
+    /* Tło z teksturą 1.png */
     .bg {
       position: absolute;
       top: 0;
@@ -38,7 +38,20 @@
       background-size: 100vw 100vh;
       background-position: 0 0;
     }
-    /* Character container (2.png) with animation */
+    /* Nakładka – wyświetlane obrazy przy najechaniu na przyciski */
+    #hoverImage {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      z-index: 2;
+    }
+    /* Kontener postaci (2.png) z animacją */
     .character {
       position: absolute;
       bottom: 20px;
@@ -50,7 +63,7 @@
       width: 150px;
       height: auto;
     }
-    /* Navigation container at the top */
+    /* Kontener nawigacji u góry */
     .nav-container {
       position: absolute;
       top: 0;
@@ -68,7 +81,7 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    /* Add comma after each button except the last */
+    /* Dodanie przecinka po każdym przycisku oprócz ostatniego */
     .nav-buttons a:not(:last-child)::after {
       content: ", ";
       font-size: 0.5em;
@@ -82,11 +95,11 @@
       color: #000;
       font-size: 5em;
     }
-    /* Underline on hover */
+    /* Podkreślenie przy najechaniu */
     .nav-button:hover {
       text-decoration: underline;
     }
-    /* Dropdowns – positioned relative so nav buttons remain on top */
+    /* Dropdown – elementy rozwijane pozostają nad przyciskami */
     .nav-dropdowns {
       max-width: 100%;
       text-align: center;
@@ -98,7 +111,7 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Awards container – two columns; initially hidden; top padding 20vh */
+    /* Kontener z nagrodami – dwie kolumny; początkowo ukryty; padding top 20vh */
     #awards-container {
       display: none;
       position: absolute;
@@ -107,7 +120,7 @@
       width: 100%;
       height: 100%;
       z-index: 2;
-      padding-top: 20vh; /* 20% of viewport height */
+      padding-top: 20vh;
       box-sizing: border-box;
       justify-content: space-between;
       padding-left: 50px;
@@ -121,7 +134,7 @@
       font-size: 2em;
       white-space: nowrap;
     }
-    /* Potential visitor name – bottom right corner */
+    /* Nazwa potencjalnego odwiedzającego – prawy dolny róg */
     #visitorName {
       position: absolute;
       bottom: 10px;
@@ -130,7 +143,7 @@
       color: #000;
       z-index: 1001;
     }
-    /* Media query for a better mobile experience */
+    /* Media query dla urządzeń mobilnych */
     @media (max-width: 600px) {
       .nav-button {
         font-size: 3em;
@@ -145,14 +158,14 @@
   </style>
 </head>
 <body>
-  <!-- Navigation -->
+  <!-- Nawigacja -->
   <div class="nav-container">
     <div class="nav-buttons">
       <a href="#" class="nav-button" id="maks-button">maks rz</a>
-      <a href="https://vimeo.com/maksrz" class="nav-button" target="_blank">video</a>
+      <a href="https://vimeo.com/maksrz" class="nav-button" id="video-button" target="_blank">video</a>
       <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">art</a>
       <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">ig</a>
-      <a href="mailto:maksrzontkowski@gmail.com" class="nav-button">contact</a>
+      <a href="mailto:maksrzontkowski@gmail.com" class="nav-button" id="contact-button">contact</a>
       <a href="#" class="nav-button" id="enemies-button">list of my enemies</a>
       <a href="#" class="nav-button" id="awards-button">awards and festivals</a>
     </div>
@@ -162,7 +175,7 @@
       </ul>
     </div>
   </div>
-  <!-- Awards container – two columns -->
+  <!-- Kontener z nagrodami -->
   <div id="awards-container">
     <div class="festival-column left">
       <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
@@ -185,32 +198,33 @@
       <div class="festival">*TOHORROR 2024 GRAND PRIZE*</div>
     </div>
   </div>
-  <!-- Ellipse mask with background image (1.png) -->
+  <!-- Maska eliptyczna z tłem oraz nakładką hover -->
   <div class="mask">
     <div class="bg" id="bg"></div>
+    <div id="hoverImage"></div>
   </div>
-  <!-- Character (2.png) with animation -->
+  <!-- Postać (2.png) z animacją -->
   <div class="character" id="character">
     <img src="2.png" id="characterImg" alt="Postać">
   </div>
-  <!-- Potential visitor name -->
+  <!-- Nazwa potencjalnego odwiedzającego -->
   <div id="visitorName"></div>
   <script>
-    // Toggle enemy list ("1. damien")
+    // Toggle listy wrogów ("1. damien")
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
       var enemiesList = document.getElementById('enemies-list');
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
     
-    // Toggle awards container – on click, show/hide (using flex for display when shown)
+    // Toggle kontenera nagród – pokazanie/ukrycie (display: flex przy pokazaniu)
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       var awardsContainer = document.getElementById('awards-container');
       awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
     });
     
-    // Animate background with deceleration after 2 seconds of inactivity
+    // Animacja tła z wygaszaniem po 500 ms braku aktywności
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -224,8 +238,8 @@
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
       
-      // Jeśli od ostatniego ruchu minęły 2000 ms, stosujemy wygaszanie (ease out)
-      if (now - lastMouseTime > 2000) {
+      // Po 500 ms braku ruchu wygaszamy prędkość (ease out)
+      if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
         speedY *= decayFactor;
@@ -240,7 +254,7 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Animate character (2.png)
+    // Animacja postaci (2.png)
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
     let targetX = windowWidth / 2;
@@ -262,7 +276,7 @@
       animationInterval = setInterval(() => {
         toggle = !toggle;
         characterImg.src = toggle ? '3.png' : '4.png';
-        // Jeśli brak ruchu przez ponad 200 ms, zatrzymujemy animację postaci
+        // Zatrzymujemy animację postaci, gdy od ostatniego ruchu minęło ponad 200 ms
         if (Date.now() - lastMouseTime > 200) {
           stopCharacterAnimation();
         }
@@ -292,7 +306,7 @@
       }
     });
     
-    // Touch handler for mobile: jeśli dotyk nie nastąpi na przyciskach, aktualizujemy ruch
+    // Obsługa dotyku dla urządzeń mobilnych (pomijamy przyciski)
     function handleTouch(e) {
       if (e.target.closest('.nav-button')) return;
       e.preventDefault();
@@ -319,13 +333,50 @@
       windowHeight = window.innerHeight;
     });
     
-    // Random visitor name from an expanded list
+    // Funkcjonalność nakładki hover dla przycisków nawigacji
+    const hoverImageDiv = document.getElementById('hoverImage');
+    
+    function showHoverImage(imageUrl) {
+      hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
+      hoverImageDiv.style.display = "block";
+    }
+    
+    function hideHoverImage() {
+      hoverImageDiv.style.display = "none";
+    }
+    
+    document.getElementById('maks-button').addEventListener('mouseenter', function() {
+      showHoverImage('maksrz.png');
+    });
+    document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
+    
+    document.getElementById('video-button').addEventListener('mouseenter', function() {
+      showHoverImage('video.png');
+    });
+    document.getElementById('video-button').addEventListener('mouseleave', hideHoverImage);
+    
+    document.getElementById('contact-button').addEventListener('mouseenter', function() {
+      showHoverImage('contact.png');
+    });
+    document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
+    
+    document.getElementById('enemies-button').addEventListener('mouseenter', function() {
+      showHoverImage('enemies.png');
+    });
+    document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
+    
+    document.getElementById('awards-button').addEventListener('mouseenter', function() {
+      showHoverImage('awards.png');
+    });
+    document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
+    
+    // Losowa nazwa potencjalnego odwiedzającego
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
       "Błażej", "Mieczysław", "Zbigniew", "Witold", "Bronisław", "Czesław", "Lech", "Stanisław", "Wacław", "Kazimierz",
       "Agnieszka", "Barbara", "Czesława", "Danuta", "Elżbieta", "Grażyna", "Halina", "Irena", "Jadwiga", "Krystyna", "Łucja", "Małgorzata", "Natalia", "Olga", "Patrycja",
-      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula", "Maksio", "Julia", "Chris", "Maddie", "Jan", "Maciek", "Marcelina", "Michael", "Mikołaj", "Jasio", "Grzegorz", "John", "Peter Smith" 
+      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula", "Julia", "John", "Wojtek", "Michael", "Maddie"
     ];
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
