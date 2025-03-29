@@ -252,7 +252,7 @@
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
       
-      // After 500ms of inactivity, apply decay (ease out)
+      // Jeśli minęło 500ms od ostatniego ruchu, stosujemy spowolnienie (ease out)
       if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
@@ -268,13 +268,12 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Character horizontal animation – tylko gdy nie jest przeciągany
+    // Character horizontal animation – działa tylko, gdy nie jest przeciągany
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
     let animationInterval = null;
     let isAnimating = false;
-    // Modyfikujemy animateCharacter, aby nie ingerował podczas przeciągania
     function animateCharacter() {
       if (!dragging) {
         currentX += (targetX - currentX) * 0.1;
@@ -284,37 +283,35 @@
     }
     requestAnimationFrame(animateCharacter);
     
-    // --- Nowa logika dla przeciągania i odbijania ---
+    // --- Logika dla przeciągania i odbijania ---
     let dragging = false;
     let dragOffsetX = 0, dragOffsetY = 0;
-    // Przechowujemy ostatnią pozycję, jeśli chcielibyśmy obliczać prędkość (tu uproszczamy)
     
-    // Rozpoczynamy przeciąganie po naciśnięciu postaci (mousedown)
+    // Rozpoczęcie przeciągania – mousedown/touchstart na obrazie postaci
     characterImg.addEventListener('mousedown', function(e) {
       e.preventDefault();
       dragging = true;
-      // Wyłączamy standardową animację postaci
       stopCharacterAnimation();
       const rect = characterImg.getBoundingClientRect();
       dragOffsetX = e.clientX - rect.left;
       dragOffsetY = e.clientY - rect.top;
     });
     
+    // Podczas przeciągania – aktualizacja pozycji oraz lastMouseTime, by tło nadal reagowało
     document.addEventListener('mousemove', function(e) {
       if (dragging) {
         e.preventDefault();
-        // Ustawiamy pozycję kontenera postaci zgodnie z ruchem myszy
         character.style.left = (e.clientX - dragOffsetX) + 'px';
         character.style.top = (e.clientY - dragOffsetY) + 'px';
+        lastMouseTime = Date.now(); // aktualizacja, aby tło nie spowalniało
       }
     });
     
     document.addEventListener('mouseup', function(e) {
       if (dragging) {
         dragging = false;
-        // Po puszczeniu przycisku myszy, nadajemy domyślną prędkość (można rozwinąć obliczenia na podstawie ruchu)
         bounceVelocityX = 0;
-        bounceVelocityY = -10; // nadamy niewielki impuls w górę
+        bounceVelocityY = -10;
         startBouncingFromDrag();
       }
     });
@@ -336,6 +333,7 @@
         const touch = e.touches[0];
         character.style.left = (touch.clientX - dragOffsetX) + 'px';
         character.style.top = (touch.clientY - dragOffsetY) + 'px';
+        lastMouseTime = Date.now(); // aktualizacja lastMouseTime dla dotyku
       }
     }, {passive: false});
     
@@ -348,7 +346,7 @@
       }
     });
     
-    // Bouncing simulation – używana po puszczeniu przeciągania
+    // Bouncing simulation – symulacja odbić po zakończeniu przeciągania
     let isBouncing = false;
     let bouncingCharacter = null;
     let bounceVelocityX = 0;
@@ -358,7 +356,6 @@
     
     function startBouncingFromDrag() {
       const rect = characterImg.getBoundingClientRect();
-      // Utwórz klon postaci do symulacji odbić
       bouncingCharacter = characterImg.cloneNode(true);
       bouncingCharacter.id = 'bouncingCharacter';
       bouncingCharacter.classList.add('bouncing');
@@ -368,7 +365,6 @@
       bouncingCharacter.style.width = rect.width + 'px';
       bouncingCharacter.style.height = rect.height + 'px';
       bouncingCharacter.style.zIndex = '1000';
-      // Ukryj oryginalny obrazek
       characterImg.style.visibility = 'hidden';
       document.body.appendChild(bouncingCharacter);
       isBouncing = true;
@@ -387,11 +383,9 @@
         bounceVelocityX *= -BOUNCE_DAMPING;
       }
       
-      // Odbijanie od sufitu lub podłogi (dolna krawędź traktowana jako ground)
+      // Odbijanie od sufitu lub podłogi (dolna krawędź jako ground)
       if (newTop <= 0 || newTop + rect.height >= window.innerHeight) {
         bounceVelocityY *= -BOUNCE_DAMPING;
-        // Zapobiegamy sytuacji, gdy po uderzeniu prędkość jest bardzo niska –
-        // wtedy ustawiamy postać dokładnie na podłodze i kończymy symulację
         if (newTop + rect.height >= window.innerHeight - 10 && Math.abs(bounceVelocityY) < 0.5) {
           bouncingCharacter.style.top = (window.innerHeight - rect.height) + 'px';
           stopBouncing();
@@ -399,10 +393,8 @@
         }
       }
       
-      // Zastosuj grawitację
       bounceVelocityY += GRAVITY;
       
-      // Aktualizuj pozycję
       bouncingCharacter.style.left = newLeft + 'px';
       bouncingCharacter.style.top = newTop + 'px';
       
@@ -415,12 +407,11 @@
         document.body.removeChild(bouncingCharacter);
         bouncingCharacter = null;
       }
-      // Przywróć widoczność oryginalnego obrazka postaci
       characterImg.style.visibility = 'visible';
       isBouncing = false;
     }
     
-    // Standardowa animacja postaci (zmiana obrazka) – wyłączona podczas przeciągania
+    // Standardowa animacja zmiany obrazka – wyłączana przy przeciąganiu
     function startCharacterAnimation() {
       if (dragging) return;
       isAnimating = true;
@@ -428,7 +419,6 @@
       animationInterval = setInterval(() => {
         toggle = !toggle;
         characterImg.src = toggle ? '3.png' : '4.png';
-        // Zatrzymujemy animację, jeśli od ostatniego ruchu minęło ponad 200ms
         if (Date.now() - lastMouseTime > 200) {
           stopCharacterAnimation();
         }
@@ -442,14 +432,19 @@
       characterImg.src = '2.png';
     }
     
+    // Globalny listener – aktualizacja dla tła i animacji, gdy nie przeciągamy
     document.addEventListener('mousemove', function(e) {
-      // Aktualizujemy target dla animacji, jeżeli nie przeciągamy
-      if (!dragging) {
-        targetX = e.clientX;
-        lastMouseTime = Date.now();
-        if (!isAnimating) {
-          startCharacterAnimation();
-        }
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating && !dragging) {
+        startCharacterAnimation();
       }
     });
     
@@ -482,7 +477,6 @@
     });
     document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
     
-    // For video button: show aniol.gif at 60% size
     document.getElementById('video-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "60% auto";
       showHoverImage('gifaniol.gif');
@@ -492,7 +486,6 @@
       hoverImageDiv.style.backgroundSize = "contain";
     });
     
-    // For art button: show art.png at 50% size
     document.getElementById('art-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "50% auto";
       showHoverImage('art.png');
@@ -520,7 +513,7 @@
     });
     document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
     
-    // Random visitor name from an expanded list
+    // Random visitor name
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
