@@ -2,9 +2,10 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maks Rz</title>
   <style>
-    /* Global settings – white background, custom cursor */
+    /* Global settings – white background, custom cursor, disable default touch actions */
     html, body {
       margin: 0;
       padding: 0;
@@ -13,6 +14,7 @@
       height: 100%;
       background-color: white;
       cursor: url('cursor1.png'), auto;
+      touch-action: none;
     }
     /* Ellipse mask – shows content only inside the ellipse */
     .mask {
@@ -232,7 +234,7 @@
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
     
-    // Toggle awards container – show/hide (display: flex when shown)
+    // Toggle awards container – show/hide
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       var awardsContainer = document.getElementById('awards-container');
@@ -370,7 +372,7 @@
       rotationAngle = 0;
       bouncingCharacter.style.position = 'absolute';
       bouncingCharacter.style.zIndex = '1000';
-      // Explicitly set the size to match the original
+      // Explicitly set size to match the original
       bouncingCharacter.style.width = thrownWidth + "px";
       bouncingCharacter.style.height = thrownHeight + "px";
       characterImg.style.visibility = 'hidden';
@@ -413,7 +415,7 @@
       lastDragTime = now;
     }
     
-    // End dragging and begin the throw simulation
+    // End dragging and begin throw simulation
     function endDrag(e) {
       if (!isDragging) return;
       isDragging = false;
@@ -424,12 +426,19 @@
       requestAnimationFrame(updateBounce);
     }
     
-    // Bounce simulation: update translation and rotation separately.
+    // Also handle touchcancel on mobile
+    document.addEventListener('touchcancel', function(e) {
+      if (isDragging) {
+        endDrag(e.changedTouches[0]);
+      }
+    }, {passive: false});
+    
+    // Bounce simulation: update translation and rotation.
     // When touching the bottom border, freeze rotation.
     function updateBounce() {
       if (!bouncingCharacter) return;
       
-      // Only update rotation if not in contact with bottom border
+      // Only update rotation if not touching the bottom border
       if (thrownPosY + thrownHeight < window.innerHeight) {
         rotationAngle += ROTATION_SPEED;
       }
@@ -452,7 +461,7 @@
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
-      // Bounce off floor and freeze rotation when touching the bottom
+      // Bounce off floor and freeze rotation when touching bottom
       if (newPosY + thrownHeight > window.innerHeight) {
         newPosY = window.innerHeight - thrownHeight;
         bounceVelocityY *= -BOUNCE_DAMPING;
@@ -461,7 +470,7 @@
       // Apply gravity
       bounceVelocityY += GRAVITY;
       
-      // Apply friction to gradually slow the object
+      // Apply friction
       bounceVelocityX *= 0.99;
       bounceVelocityY *= 0.99;
       
@@ -479,7 +488,7 @@
       requestAnimationFrame(updateBounce);
     }
     
-    // Remove the clone and restore the original character
+    // Remove clone and restore original character
     function stopBouncing() {
       if (bouncingCharacter) {
         document.body.removeChild(bouncingCharacter);
