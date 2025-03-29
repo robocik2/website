@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>Maks Rz – Rewritten Throwing Part with Box2D</title>
+  <title>Maks Rz</title>
   <style>
     /* Global settings – white background, custom cursor */
     html, body {
@@ -38,7 +38,7 @@
       background-size: 100vw 100vh;
       background-position: 0 0;
     }
-    /* Hover overlay – displays images on button hover */
+    /* Hover overlay – displays images on button hover; now tiled for mobile */
     #hoverImage {
       display: none;
       position: absolute;
@@ -76,6 +76,7 @@
       width: 100%;
       z-index: 1000;
       font-family: "Apple Garamond", serif;
+      font-stretch: expanded;
       text-align: center;
       padding: 10px 0;
     }
@@ -85,6 +86,7 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+    /* Add comma after each button except the last */
     .nav-buttons a:not(:last-child)::after {
       content: ", ";
       font-size: 0.5em;
@@ -98,9 +100,11 @@
       color: #000;
       font-size: 5em;
     }
+    /* Underline on hover */
     .nav-button:hover {
       text-decoration: underline;
     }
+    /* Dropdown – elements remain above buttons */
     .nav-dropdowns {
       max-width: 100%;
       text-align: center;
@@ -112,7 +116,7 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Awards container – initially hidden */
+    /* Awards container – two columns; initially hidden; padding top 20vh */
     #awards-container {
       display: none;
       position: absolute;
@@ -124,7 +128,8 @@
       padding-top: 20vh;
       box-sizing: border-box;
       justify-content: space-between;
-      padding: 0 50px;
+      padding-left: 50px;
+      padding-right: 50px;
     }
     .festival-column {
       width: 45%;
@@ -143,6 +148,7 @@
       color: #000;
       z-index: 1001;
     }
+    /* Media query for mobile devices */
     @media (max-width: 600px) {
       .nav-button {
         font-size: 3em;
@@ -155,8 +161,6 @@
       }
     }
   </style>
-  <!-- Load Box2DWeb from CDN (based on Erin Catto’s work) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/box2dweb/2.1.a.3/Box2dWeb-2.1.a.3.min.js"></script>
 </head>
 <body>
   <!-- Navigation -->
@@ -206,7 +210,7 @@
   </div>
   <!-- Character (2.png) with animation -->
   <div class="character" id="character">
-    <img src="2.png" id="characterImg" alt="Character"
+    <img src="2.png" id="characterImg" alt="Postać"
          draggable="false"
          ondragstart="return false;"
          oncontextmenu="return false;"
@@ -215,25 +219,26 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Prevent default drag behavior on character image
+    // Blokada przeciągania i menu kontekstowego dla obrazu 2.png
     const characterImg = document.getElementById('characterImg');
     characterImg.addEventListener('dragstart', e => e.preventDefault());
     characterImg.addEventListener('contextmenu', e => e.preventDefault());
-
-    // Toggle enemies list
+    
+    // Toggle enemies list ("1. damien")
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
-      const enemiesList = document.getElementById('enemies-list');
+      var enemiesList = document.getElementById('enemies-list');
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
-    // Toggle awards container
+    
+    // Toggle awards container – show/hide (display: flex when shown)
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
-      const awardsContainer = document.getElementById('awards-container');
+      var awardsContainer = document.getElementById('awards-container');
       awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
     });
-
-    // Background animation (moves 1.png)
+    
+    // Background animation with deceleration after 500ms of inactivity
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -246,6 +251,8 @@
       const now = Date.now();
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
+      
+      // After 500ms of inactivity, apply decay (ease out)
       if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
@@ -253,6 +260,7 @@
         if (Math.abs(speedX) < 0.01) speedX = 0;
         if (Math.abs(speedY) < 0.01) speedY = 0;
       }
+      
       offsetX += speedX;
       offsetY += speedY;
       bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
@@ -260,232 +268,28 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Simple horizontal animation for character when not dragged
+    // Character animation (2.png)
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
     let animationInterval = null;
     let isAnimating = false;
+    let lastMouseX = windowWidth / 2;
+    
     function animateCharacter() {
-      if (!dragging) {
-        currentX += (targetX - currentX) * 0.1;
-        character.style.left = currentX + 'px';
-      }
+      currentX += (targetX - currentX) * 0.1;
+      character.style.left = currentX + 'px';
       requestAnimationFrame(animateCharacter);
     }
     requestAnimationFrame(animateCharacter);
     
-    // Variables for dragging and computing throw velocity
-    let dragging = false;
-    let dragOffsetX = 0, dragOffsetY = 0;
-    let dragStartTime = 0, dragStartX = 0, dragStartY = 0;
-    let lastDragTime = 0, lastDragX = 0, lastDragY = 0;
-    
-    // Mouse drag start
-    characterImg.addEventListener('mousedown', function(e) {
-      e.preventDefault();
-      dragging = true;
-      dragStartTime = Date.now();
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
-      lastDragTime = dragStartTime;
-      lastDragX = dragStartX;
-      lastDragY = dragStartY;
-      const rect = characterImg.getBoundingClientRect();
-      dragOffsetX = e.clientX - rect.left;
-      dragOffsetY = e.clientY - rect.top;
-      stopCharacterAnimation();
-    });
-    document.addEventListener('mousemove', function(e) {
-      if (dragging) {
-        e.preventDefault();
-        character.style.left = (e.clientX - dragOffsetX) + 'px';
-        character.style.top = (e.clientY - dragOffsetY) + 'px';
-        lastDragTime = Date.now();
-        lastDragX = e.clientX;
-        lastDragY = e.clientY;
-        lastMouseTime = Date.now();
-      }
-    });
-    document.addEventListener('mouseup', function(e) {
-      if (dragging) {
-        dragging = false;
-        const scale = 30; // pixels per meter
-        const deltaTime = (lastDragTime - dragStartTime) / 1000;
-        let initialVx = 0, initialVy = 0;
-        if (deltaTime > 0.001) {
-          initialVx = (lastDragX - dragStartX) / (scale * deltaTime);
-          initialVy = (lastDragY - dragStartY) / (scale * deltaTime);
-        } else {
-          initialVy = -10;
-        }
-        startPhysicsSimulation({ x: initialVx, y: initialVy });
-      }
-    });
-    
-    // Touch support (similar to mouse)
-    characterImg.addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      dragging = true;
-      const touch = e.touches[0];
-      dragStartTime = Date.now();
-      dragStartX = touch.clientX;
-      dragStartY = touch.clientY;
-      lastDragTime = dragStartTime;
-      lastDragX = dragStartX;
-      lastDragY = dragStartY;
-      const rect = characterImg.getBoundingClientRect();
-      dragOffsetX = touch.clientX - rect.left;
-      dragOffsetY = touch.clientY - rect.top;
-      stopCharacterAnimation();
-    });
-    document.addEventListener('touchmove', function(e) {
-      if (dragging) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        character.style.left = (touch.clientX - dragOffsetX) + 'px';
-        character.style.top = (touch.clientY - dragOffsetY) + 'px';
-        lastDragTime = Date.now();
-        lastDragX = touch.clientX;
-        lastDragY = touch.clientY;
-        lastMouseTime = Date.now();
-      }
-    }, {passive: false});
-    document.addEventListener('touchend', function(e) {
-      if (dragging) {
-        dragging = false;
-        const scale = 30;
-        const deltaTime = (lastDragTime - dragStartTime) / 1000;
-        let initialVx = 0, initialVy = 0;
-        if (deltaTime > 0.001) {
-          initialVx = (lastDragX - dragStartX) / (scale * deltaTime);
-          initialVy = (lastDragY - dragStartY) / (scale * deltaTime);
-        } else {
-          initialVy = -10;
-        }
-        startPhysicsSimulation({ x: initialVx, y: initialVy });
-      }
-    });
-    
-    // Rewritten throwing simulation using Box2DWeb
-    function startPhysicsSimulation(initialVelocity) {
-      const scale = 30; // pixels per meter
-      const rect = characterImg.getBoundingClientRect();
-      
-      // Create a clone for the physics simulation
-      const simEl = characterImg.cloneNode(true);
-      simEl.id = 'simCharacter';
-      simEl.classList.add('bouncing');
-      simEl.style.position = 'absolute';
-      simEl.style.left = rect.left + 'px';
-      simEl.style.top = rect.top + 'px';
-      simEl.style.width = rect.width + 'px';
-      simEl.style.height = rect.height + 'px';
-      simEl.style.zIndex = '1000';
-      characterImg.style.visibility = 'hidden';
-      document.body.appendChild(simEl);
-      
-      // Box2D shortcuts
-      const b2Vec2 = Box2D.Common.Math.b2Vec2;
-      const b2BodyDef = Box2D.Dynamics.b2BodyDef;
-      const b2Body = Box2D.Dynamics.b2Body;
-      const b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
-      const b2World = Box2D.Dynamics.b2World;
-      const b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
-      
-      // Create the Box2D world with gravity (10 m/s² downward)
-      const world = new b2World(new b2Vec2(0, 10), true);
-      
-      // Create a ground body (centered horizontally)
-      let groundBodyDef = new b2BodyDef();
-      groundBodyDef.position.Set(windowWidth/(2*scale), windowHeight/scale);
-      let groundBody = world.CreateBody(groundBodyDef);
-      let groundFixDef = new b2FixtureDef();
-      groundFixDef.density = 0;
-      groundFixDef.friction = 0.5;
-      groundFixDef.restitution = 0.2;
-      groundFixDef.shape = new b2PolygonShape();
-      // Create ground as a box (half-width and a small half-height)
-      groundFixDef.shape.SetAsBox(windowWidth/(2*scale), 0.1);
-      groundBody.CreateFixture(groundFixDef);
-      
-      // Create side walls
-      let leftWallDef = new b2BodyDef();
-      leftWallDef.position.Set(0, windowHeight/(2*scale));
-      let leftWall = world.CreateBody(leftWallDef);
-      let leftWallFix = new b2FixtureDef();
-      leftWallFix.shape = new b2PolygonShape();
-      leftWallFix.shape.SetAsBox(0.1, windowHeight/(2*scale));
-      leftWall.CreateFixture(leftWallFix);
-      
-      let rightWallDef = new b2BodyDef();
-      rightWallDef.position.Set(windowWidth/scale, windowHeight/(2*scale));
-      let rightWall = world.CreateBody(rightWallDef);
-      let rightWallFix = new b2FixtureDef();
-      rightWallFix.shape = new b2PolygonShape();
-      rightWallFix.shape.SetAsBox(0.1, windowHeight/(2*scale));
-      rightWall.CreateFixture(rightWallFix);
-      
-      // Create a dynamic body for the character
-      let bodyDef = new b2BodyDef();
-      bodyDef.type = b2Body.b2_dynamicBody;
-      // Set position to the center of the image (convert to meters)
-      let startX = (rect.left + rect.width/2) / scale;
-      let startY = (rect.top + rect.height/2) / scale;
-      bodyDef.position.Set(startX, startY);
-      let body = world.CreateBody(bodyDef);
-      
-      let fixDef = new b2FixtureDef();
-      fixDef.density = 1.0;
-      fixDef.friction = 0.5;
-      fixDef.restitution = 0.7;
-      fixDef.shape = new b2PolygonShape();
-      fixDef.shape.SetAsBox((rect.width/2)/scale, (rect.height/2)/scale);
-      body.CreateFixture(fixDef);
-      
-      // Optionally apply a multiplier to the computed velocity if needed
-      const multiplier = 1.0;
-      body.SetLinearVelocity(new b2Vec2(initialVelocity.x * multiplier, initialVelocity.y * multiplier));
-      
-      const timeStep = 1/60;
-      const velocityIterations = 8;
-      const positionIterations = 3;
-      
-      function update() {
-        world.Step(timeStep, velocityIterations, positionIterations);
-        world.ClearForces();
-        const pos = body.GetPosition();
-        const angle = body.GetAngle();
-        // Convert Box2D coordinates (meters) back to pixels
-        const newLeft = (pos.x * scale) - rect.width/2;
-        const newTop = (pos.y * scale) - rect.height/2;
-        simEl.style.left = newLeft + 'px';
-        simEl.style.top = newTop + 'px';
-        simEl.style.transform = "rotate(" + (angle * 180/Math.PI) + "deg)";
-        
-        const velocity = body.GetLinearVelocity();
-        // When velocity is very low and the object is near the ground, finish the simulation
-        if (velocity.Length() < 0.1 && (newTop + rect.height >= windowHeight - 5)) {
-          simEl.style.top = (windowHeight - rect.height) + 'px';
-          document.body.removeChild(simEl);
-          characterImg.style.visibility = 'visible';
-          character.style.left = simEl.style.left;
-          character.style.top = simEl.style.top;
-          return;
-        }
-        requestAnimationFrame(update);
-      }
-      requestAnimationFrame(update);
-    }
-    
-    // Standard animation for changing the character image when not dragging
     function startCharacterAnimation() {
-      if (dragging) return;
       isAnimating = true;
       let toggle = false;
       animationInterval = setInterval(() => {
         toggle = !toggle;
         characterImg.src = toggle ? '3.png' : '4.png';
+        // Stop character animation if more than 200ms have passed since last movement
         if (Date.now() - lastMouseTime > 200) {
           stopCharacterAnimation();
         }
@@ -499,7 +303,6 @@
       characterImg.src = '2.png';
     }
     
-    // Global listeners for mouse/touch movement (update background and character target)
     document.addEventListener('mousemove', function(e) {
       const mouseX = e.clientX;
       const mouseY = e.clientY;
@@ -509,36 +312,161 @@
       speedX = deltaX * maxSpeed;
       speedY = deltaY * maxSpeed;
       targetX = mouseX;
+      lastMouseX = mouseX;
       lastMouseTime = Date.now();
-      if (!isAnimating && !dragging) {
+      if (!isAnimating) {
         startCharacterAnimation();
       }
     });
-    document.addEventListener('touchmove', function(e) {
-      if (!dragging) {
-        const touch = e.touches[0];
-        targetX = touch.clientX;
-        lastMouseTime = Date.now();
-        if (!isAnimating) {
-          startCharacterAnimation();
-        }
+    
+    // Touch handler for mobile devices (ignore buttons)
+    function handleTouch(e) {
+      if (e.target.closest('.nav-button')) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const touchX = touch.clientX;
+      const touchY = touch.clientY;
+      const deltaX = (touchX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (touchY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = touchX;
+      lastMouseTime = Date.now();
+      if (!isAnimating) {
+        startCharacterAnimation();
       }
+    }
+    
+    document.addEventListener('touchstart', handleTouch, {passive: false});
+    document.addEventListener('touchmove', handleTouch, {passive: false});
+    
+    // New bouncing functionality
+    let isBouncing = false;
+    let bouncingCharacter = null;
+    let bounceVelocityX = 0;
+    let bounceVelocityY = 0;
+    const GRAVITY = 0.5;
+    const BOUNCE_DAMPING = 0.8;
+
+    function startBouncing(event) {
+      // Prevent bouncing if already bouncing or event is on a button
+      if (isBouncing || event.target.closest('.nav-button')) return;
+
+      // Stop normal character animation
+      stopCharacterAnimation();
+      const characterImg = document.getElementById('characterImg');
+      
+      // Create a new bouncing character
+      bouncingCharacter = characterImg.cloneNode(true);
+      bouncingCharacter.id = 'bouncingCharacter';
+      bouncingCharacter.classList.add('bouncing');
+      
+      // Set initial position
+      const rect = characterImg.getBoundingClientRect();
+      bouncingCharacter.style.position = 'absolute';
+      bouncingCharacter.style.left = rect.left + 'px';
+      bouncingCharacter.style.top = rect.top + 'px';
+      bouncingCharacter.style.width = rect.width + 'px';
+      bouncingCharacter.style.height = rect.height + 'px';
+      bouncingCharacter.style.zIndex = '1000';
+      
+      // Hide original character
+      characterImg.style.visibility = 'hidden';
+      
+      // Add to body
+      document.body.appendChild(bouncingCharacter);
+      
+      // Set initial velocity based on mouse/touch
+      bounceVelocityX = event.type === 'mousedown' ? 
+        (event.clientX - rect.left - rect.width / 2) * 0.5 : 
+        (event.touches[0].clientX - rect.left - rect.width / 2) * 0.5;
+      bounceVelocityY = -10; // Initial upward velocity
+      
+      isBouncing = true;
+      requestAnimationFrame(updateBounce);
+    }
+
+    function updateBounce() {
+      if (!bouncingCharacter) return;
+
+      const rect = bouncingCharacter.getBoundingClientRect();
+      
+      // Update position
+      const newLeft = rect.left + bounceVelocityX;
+      const newTop = rect.top + bounceVelocityY;
+      
+      // Bounce off walls
+      if (newLeft <= 0 || newLeft + rect.width >= window.innerWidth) {
+        bounceVelocityX *= -BOUNCE_DAMPING;
+      }
+      
+      // Bounce off floor or ceiling
+      if (newTop <= 0 || newTop + rect.height >= window.innerHeight) {
+        bounceVelocityY *= -BOUNCE_DAMPING;
+      }
+      
+      // Apply gravity
+      bounceVelocityY += GRAVITY;
+      
+      // Update character position
+      bouncingCharacter.style.left = newLeft + 'px';
+      bouncingCharacter.style.top = newTop + 'px';
+      
+      // Stop bouncing if velocity is very low
+      if (Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5 && 
+          newTop + rect.height >= window.innerHeight - 10) {
+        stopBouncing();
+        return;
+      }
+      
+      requestAnimationFrame(updateBounce);
+    }
+
+    function stopBouncing() {
+      if (!isBouncing) return;
+      
+      // Remove bouncing character
+      if (bouncingCharacter) {
+        document.body.removeChild(bouncingCharacter);
+        bouncingCharacter = null;
+      }
+      
+      // Restore original character
+      const characterImg = document.getElementById('characterImg');
+      characterImg.style.visibility = 'visible';
+      
+      isBouncing = false;
+    }
+
+    // Add event listeners for mouse and touch
+    document.addEventListener('mousedown', startBouncing);
+    document.addEventListener('touchstart', startBouncing, {passive: false});
+
+    // Prevent default touch behavior to allow bouncing
+    document.addEventListener('touchmove', function(e) {
+      if (isBouncing) e.preventDefault();
     }, {passive: false});
     
-    // Hover overlay functionality for navigation buttons (unchanged)
+    // Hover overlay functionality for navigation buttons
     const hoverImageDiv = document.getElementById('hoverImage');
+    
     function showHoverImage(imageUrl) {
       hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
       hoverImageDiv.style.display = "block";
     }
+    
     function hideHoverImage() {
       hoverImageDiv.style.display = "none";
     }
+    
     document.getElementById('maks-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('maksrz.png');
     });
     document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
+    
+    // For video button: show aniol.gif at 60% size
     document.getElementById('video-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "60% auto";
       showHoverImage('gifaniol.gif');
@@ -547,6 +475,8 @@
       hideHoverImage();
       hoverImageDiv.style.backgroundSize = "contain";
     });
+    
+    // For art button: show art.png at 20% smaller than before (50% auto)
     document.getElementById('art-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "50% auto";
       showHoverImage('art.png');
@@ -555,23 +485,26 @@
       hideHoverImage();
       hoverImageDiv.style.backgroundSize = "contain";
     });
+    
     document.getElementById('contact-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('contact.png');
     });
     document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
+    
     document.getElementById('enemies-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('enemies.png');
     });
     document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
+    
     document.getElementById('awards-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('awards.png');
     });
     document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
     
-    // Set a random visitor name
+    // Random visitor name from an expanded list
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
