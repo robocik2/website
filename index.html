@@ -125,7 +125,7 @@
     #awards-container {
       display: none;
     }
-    /* Nowy kontener na animowany tekst, wyświetlany pod elipsą */
+    /* New container for animated messages, displayed below the ellipse */
     #messageDisplay {
       position: absolute;
       top: 80%; /* poniżej elipsy */
@@ -136,6 +136,7 @@
       color: #000;
       z-index: 5;
       white-space: nowrap;
+      padding: 0 10px; /* zapewnia marginesy */
     }
     /* Visitor name – bottom right corner */
     #visitorName {
@@ -154,7 +155,10 @@
       #visitorName {
         font-size: 1.2em;
       }
-      /* In mobile, the awards container and enemies list are not używane */
+      #messageDisplay {
+        font-size: 2em;
+        padding: 0 5%;
+      }
     }
   </style>
 </head>
@@ -176,7 +180,7 @@
       </ul>
     </div>
   </div>
-  <!-- Awards container (oryginalnie, pozostaje ukryty) -->
+  <!-- Awards container (pozostaje ukryty) -->
   <div id="awards-container">
     <div class="festival-column left">
       <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
@@ -204,7 +208,7 @@
     <div class="bg" id="bg"></div>
     <div id="hoverImage"></div>
   </div>
-  <!-- Nowy element do wyświetlania animowanego tekstu -->
+  <!-- Container for animated messages -->
   <div id="messageDisplay"></div>
   <!-- Character (2.png) with animation -->
   <div class="character" id="character">
@@ -225,21 +229,18 @@
     // --- Funkcja do animowanego wyświetlania wiadomości ---
     let messageIntervalId = null;
     function displayMessages(messages) {
-      // Jeśli jakaś animacja już trwa, zatrzymaj ją
-      if(messageIntervalId) {
-        clearInterval(messageIntervalId);
-        messageIntervalId = null;
-      }
       const display = document.getElementById('messageDisplay');
-      display.innerText = "";
+      // Jeśli tekst już jest widoczny (lub animacja trwa), nie rób nic
+      if(display.innerText.trim() !== "" || messageIntervalId !== null) return;
+      
       let index = 0;
-      // Wyświetl pierwszy komunikat od razu
       display.innerText = messages[index];
       messageIntervalId = setInterval(() => {
         index++;
         if(index >= messages.length) {
           clearInterval(messageIntervalId);
           messageIntervalId = null;
+          // Pozostaw tekst widoczny – kliknięcie ponownie nie czyści go
         } else {
           display.innerText = messages[index];
         }
