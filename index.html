@@ -344,19 +344,19 @@
     let bounceVelocityX = 0;
     let bounceVelocityY = 0;
     const GRAVITY = 0.5;
-    const BOUNCE_DAMPING = 0.85;  // Increased bounciness
+    const BOUNCE_DAMPING = 0.95; // Increased restitution for more bounce
     
     // Rotation variables for thrown state
     let rotationAngle = 0;
     const ROTATION_SPEED = 5; // degrees per frame
     
-    // To enforce a minimum thrown state duration (in ms)
+    // Enforce a minimum thrown state duration (ms)
     let thrownTime = 0;
     
-    // Global variables to track position and size of the thrown object
+    // Global variables to track position and size of thrown object
     let thrownPosX = 0, thrownPosY = 0, thrownWidth = 0, thrownHeight = 0;
     
-    // Create clone for dragging (bouncing character) with fixed scale
+    // Create clone for dragging without altering scale
     function createBouncingCharacter(e) {
       const characterImg = document.getElementById('characterImg');
       bouncingCharacter = characterImg.cloneNode(true);
@@ -371,7 +371,8 @@
       bouncingCharacter.style.position = 'absolute';
       bouncingCharacter.style.zIndex = '1000';
       characterImg.style.visibility = 'hidden';
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) scale(1) rotate(0deg)";
+      // Set transform without scale
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
       document.body.appendChild(bouncingCharacter);
     }
     
@@ -390,7 +391,7 @@
       document.addEventListener('mouseup', endDrag);
     }
     
-    // Update clone's position during drag; ensure no scale change
+    // Update clone position during drag (no scale change)
     function duringDrag(e) {
       if (!isDragging || !bouncingCharacter) return;
       const now = Date.now();
@@ -403,13 +404,13 @@
       thrownPosX = e.clientX - rect.width / 2;
       thrownPosY = e.clientY - rect.height / 2;
       rotationAngle = 0;
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) scale(1) rotate(0deg)";
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
       lastDragX = e.clientX;
       lastDragY = e.clientY;
       lastDragTime = now;
     }
     
-    // End dragging and start throw simulation
+    // End drag and start throw simulation
     function endDrag(e) {
       if (!isDragging) return;
       isDragging = false;
@@ -420,13 +421,15 @@
       requestAnimationFrame(updateBounce);
     }
     
-    // Physics simulation with separate translation and rotation
+    // Physics simulation: update translation and rotation separately
     function updateBounce() {
       if (!bouncingCharacter) return;
+      
       rotationAngle += ROTATION_SPEED;
       let newPosX = thrownPosX + bounceVelocityX;
       let newPosY = thrownPosY + bounceVelocityY;
       
+      // Bounce off left/right edges
       if (newPosX < 0) {
         newPosX = 0;
         bounceVelocityX *= -BOUNCE_DAMPING;
@@ -435,23 +438,32 @@
         bounceVelocityX *= -BOUNCE_DAMPING;
       }
       
+      // Bounce off ceiling
       if (newPosY < 0) {
         newPosY = 0;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
+      // Bounce off floor
       if (newPosY + thrownHeight > window.innerHeight) {
         newPosY = window.innerHeight - thrownHeight;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
+      // Apply gravity
       bounceVelocityY += GRAVITY;
+      
+      // Apply friction to gradually reduce velocities
+      bounceVelocityX *= 0.99;
+      bounceVelocityY *= 0.99;
+      
       thrownPosX = newPosX;
       thrownPosY = newPosY;
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) scale(1) rotate(" + rotationAngle + "deg)";
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(" + rotationAngle + "deg)";
       
+      // Stopping condition: after 4 seconds and when velocities are low
       if (Date.now() - thrownTime >= 4000 &&
-          Math.abs(bounceVelocityX) < 2 && Math.abs(bounceVelocityY) < 2) {
+          Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
         stopBouncing();
         return;
       }
@@ -459,7 +471,7 @@
       requestAnimationFrame(updateBounce);
     }
     
-    // Cleanup: remove clone and restore original character
+    // Remove clone and restore original character
     function stopBouncing() {
       if (bouncingCharacter) {
         document.body.removeChild(bouncingCharacter);
