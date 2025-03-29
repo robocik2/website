@@ -356,9 +356,8 @@
     // To enforce a minimum thrown state duration (in ms)
     let thrownTime = 0;
     
-    // Variables for drag velocity calculation; multiplier reduced to tone down speed
-    let lastDragTime = 0;
-    let lastDragX = 0, lastDragY = 0;
+    // Global variables to track the thrown object's position and size
+    let thrownPosX = 0, thrownPosY = 0, thrownWidth = 0, thrownHeight = 0;
     
     // Function to create a clone for dragging (bouncing character)
     function createBouncingCharacter(e) {
@@ -367,15 +366,17 @@
       bouncingCharacter.id = 'bouncingCharacter';
       bouncingCharacter.classList.add('bouncing');
       const rect = characterImg.getBoundingClientRect();
+      thrownPosX = rect.left;
+      thrownPosY = rect.top;
+      thrownWidth = rect.width;
+      thrownHeight = rect.height;
+      rotationAngle = 0;
       bouncingCharacter.style.position = 'absolute';
-      bouncingCharacter.style.left = rect.left + 'px';
-      bouncingCharacter.style.top = rect.top + 'px';
-      bouncingCharacter.style.width = rect.width + 'px';
-      bouncingCharacter.style.height = rect.height + 'px';
       bouncingCharacter.style.zIndex = '1000';
-      // Ensure no previous transform (rotation) interferes
-      bouncingCharacter.style.transform = "rotate(0deg)";
+      // Hide the original character
       characterImg.style.visibility = 'hidden';
+      // Initialize transform using the stored position and no rotation
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
       document.body.appendChild(bouncingCharacter);
     }
     
@@ -408,9 +409,13 @@
         bounceVelocityX = ((e.clientX - lastDragX) / deltaTime) * 8;
         bounceVelocityY = ((e.clientY - lastDragY) / deltaTime) * 8;
       }
+      // Update thrown position so that the clone's center follows the pointer
       const rect = bouncingCharacter.getBoundingClientRect();
-      bouncingCharacter.style.left = (e.clientX - rect.width / 2) + 'px';
-      bouncingCharacter.style.top  = (e.clientY - rect.height / 2) + 'px';
+      thrownPosX = e.clientX - rect.width / 2;
+      thrownPosY = e.clientY - rect.height / 2;
+      // Reset rotation during drag
+      rotationAngle = 0;
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
       
       lastDragX = e.clientX;
       lastDragY = e.clientY;
@@ -434,39 +439,44 @@
     // Physics simulation for the thrown character with rotation
     function updateBounce() {
       if (!bouncingCharacter) return;
-      const rect = bouncingCharacter.getBoundingClientRect();
       
-      // Update rotation
+      // Update rotation angle (rotation is separate from translation)
       rotationAngle += ROTATION_SPEED;
-      bouncingCharacter.style.transform = "rotate(" + rotationAngle + "deg)";
       
-      let newLeft = rect.left + bounceVelocityX;
-      let newTop = rect.top + bounceVelocityY;
+      // Compute new positions based on current velocities
+      let newPosX = thrownPosX + bounceVelocityX;
+      let newPosY = thrownPosY + bounceVelocityY;
       
-      // Bounce off left/right walls
-      if (newLeft <= 0 || newLeft + rect.width >= window.innerWidth) {
+      // Bounce off left/right boundaries
+      if (newPosX < 0) {
+        newPosX = 0;
         bounceVelocityX *= -BOUNCE_DAMPING;
-        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - rect.width));
+      } else if (newPosX + thrownWidth > window.innerWidth) {
+        newPosX = window.innerWidth - thrownWidth;
+        bounceVelocityX *= -BOUNCE_DAMPING;
       }
       
       // Bounce off ceiling
-      if (newTop <= 0) {
+      if (newPosY < 0) {
+        newPosY = 0;
         bounceVelocityY *= -BOUNCE_DAMPING;
-        newTop = 0;
       }
       
-      // Bounce off floor: instead of stopping immediately, invert velocity to simulate a bounce
-      if (newTop + rect.height >= window.innerHeight) {
-        newTop = window.innerHeight - rect.height;
+      // Bounce off floor
+      if (newPosY + thrownHeight > window.innerHeight) {
+        newPosY = window.innerHeight - thrownHeight;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
       // Apply gravity
       bounceVelocityY += GRAVITY;
       
-      // Update character position
-      bouncingCharacter.style.left = newLeft + 'px';
-      bouncingCharacter.style.top = newTop + 'px';
+      // Update stored position
+      thrownPosX = newPosX;
+      thrownPosY = newPosY;
+      
+      // Update the clone's transform to combine translation and rotation
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(" + rotationAngle + "deg)";
       
       // Only allow stopping if at least 4 seconds have passed and velocities are low
       if (Date.now() - thrownTime >= 4000 &&
