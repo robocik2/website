@@ -121,27 +121,20 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Awards container – two columns on desktop; initially hidden */
+    /* Awards container – oryginalnie ukryty */
     #awards-container {
       display: none;
+    }
+    /* Nowy kontener na animowany tekst, wyświetlany pod elipsą */
+    #messageDisplay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-      padding-top: 20vh;
-      box-sizing: border-box;
-      justify-content: space-between;
-      padding-left: 50px;
-      padding-right: 50px;
-    }
-    .festival-column {
-      width: 45%;
-    }
-    .festival {
-      margin-bottom: 1em;
-      font-size: 2em;
+      top: 80%; /* poniżej elipsy */
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 3em; /* większa czcionka */
+      text-align: center;
+      color: #000;
+      z-index: 5;
       white-space: nowrap;
     }
     /* Visitor name – bottom right corner */
@@ -153,47 +146,15 @@
       color: #000;
       z-index: 1001;
     }
-    /* Mobile adjustments: ensure buttons and lists display correctly below the menu */
+    /* Mobile adjustments */
     @media (max-width: 600px) {
       .nav-button {
         font-size: 3em;
       }
-      .festival {
-        font-size: 1.5em;
-      }
       #visitorName {
         font-size: 1.2em;
       }
-      /* Awards container: display one festival per line on white background below menu */
-      #awards-container {
-        position: static;
-        width: 100%;
-        height: auto;
-        padding: 10px;
-        background-color: white;
-        box-sizing: border-box;
-      }
-      #awards-container .festival-column {
-        width: 100%;
-        margin-bottom: 10px;
-      }
-      #awards-container .festival {
-        display: block;
-        margin-bottom: 5px;
-      }
-      /* Enemies list: show each enemy on its own line on a white background below the menu */
-      .nav-dropdowns {
-        position: static;
-        width: 100%;
-        background-color: white;
-        padding: 10px;
-        box-sizing: border-box;
-      }
-      .enemies-list li {
-        display: block;
-        margin-bottom: 5px;
-        font-size: 1.5em;
-      }
+      /* In mobile, the awards container and enemies list are not używane */
     }
   </style>
 </head>
@@ -215,7 +176,7 @@
       </ul>
     </div>
   </div>
-  <!-- Awards container -->
+  <!-- Awards container (oryginalnie, pozostaje ukryty) -->
   <div id="awards-container">
     <div class="festival-column left">
       <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
@@ -243,6 +204,8 @@
     <div class="bg" id="bg"></div>
     <div id="hoverImage"></div>
   </div>
+  <!-- Nowy element do wyświetlania animowanego tekstu -->
+  <div id="messageDisplay"></div>
   <!-- Character (2.png) with animation -->
   <div class="character" id="character">
     <img src="2.png" id="characterImg" alt="Postać"
@@ -259,22 +222,64 @@
     characterImg.addEventListener('dragstart', e => e.preventDefault());
     characterImg.addEventListener('contextmenu', e => e.preventDefault());
     
-    // Toggle enemies list ("1. damien")
-    document.getElementById('enemies-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      var enemiesList = document.getElementById('enemies-list');
-      enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
-    });
+    // --- Funkcja do animowanego wyświetlania wiadomości ---
+    let messageIntervalId = null;
+    function displayMessages(messages) {
+      // Jeśli jakaś animacja już trwa, zatrzymaj ją
+      if(messageIntervalId) {
+        clearInterval(messageIntervalId);
+        messageIntervalId = null;
+      }
+      const display = document.getElementById('messageDisplay');
+      display.innerText = "";
+      let index = 0;
+      // Wyświetl pierwszy komunikat od razu
+      display.innerText = messages[index];
+      messageIntervalId = setInterval(() => {
+        index++;
+        if(index >= messages.length) {
+          clearInterval(messageIntervalId);
+          messageIntervalId = null;
+        } else {
+          display.innerText = messages[index];
+        }
+      }, 1000);
+    }
     
-    // Toggle awards container – show/hide (display: flex on desktop, block on mobile via media query)
+    // Tablice komunikatów – dla festiwali i listy wrogów
+    const festivalMessages = [
+      "*Sundance Film Festival 2024 Official Selection*",
+      "*ANNECY International Animation Festival 2024 Official Selection*",
+      "*OTTAWA Animation Festival AWARD WINNER*",
+      "*SPEKTRUM 2024 GRAND PRIZE*",
+      "*New Horizons Festival 2024 Official Selection*",
+      "*PICTOPLASMA 2024 Official Selection*",
+      "*FEST New Directors 2024 Official Selection*",
+      "*Rooftop Films 2024 Official Selection*",
+      "*Animator Festival 2024: AWARD WINNER*",
+      "*SFP Best Animated Films 2023, AWARD WINNER*",
+      "*Kaboom Animation Festival 2024: Special Mention*",
+      "*ŻUBROFFKA 2024: AWARD WINNER*",
+      "*Salute Your Shorts Festival 2024 Official Selection*",
+      "*Fest Anca 2024 Official Selection*",
+      "*HELSINKI INTERNATIONAL FILM FESTIVAL*",
+      "*TOHORROR 2024 GRAND PRIZE*"
+    ];
+    const enemyMessages = [
+      "1. damien"
+    ];
+    
+    // Podmiana zachowania przycisków – wyświetlanie animowanych komunikatów
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
-      var awardsContainer = document.getElementById('awards-container');
-      awardsContainer.style.display = (awardsContainer.style.display === 'flex' || awardsContainer.style.display === 'block') ? 'none' : 
-        (window.innerWidth <= 600 ? 'block' : 'flex');
+      displayMessages(festivalMessages);
+    });
+    document.getElementById('enemies-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      displayMessages(enemyMessages);
     });
     
-    // Background animation with deceleration after 500ms of inactivity
+    // --- Pozostały kod animacji tła i postaci ---
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -353,7 +358,6 @@
         }
       }
     }
-    // Attach both pointermove and mousemove for background updates
     document.addEventListener('pointermove', updateBackground);
     document.addEventListener('mousemove', updateBackground);
     
@@ -364,19 +368,12 @@
     let bounceVelocityX = 0;
     let bounceVelocityY = 0;
     const GRAVITY = 0.5;
-    const BOUNCE_DAMPING = 0.95; // More bounce
-    
-    // Rotation variables for thrown state
+    const BOUNCE_DAMPING = 0.95;
     let rotationAngle = 0;
-    const ROTATION_SPEED = 5; // degrees per frame
-    
-    // Enforce a minimum thrown state duration (ms)
+    const ROTATION_SPEED = 5;
     let thrownTime = 0;
-    
-    // Global variables to track position and size of thrown object
     let thrownPosX = 0, thrownPosY = 0, thrownWidth = 0, thrownHeight = 0;
     
-    // Create clone for dragging (ensuring same size)
     function createBouncingCharacter(e) {
       const characterImg = document.getElementById('characterImg');
       bouncingCharacter = characterImg.cloneNode(true);
@@ -390,16 +387,13 @@
       rotationAngle = 0;
       bouncingCharacter.style.position = 'absolute';
       bouncingCharacter.style.zIndex = '1000';
-      // Explicitly set the size to match the original
       bouncingCharacter.style.width = thrownWidth + "px";
       bouncingCharacter.style.height = thrownHeight + "px";
       characterImg.style.visibility = 'hidden';
-      // Set transform with translation and initial rotation (no scaling)
       bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
       document.body.appendChild(bouncingCharacter);
     }
     
-    // Start dragging on pointer down over the character
     function startDrag(e) {
       if (!e.target.closest('#character')) return;
       e.preventDefault();
@@ -412,7 +406,6 @@
       lastDragTime = Date.now();
     }
     
-    // Update clone's position during drag
     function duringDrag(e) {
       if (!isDragging || !bouncingCharacter) return;
       const now = Date.now();
@@ -424,14 +417,13 @@
       const rect = bouncingCharacter.getBoundingClientRect();
       thrownPosX = e.clientX - rect.width / 2;
       thrownPosY = e.clientY - rect.height / 2;
-      rotationAngle = 0; // reset rotation during drag
+      rotationAngle = 0;
       bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
       lastDragX = e.clientX;
       lastDragY = e.clientY;
       lastDragTime = now;
     }
     
-    // End dragging and begin the throw simulation
     function endDrag(e) {
       if (!isDragging) return;
       isDragging = false;
@@ -440,11 +432,9 @@
       requestAnimationFrame(updateBounce);
     }
     
-    // Bounce simulation: update translation and rotation.
     function updateBounce() {
       if (!bouncingCharacter) return;
       
-      // Update rotation if not in contact with bottom border
       if (thrownPosY + thrownHeight < window.innerHeight) {
         rotationAngle += ROTATION_SPEED;
       }
@@ -452,7 +442,6 @@
       let newPosX = thrownPosX + bounceVelocityX;
       let newPosY = thrownPosY + bounceVelocityY;
       
-      // Bounce off left/right boundaries
       if (newPosX < 0) {
         newPosX = 0;
         bounceVelocityX *= -BOUNCE_DAMPING;
@@ -461,22 +450,17 @@
         bounceVelocityX *= -BOUNCE_DAMPING;
       }
       
-      // Bounce off ceiling
       if (newPosY < 0) {
         newPosY = 0;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
-      // Bounce off floor and freeze rotation
       if (newPosY + thrownHeight > window.innerHeight) {
         newPosY = window.innerHeight - thrownHeight;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
-      // Apply gravity
       bounceVelocityY += GRAVITY;
-      
-      // Apply friction to gradually slow the object
       bounceVelocityX *= 0.99;
       bounceVelocityY *= 0.99;
       
@@ -484,7 +468,6 @@
       thrownPosY = newPosY;
       bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(" + rotationAngle + "deg)";
       
-      // Stop after 4 seconds when velocities are very low
       if (Date.now() - thrownTime >= 4000 &&
           Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
         stopBouncing();
@@ -494,7 +477,6 @@
       requestAnimationFrame(updateBounce);
     }
     
-    // Remove the clone and restore the original character
     function stopBouncing() {
       if (bouncingCharacter) {
         document.body.removeChild(bouncingCharacter);
@@ -504,7 +486,6 @@
       isBouncing = false;
     }
     
-    // Use pointer events for unified input handling for dragging/throwing
     characterImg.addEventListener('pointerdown', startDrag);
     document.addEventListener('pointermove', function(e) {
       if (isDragging && bouncingCharacter) {
