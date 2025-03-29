@@ -253,7 +253,6 @@
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
       
-      // After 500ms of inactivity, apply decay (ease out)
       if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
@@ -289,7 +288,6 @@
       animationInterval = setInterval(() => {
         toggle = !toggle;
         characterImg.src = toggle ? '3.png' : '4.png';
-        // Stop character animation if more than 200ms have passed since last movement
         if (Date.now() - lastMouseTime > 200) {
           stopCharacterAnimation();
         }
@@ -318,7 +316,6 @@
       }
     });
     
-    // Touch handler for mobile devices (ignoring buttons)
     function handleTouch(e) {
       if (e.target.closest('.nav-button')) return;
       e.preventDefault();
@@ -340,14 +337,14 @@
     document.addEventListener('touchstart', handleTouch, {passive: false});
     document.addEventListener('touchmove', handleTouch, {passive: false});
     
-    // --- New functionality: Grabbable and throwable character ---
+    // --- Grabbable and Throwable Character ---
     let isDragging = false;
     let isBouncing = false;
     let bouncingCharacter = null;
     let bounceVelocityX = 0;
     let bounceVelocityY = 0;
     const GRAVITY = 0.5;
-    const BOUNCE_DAMPING = 0.8;
+    const BOUNCE_DAMPING = 0.85;  // Increased bounciness
     
     // Rotation variables for thrown state
     let rotationAngle = 0;
@@ -356,10 +353,10 @@
     // To enforce a minimum thrown state duration (in ms)
     let thrownTime = 0;
     
-    // Global variables to track the thrown object's position and size
+    // Global variables to track position and size of the thrown object
     let thrownPosX = 0, thrownPosY = 0, thrownWidth = 0, thrownHeight = 0;
     
-    // Function to create a clone for dragging (bouncing character)
+    // Create clone for dragging (bouncing character) with fixed scale
     function createBouncingCharacter(e) {
       const characterImg = document.getElementById('characterImg');
       bouncingCharacter = characterImg.cloneNode(true);
@@ -373,81 +370,63 @@
       rotationAngle = 0;
       bouncingCharacter.style.position = 'absolute';
       bouncingCharacter.style.zIndex = '1000';
-      // Hide the original character
       characterImg.style.visibility = 'hidden';
-      // Initialize transform using the stored position and no rotation
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) scale(1) rotate(0deg)";
       document.body.appendChild(bouncingCharacter);
     }
     
-    // Start dragging when mousedown on the character image
+    // Start dragging on mousedown over the character
     function startDrag(e) {
       if (!e.target.closest('#character')) return;
       e.preventDefault();
-      
       if (isBouncing) return;
-      
-      stopCharacterAnimation(); // Stop cursor-following animation
+      stopCharacterAnimation();
       createBouncingCharacter(e);
       isDragging = true;
-      
       lastDragX = e.clientX;
       lastDragY = e.clientY;
       lastDragTime = Date.now();
-      
       document.addEventListener('mousemove', duringDrag);
       document.addEventListener('mouseup', endDrag);
     }
     
-    // Update bouncingCharacter position during drag and calculate velocity
+    // Update clone's position during drag; ensure no scale change
     function duringDrag(e) {
       if (!isDragging || !bouncingCharacter) return;
       const now = Date.now();
       const deltaTime = now - lastDragTime;
       if (deltaTime > 0) {
-        // Multiplier reduced from 16 to 8 to tone down speed on hard throws
         bounceVelocityX = ((e.clientX - lastDragX) / deltaTime) * 8;
         bounceVelocityY = ((e.clientY - lastDragY) / deltaTime) * 8;
       }
-      // Update thrown position so that the clone's center follows the pointer
       const rect = bouncingCharacter.getBoundingClientRect();
       thrownPosX = e.clientX - rect.width / 2;
       thrownPosY = e.clientY - rect.height / 2;
-      // Reset rotation during drag
       rotationAngle = 0;
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
-      
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) scale(1) rotate(0deg)";
       lastDragX = e.clientX;
       lastDragY = e.clientY;
       lastDragTime = now;
     }
     
-    // End dragging and start the throw simulation
+    // End dragging and start throw simulation
     function endDrag(e) {
       if (!isDragging) return;
       isDragging = false;
       document.removeEventListener('mousemove', duringDrag);
       document.removeEventListener('mouseup', endDrag);
-      
-      // Record throw start time to ensure a minimum thrown state duration
       thrownTime = Date.now();
-      
       isBouncing = true;
       requestAnimationFrame(updateBounce);
     }
     
-    // Physics simulation for the thrown character with rotation
+    // Physics simulation with separate translation and rotation
     function updateBounce() {
       if (!bouncingCharacter) return;
-      
-      // Update rotation angle (rotation is separate from translation)
       rotationAngle += ROTATION_SPEED;
-      
-      // Compute new positions based on current velocities
       let newPosX = thrownPosX + bounceVelocityX;
       let newPosY = thrownPosY + bounceVelocityY;
       
-      // Bounce off left/right boundaries
       if (newPosX < 0) {
         newPosX = 0;
         bounceVelocityX *= -BOUNCE_DAMPING;
@@ -456,31 +435,23 @@
         bounceVelocityX *= -BOUNCE_DAMPING;
       }
       
-      // Bounce off ceiling
       if (newPosY < 0) {
         newPosY = 0;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
-      // Bounce off floor
       if (newPosY + thrownHeight > window.innerHeight) {
         newPosY = window.innerHeight - thrownHeight;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
-      // Apply gravity
       bounceVelocityY += GRAVITY;
-      
-      // Update stored position
       thrownPosX = newPosX;
       thrownPosY = newPosY;
+      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) scale(1) rotate(" + rotationAngle + "deg)";
       
-      // Update the clone's transform to combine translation and rotation
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(" + rotationAngle + "deg)";
-      
-      // Only allow stopping if at least 4 seconds have passed and velocities are low
       if (Date.now() - thrownTime >= 4000 &&
-          Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
+          Math.abs(bounceVelocityX) < 2 && Math.abs(bounceVelocityY) < 2) {
         stopBouncing();
         return;
       }
@@ -488,7 +459,7 @@
       requestAnimationFrame(updateBounce);
     }
     
-    // Restore original character after bounce simulation
+    // Cleanup: remove clone and restore original character
     function stopBouncing() {
       if (bouncingCharacter) {
         document.body.removeChild(bouncingCharacter);
@@ -499,10 +470,7 @@
       isBouncing = false;
     }
     
-    // Attach mousedown listener for dragging
     document.getElementById('characterImg').addEventListener('mousedown', startDrag);
-    
-    // Touch event listeners for mobile
     document.getElementById('characterImg').addEventListener('touchstart', function(e) {
       e.preventDefault();
       startDrag(e.touches[0]);
@@ -520,7 +488,7 @@
       }
     }, {passive: false});
     
-    // --- Hover overlay functionality for navigation buttons ---
+    // --- Hover overlay for navigation buttons ---
     const hoverImageDiv = document.getElementById('hoverImage');
     
     function showHoverImage(imageUrl) {
@@ -574,7 +542,7 @@
     });
     document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
     
-    // --- Random visitor name ---
+    // --- Random Visitor Name ---
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
