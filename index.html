@@ -136,7 +136,7 @@
       color: #000;
       z-index: 5;
       white-space: nowrap;
-      padding: 0 10px; /* zapewnia marginesy */
+      padding: 0 10px; /* marginesy */
     }
     /* Visitor name – bottom right corner */
     #visitorName {
@@ -226,13 +226,11 @@
     characterImg.addEventListener('dragstart', e => e.preventDefault());
     characterImg.addEventListener('contextmenu', e => e.preventDefault());
     
-    // --- Funkcja do animowanego wyświetlania wiadomości ---
+    // Zmienna globalna do obsługi interwału
     let messageIntervalId = null;
+    
     function displayMessages(messages) {
       const display = document.getElementById('messageDisplay');
-      // Jeśli tekst już jest widoczny (lub animacja trwa), nie rób nic
-      if(display.innerText.trim() !== "" || messageIntervalId !== null) return;
-      
       let index = 0;
       display.innerText = messages[index];
       messageIntervalId = setInterval(() => {
@@ -240,11 +238,23 @@
         if(index >= messages.length) {
           clearInterval(messageIntervalId);
           messageIntervalId = null;
-          // Pozostaw tekst widoczny – kliknięcie ponownie nie czyści go
+          // Pozostawiamy ostatni komunikat widoczny, aż użytkownik kliknie ponownie
         } else {
           display.innerText = messages[index];
         }
       }, 1000);
+    }
+    
+    // Funkcja toggle – jeśli tekst jest widoczny, usuwa go, w przeciwnym razie uruchamia animację
+    function toggleMessages(messages) {
+      const display = document.getElementById('messageDisplay');
+      if(display.innerText.trim() !== "" || messageIntervalId !== null) {
+        clearInterval(messageIntervalId);
+        messageIntervalId = null;
+        display.innerText = "";
+      } else {
+        displayMessages(messages);
+      }
     }
     
     // Tablice komunikatów – dla festiwali i listy wrogów
@@ -270,14 +280,14 @@
       "1. damien"
     ];
     
-    // Podmiana zachowania przycisków – wyświetlanie animowanych komunikatów
+    // Podmiana zachowania przycisków – toggle wyświetlania komunikatów
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
-      displayMessages(festivalMessages);
+      toggleMessages(festivalMessages);
     });
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
-      displayMessages(enemyMessages);
+      toggleMessages(enemyMessages);
     });
     
     // --- Pozostały kod animacji tła i postaci ---
