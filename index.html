@@ -219,7 +219,7 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Blokada przeciągania i menu kontekstowego dla obrazu 2.png
+    // Prevent dragging and context menu for character image (2.png)
     const characterImg = document.getElementById('characterImg');
     characterImg.addEventListener('dragstart', e => e.preventDefault());
     characterImg.addEventListener('contextmenu', e => e.preventDefault());
@@ -268,13 +268,12 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Character animation (2.png)
+    // Character animation (2.png) following cursor
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
     let animationInterval = null;
     let isAnimating = false;
-    let lastMouseX = windowWidth / 2;
     
     function animateCharacter() {
       currentX += (targetX - currentX) * 0.1;
@@ -312,14 +311,13 @@
       speedX = deltaX * maxSpeed;
       speedY = deltaY * maxSpeed;
       targetX = mouseX;
-      lastMouseX = mouseX;
       lastMouseTime = Date.now();
-      if (!isAnimating) {
+      if (!isAnimating && !isDragging && !isBouncing) {
         startCharacterAnimation();
       }
     });
     
-    // Touch handler for mobile devices (ignore buttons)
+    // Touch handler for mobile devices (ignoring buttons)
     function handleTouch(e) {
       if (e.target.closest('.nav-button')) return;
       e.preventDefault();
@@ -333,7 +331,7 @@
       speedY = deltaY * maxSpeed;
       targetX = touchX;
       lastMouseTime = Date.now();
-      if (!isAnimating) {
+      if (!isAnimating && !isDragging && !isBouncing) {
         startCharacterAnimation();
       }
     }
@@ -341,28 +339,25 @@
     document.addEventListener('touchstart', handleTouch, {passive: false});
     document.addEventListener('touchmove', handleTouch, {passive: false});
     
-    // New bouncing functionality
+    // --- New functionality: Grabbable and throwable character ---
+    let isDragging = false;
     let isBouncing = false;
     let bouncingCharacter = null;
     let bounceVelocityX = 0;
     let bounceVelocityY = 0;
     const GRAVITY = 0.5;
     const BOUNCE_DAMPING = 0.8;
-
-    function startBouncing(event) {
-      // Prevent bouncing if already bouncing or event is on a button
-      if (isBouncing || event.target.closest('.nav-button')) return;
-
-      // Stop normal character animation
-      stopCharacterAnimation();
+    
+    // Variables for drag velocity calculation
+    let lastDragTime = 0;
+    let lastDragX = 0, lastDragY = 0;
+    
+    // Function to create a clone for dragging (bouncing character)
+    function createBouncingCharacter(e) {
       const characterImg = document.getElementById('characterImg');
-      
-      // Create a new bouncing character
       bouncingCharacter = characterImg.cloneNode(true);
       bouncingCharacter.id = 'bouncingCharacter';
       bouncingCharacter.classList.add('bouncing');
-      
-      // Set initial position
       const rect = characterImg.getBoundingClientRect();
       bouncingCharacter.style.position = 'absolute';
       bouncingCharacter.style.left = rect.left + 'px';
@@ -370,85 +365,132 @@
       bouncingCharacter.style.width = rect.width + 'px';
       bouncingCharacter.style.height = rect.height + 'px';
       bouncingCharacter.style.zIndex = '1000';
-      
-      // Hide original character
       characterImg.style.visibility = 'hidden';
-      
-      // Add to body
       document.body.appendChild(bouncingCharacter);
+    }
+    
+    // Start dragging when mousedown on the character image
+    function startDrag(e) {
+      if (!e.target.closest('#character')) return;
+      e.preventDefault();
       
-      // Set initial velocity based on mouse/touch
-      bounceVelocityX = event.type === 'mousedown' ? 
-        (event.clientX - rect.left - rect.width / 2) * 0.5 : 
-        (event.touches[0].clientX - rect.left - rect.width / 2) * 0.5;
-      bounceVelocityY = -10; // Initial upward velocity
+      if (isBouncing) return;
+      
+      stopCharacterAnimation(); // Stop cursor-following animation
+      createBouncingCharacter(e);
+      isDragging = true;
+      
+      lastDragX = e.clientX;
+      lastDragY = e.clientY;
+      lastDragTime = Date.now();
+      
+      document.addEventListener('mousemove', duringDrag);
+      document.addEventListener('mouseup', endDrag);
+    }
+    
+    // Update bouncingCharacter position during drag and calculate velocity
+    function duringDrag(e) {
+      if (!isDragging || !bouncingCharacter) return;
+      const now = Date.now();
+      const deltaTime = now - lastDragTime;
+      if (deltaTime > 0) {
+        bounceVelocityX = ((e.clientX - lastDragX) / deltaTime) * 16;
+        bounceVelocityY = ((e.clientY - lastDragY) / deltaTime) * 16;
+      }
+      const rect = bouncingCharacter.getBoundingClientRect();
+      bouncingCharacter.style.left = (e.clientX - rect.width / 2) + 'px';
+      bouncingCharacter.style.top  = (e.clientY - rect.height / 2) + 'px';
+      
+      lastDragX = e.clientX;
+      lastDragY = e.clientY;
+      lastDragTime = now;
+    }
+    
+    // End dragging and start the throw simulation
+    function endDrag(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      document.removeEventListener('mousemove', duringDrag);
+      document.removeEventListener('mouseup', endDrag);
       
       isBouncing = true;
       requestAnimationFrame(updateBounce);
     }
-
+    
+    // Physics simulation for the thrown character
     function updateBounce() {
       if (!bouncingCharacter) return;
-
       const rect = bouncingCharacter.getBoundingClientRect();
+      let newLeft = rect.left + bounceVelocityX;
+      let newTop = rect.top + bounceVelocityY;
       
-      // Update position
-      const newLeft = rect.left + bounceVelocityX;
-      const newTop = rect.top + bounceVelocityY;
-      
-      // Bounce off walls
+      // Bounce off left/right walls
       if (newLeft <= 0 || newLeft + rect.width >= window.innerWidth) {
         bounceVelocityX *= -BOUNCE_DAMPING;
+        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - rect.width));
       }
       
-      // Bounce off floor or ceiling
-      if (newTop <= 0 || newTop + rect.height >= window.innerHeight) {
+      // Bounce off floor
+      if (newTop + rect.height >= window.innerHeight) {
+        newTop = window.innerHeight - rect.height;
+        bouncingCharacter.style.left = newLeft + 'px';
+        bouncingCharacter.style.top = newTop + 'px';
+        stopBouncing();
+        return;
+      }
+      
+      // Bounce off ceiling
+      if (newTop <= 0) {
         bounceVelocityY *= -BOUNCE_DAMPING;
+        newTop = 0;
       }
       
-      // Apply gravity
       bounceVelocityY += GRAVITY;
       
-      // Update character position
       bouncingCharacter.style.left = newLeft + 'px';
       bouncingCharacter.style.top = newTop + 'px';
       
-      // Stop bouncing if velocity is very low
-      if (Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5 && 
-          newTop + rect.height >= window.innerHeight - 10) {
+      if (Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
         stopBouncing();
         return;
       }
       
       requestAnimationFrame(updateBounce);
     }
-
+    
+    // Restore original character after bounce simulation
     function stopBouncing() {
-      if (!isBouncing) return;
-      
-      // Remove bouncing character
       if (bouncingCharacter) {
         document.body.removeChild(bouncingCharacter);
         bouncingCharacter = null;
       }
-      
-      // Restore original character
       const characterImg = document.getElementById('characterImg');
       characterImg.style.visibility = 'visible';
-      
       isBouncing = false;
     }
-
-    // Add event listeners for mouse and touch
-    document.addEventListener('mousedown', startBouncing);
-    document.addEventListener('touchstart', startBouncing, {passive: false});
-
-    // Prevent default touch behavior to allow bouncing
-    document.addEventListener('touchmove', function(e) {
-      if (isBouncing) e.preventDefault();
+    
+    // Attach mousedown listener for dragging
+    document.getElementById('characterImg').addEventListener('mousedown', startDrag);
+    
+    // Touch event listeners for mobile
+    document.getElementById('characterImg').addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      startDrag(e.touches[0]);
     }, {passive: false});
     
-    // Hover overlay functionality for navigation buttons
+    document.addEventListener('touchmove', function(e) {
+      if (isDragging && bouncingCharacter) {
+        duringDrag(e.touches[0]);
+      }
+    }, {passive: false});
+    
+    document.addEventListener('touchend', function(e) {
+      if (isDragging) {
+        endDrag(e.changedTouches[0]);
+      }
+    }, {passive: false});
+    
+    // --- Hover overlay functionality for navigation buttons ---
     const hoverImageDiv = document.getElementById('hoverImage');
     
     function showHoverImage(imageUrl) {
@@ -466,7 +508,6 @@
     });
     document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
     
-    // For video button: show aniol.gif at 60% size
     document.getElementById('video-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "60% auto";
       showHoverImage('gifaniol.gif');
@@ -476,7 +517,6 @@
       hoverImageDiv.style.backgroundSize = "contain";
     });
     
-    // For art button: show art.png at 20% smaller than before (50% auto)
     document.getElementById('art-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "50% auto";
       showHoverImage('art.png');
@@ -504,7 +544,7 @@
     });
     document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
     
-    // Random visitor name from an expanded list
+    // --- Random visitor name ---
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
