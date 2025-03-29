@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Maks Rz</title>
+  <title>Maks Rz - Box2D Physics</title>
   <style>
     /* Global settings – white background, custom cursor */
     html, body {
@@ -38,7 +38,7 @@
       background-size: 100vw 100vh;
       background-position: 0 0;
     }
-    /* Hover overlay – displays images on button hover; now tiled for mobile */
+    /* Hover overlay – displays images on button hover */
     #hoverImage {
       display: none;
       position: absolute;
@@ -63,12 +63,10 @@
       width: 150px;
       height: auto;
     }
-    /* Style dla rzucanego obiektu – klasa bouncing */
+    /* Bouncing character style */
     .bouncing {
       position: absolute;
       transition: none;
-      /* Ustawienie punktu obrotu na środku */
-      transform-origin: 50% 50%;
     }
     /* Navigation container at the top */
     .nav-container {
@@ -78,7 +76,6 @@
       width: 100%;
       z-index: 1000;
       font-family: "Apple Garamond", serif;
-      font-stretch: expanded;
       text-align: center;
       padding: 10px 0;
     }
@@ -88,7 +85,6 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    /* Add comma after each button except the last */
     .nav-buttons a:not(:last-child)::after {
       content: ", ";
       font-size: 0.5em;
@@ -102,11 +98,9 @@
       color: #000;
       font-size: 5em;
     }
-    /* Underline on hover */
     .nav-button:hover {
       text-decoration: underline;
     }
-    /* Dropdown – elements remain above buttons */
     .nav-dropdowns {
       max-width: 100%;
       text-align: center;
@@ -118,7 +112,7 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Awards container – two columns; initially hidden; padding top 20vh */
+    /* Awards container – initially hidden */
     #awards-container {
       display: none;
       position: absolute;
@@ -130,8 +124,7 @@
       padding-top: 20vh;
       box-sizing: border-box;
       justify-content: space-between;
-      padding-left: 50px;
-      padding-right: 50px;
+      padding: 0 50px;
     }
     .festival-column {
       width: 45%;
@@ -150,7 +143,6 @@
       color: #000;
       z-index: 1001;
     }
-    /* Media query for mobile devices */
     @media (max-width: 600px) {
       .nav-button {
         font-size: 3em;
@@ -163,6 +155,8 @@
       }
     }
   </style>
+  <!-- External Box2D script from CDN (Box2DWeb by Erin Catto) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/box2dweb/2.1.a.3/Box2dWeb-2.1.a.3.min.js"></script>
 </head>
 <body>
   <!-- Navigation -->
@@ -221,26 +215,26 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Blokada przeciągania i menu kontekstowego dla obrazu 2.png
+    // Prevent dragging and right-click context menu on character image
     const characterImg = document.getElementById('characterImg');
     characterImg.addEventListener('dragstart', e => e.preventDefault());
     characterImg.addEventListener('contextmenu', e => e.preventDefault());
-    
-    // Toggle enemies list ("1. damien")
+
+    // Toggle enemies list
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
-      var enemiesList = document.getElementById('enemies-list');
+      const enemiesList = document.getElementById('enemies-list');
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
     
-    // Toggle awards container – show/hide (display: flex when shown)
+    // Toggle awards container
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
-      var awardsContainer = document.getElementById('awards-container');
+      const awardsContainer = document.getElementById('awards-container');
       awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
     });
     
-    // Background animation – ruch tła zależny od pozycji kursora
+    // Background animation (1.png)
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -253,6 +247,7 @@
       const now = Date.now();
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
+      
       if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
@@ -260,6 +255,7 @@
         if (Math.abs(speedX) < 0.01) speedX = 0;
         if (Math.abs(speedY) < 0.01) speedY = 0;
       }
+      
       offsetX += speedX;
       offsetY += speedY;
       bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
@@ -267,14 +263,14 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Standardowa animacja zmiany obrazka – aktywna, gdy nie przeciągamy i nie jest aktywny rzut
+    // Simple horizontal animation for the character when not dragged
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
     let animationInterval = null;
     let isAnimating = false;
     function animateCharacter() {
-      if (!dragging && !isProjectileActive) {
+      if (!dragging) {
         currentX += (targetX - currentX) * 0.1;
         character.style.left = currentX + 'px';
       }
@@ -282,208 +278,216 @@
     }
     requestAnimationFrame(animateCharacter);
     
-    // --- Logika przeciągania i rzutu ---
+    // Variables for drag and throw velocity
     let dragging = false;
-    // Do obliczania prędkości rzutu zapamiętujemy dwie ostatnie pozycje
-    let prevDragX = 0, prevDragY = 0, prevDragTime = 0;
-    let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
     let dragOffsetX = 0, dragOffsetY = 0;
+    let dragStartTime = 0, dragStartX = 0, dragStartY = 0;
+    let lastDragTime = 0, lastDragX = 0, lastDragY = 0;
     
-    // Ustawienia rzutu
-    let isProjectileActive = false;
-    let projectileCharacter = null;
-    let bounceVelocityX = 0;
-    let bounceVelocityY = 0;
-    const GRAVITY = 0.5;
-    const BOUNCE_DAMPING = 0.8;
-    const VELOCITY_SCALE = 0.5; // Dostosuj skalę prędkości
-    const MIN_DRAG_DELTA = 2;  // Minimalna zmiana pozycji, aby uznać, że był rzut
-    
-    // Rozpoczęcie przeciągania – mousedown / touchstart
+    // Mouse drag start
     characterImg.addEventListener('mousedown', function(e) {
       e.preventDefault();
       dragging = true;
-      prevDragX = lastDragX = e.clientX;
-      prevDragY = lastDragY = e.clientY;
-      prevDragTime = lastDragTime = Date.now();
+      dragStartTime = Date.now();
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      lastDragTime = dragStartTime;
+      lastDragX = dragStartX;
+      lastDragY = dragStartY;
+      // Calculate offset for smooth dragging
       const rect = characterImg.getBoundingClientRect();
       dragOffsetX = e.clientX - rect.left;
       dragOffsetY = e.clientY - rect.top;
+      stopCharacterAnimation();
     });
-    
-    characterImg.addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      dragging = true;
-      const touch = e.touches[0];
-      prevDragX = lastDragX = touch.clientX;
-      prevDragY = lastDragY = touch.clientY;
-      prevDragTime = lastDragTime = Date.now();
-      const rect = characterImg.getBoundingClientRect();
-      dragOffsetX = touch.clientX - rect.left;
-      dragOffsetY = touch.clientY - rect.top;
-    });
-    
-    // Aktualizacja pozycji podczas przeciągania
-    function updateDrag(clientX, clientY) {
-      prevDragX = lastDragX;
-      prevDragY = lastDragY;
-      prevDragTime = lastDragTime;
-      lastDragX = clientX;
-      lastDragY = clientY;
-      lastDragTime = Date.now();
-      character.style.left = (clientX - dragOffsetX) + 'px';
-      character.style.top = (clientY - dragOffsetY) + 'px';
-      lastMouseTime = Date.now();
-    }
     
     document.addEventListener('mousemove', function(e) {
       if (dragging) {
         e.preventDefault();
-        updateDrag(e.clientX, e.clientY);
-      } else if (!isProjectileActive) {
-        targetX = e.clientX;
+        character.style.left = (e.clientX - dragOffsetX) + 'px';
+        character.style.top = (e.clientY - dragOffsetY) + 'px';
+        lastDragTime = Date.now();
+        lastDragX = e.clientX;
+        lastDragY = e.clientY;
         lastMouseTime = Date.now();
-        if (!isAnimating) startCharacterAnimation();
-        const deltaX = (e.clientX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (e.clientY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
       }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+      if (dragging) {
+        dragging = false;
+        // Calculate throw velocity (using a scale of 30 pixels = 1 meter)
+        const scale = 30;
+        const deltaTime = (lastDragTime - dragStartTime) / 1000;
+        let initialVx = 0, initialVy = 0;
+        if (deltaTime > 0.001) {
+          initialVx = (lastDragX - dragStartX) / (scale * deltaTime);
+          initialVy = (lastDragY - dragStartY) / (scale * deltaTime);
+        } else {
+          initialVy = -10;
+        }
+        startPhysicsSimulation({ x: initialVx, y: initialVy });
+      }
+    });
+    
+    // Touch drag support
+    characterImg.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      dragging = true;
+      const touch = e.touches[0];
+      dragStartTime = Date.now();
+      dragStartX = touch.clientX;
+      dragStartY = touch.clientY;
+      lastDragTime = dragStartTime;
+      lastDragX = dragStartX;
+      lastDragY = dragStartY;
+      const rect = characterImg.getBoundingClientRect();
+      dragOffsetX = touch.clientX - rect.left;
+      dragOffsetY = touch.clientY - rect.top;
+      stopCharacterAnimation();
     });
     
     document.addEventListener('touchmove', function(e) {
       if (dragging) {
         e.preventDefault();
         const touch = e.touches[0];
-        updateDrag(touch.clientX, touch.clientY);
-      } else if (!isProjectileActive) {
-        const touch = e.touches[0];
-        targetX = touch.clientX;
+        character.style.left = (touch.clientX - dragOffsetX) + 'px';
+        character.style.top = (touch.clientY - dragOffsetY) + 'px';
+        lastDragTime = Date.now();
+        lastDragX = touch.clientX;
+        lastDragY = touch.clientY;
         lastMouseTime = Date.now();
-        if (!isAnimating) startCharacterAnimation();
-        const deltaX = (touch.clientX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (touch.clientY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
       }
     }, {passive: false});
     
-    function endDrag() {
-      if (!dragging) return;
-      dragging = false;
-      const dx = lastDragX - prevDragX;
-      const dy = lastDragY - prevDragY;
-      // Jeśli zmiana pozycji jest znikoma, nie inicjujemy rzutu – tylko powrót do pozycji domyślnej
-      if (Math.abs(dx) < MIN_DRAG_DELTA && Math.abs(dy) < MIN_DRAG_DELTA) {
-        character.style.transition = "all 0.5s ease-out";
-        character.style.left = "50%";
-        character.style.bottom = "20px";
-        character.style.top = "";
-        setTimeout(() => { character.style.transition = ""; }, 500);
-        return;
-      }
-      bounceVelocityX = dx * VELOCITY_SCALE;
-      bounceVelocityY = dy * VELOCITY_SCALE;
-      startProjectile();
-    }
-    
-    document.addEventListener('mouseup', function(e) {
-      endDrag();
-    });
-    
     document.addEventListener('touchend', function(e) {
-      endDrag();
+      if (dragging) {
+        dragging = false;
+        const scale = 30;
+        const deltaTime = (lastDragTime - dragStartTime) / 1000;
+        let initialVx = 0, initialVy = 0;
+        if (deltaTime > 0.001) {
+          initialVx = (lastDragX - dragStartX) / (scale * deltaTime);
+          initialVy = (lastDragY - dragStartY) / (scale * deltaTime);
+        } else {
+          initialVy = -10;
+        }
+        startPhysicsSimulation({ x: initialVx, y: initialVy });
+      }
     });
     
-    // Start rzutu – klonujemy obrazek, ustawiamy transform-origin oraz ukrywamy oryginał
-    function startProjectile() {
+    // Physics simulation using Box2DWeb (based on Erin Catto's work)
+    function startPhysicsSimulation(initialVelocity) {
+      const scale = 30; // 30 pixels = 1 meter
       const rect = characterImg.getBoundingClientRect();
-      projectileCharacter = characterImg.cloneNode(true);
-      projectileCharacter.id = 'projectileCharacter';
-      projectileCharacter.classList.add('bouncing');
-      projectileCharacter.style.position = 'absolute';
-      projectileCharacter.style.left = rect.left + 'px';
-      projectileCharacter.style.top = rect.top + 'px';
-      projectileCharacter.style.width = rect.width + 'px';
-      projectileCharacter.style.height = rect.height + 'px';
-      projectileCharacter.style.zIndex = '1000';
-      // Ustawiamy punkt obrotu na środku
-      projectileCharacter.style.transformOrigin = "50% 50%";
-      // Resetujemy ewentualne transformacje
-      projectileCharacter.style.transform = '';
+      
+      // Create a clone for physics simulation
+      const bouncingCharacter = characterImg.cloneNode(true);
+      bouncingCharacter.id = 'bouncingCharacter';
+      bouncingCharacter.classList.add('bouncing');
+      bouncingCharacter.style.position = 'absolute';
+      bouncingCharacter.style.left = rect.left + 'px';
+      bouncingCharacter.style.top = rect.top + 'px';
+      bouncingCharacter.style.width = rect.width + 'px';
+      bouncingCharacter.style.height = rect.height + 'px';
+      bouncingCharacter.style.zIndex = '1000';
       characterImg.style.visibility = 'hidden';
-      document.body.appendChild(projectileCharacter);
-      isProjectileActive = true;
-      requestAnimationFrame(updateProjectile);
+      document.body.appendChild(bouncingCharacter);
+      
+      // Box2D shortcuts
+      const b2Vec2 = Box2D.Common.Math.b2Vec2;
+      const b2BodyDef = Box2D.Dynamics.b2BodyDef;
+      const b2Body = Box2D.Dynamics.b2Body;
+      const b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
+      const b2World = Box2D.Dynamics.b2World;
+      const b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+      
+      // Create Box2D world with gravity
+      const world = new b2World(new b2Vec2(0, 10), true);
+      
+      // Create ground (bottom edge)
+      let groundBodyDef = new b2BodyDef();
+      groundBodyDef.position.Set(0, windowHeight / scale);
+      let groundBody = world.CreateBody(groundBodyDef);
+      let groundFixDef = new b2FixtureDef();
+      groundFixDef.density = 0;
+      groundFixDef.friction = 0.5;
+      groundFixDef.restitution = 0.2;
+      groundFixDef.shape = new b2PolygonShape();
+      groundFixDef.shape.SetAsBox(windowWidth / scale, 0.1);
+      groundBody.CreateFixture(groundFixDef);
+      
+      // Create left wall
+      let leftWallDef = new b2BodyDef();
+      leftWallDef.position.Set(0, 0);
+      let leftWall = world.CreateBody(leftWallDef);
+      let leftWallFixDef = new b2FixtureDef();
+      leftWallFixDef.shape = new b2PolygonShape();
+      leftWallFixDef.shape.SetAsBox(0.1, windowHeight / scale);
+      leftWall.CreateFixture(leftWallFixDef);
+      
+      // Create right wall
+      let rightWallDef = new b2BodyDef();
+      rightWallDef.position.Set(windowWidth / scale, 0);
+      let rightWall = world.CreateBody(rightWallDef);
+      let rightWallFixDef = new b2FixtureDef();
+      rightWallFixDef.shape = new b2PolygonShape();
+      rightWallFixDef.shape.SetAsBox(0.1, windowHeight / scale);
+      rightWall.CreateFixture(rightWallFixDef);
+      
+      // Create dynamic body for the character
+      let bodyDef = new b2BodyDef();
+      bodyDef.type = b2Body.b2_dynamicBody;
+      // Convert position to meters (center of the image)
+      const initX = rect.left / scale;
+      const initY = rect.top / scale;
+      bodyDef.position.Set(initX + (rect.width / (2 * scale)), initY + (rect.height / (2 * scale)));
+      let body = world.CreateBody(bodyDef);
+      
+      let fixDef = new b2FixtureDef();
+      fixDef.density = 1.0;
+      fixDef.friction = 0.5;
+      fixDef.restitution = 0.7;
+      fixDef.shape = new b2PolygonShape();
+      fixDef.shape.SetAsBox((rect.width / 2) / scale, (rect.height / 2) / scale);
+      body.CreateFixture(fixDef);
+      
+      // Set initial velocity (in m/s)
+      body.SetLinearVelocity(new b2Vec2(initialVelocity.x, initialVelocity.y));
+      
+      const timeStep = 1 / 60;
+      const velocityIterations = 8;
+      const positionIterations = 3;
+      
+      function step() {
+        world.Step(timeStep, velocityIterations, positionIterations);
+        world.ClearForces();
+        const pos = body.GetPosition();
+        // Convert meters to pixels (centering the image)
+        const newLeft = (pos.x * scale) - rect.width / 2;
+        const newTop = (pos.y * scale) - rect.height / 2;
+        bouncingCharacter.style.left = newLeft + 'px';
+        bouncingCharacter.style.top = newTop + 'px';
+        
+        // If velocity is very low and near the ground, finish simulation
+        const velocity = body.GetLinearVelocity();
+        if (velocity.Length() < 0.1 && (newTop + rect.height >= windowHeight - 5)) {
+          bouncingCharacter.style.top = (windowHeight - rect.height) + 'px';
+          document.body.removeChild(bouncingCharacter);
+          characterImg.style.visibility = 'visible';
+          character.style.left = bouncingCharacter.style.left;
+          character.style.top = bouncingCharacter.style.top;
+          return;
+        }
+        
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
     }
     
-    // Aktualizacja trajektorii rzutu – ruch, obrót i odbicia od krawędzi
-    function updateProjectile() {
-      if (!projectileCharacter) return;
-      const rect = projectileCharacter.getBoundingClientRect();
-      let newLeft = rect.left + bounceVelocityX;
-      let newTop = rect.top + bounceVelocityY;
-      
-      // Odbicie od lewej krawędzi
-      if (newLeft <= 0) {
-        newLeft = 0;
-        bounceVelocityX *= -BOUNCE_DAMPING;
-      }
-      // Odbicie od prawej krawędzi
-      if (newLeft + rect.width >= window.innerWidth) {
-        newLeft = window.innerWidth - rect.width;
-        bounceVelocityX *= -BOUNCE_DAMPING;
-      }
-      // Odbicie od górnej krawędzi
-      if (newTop <= 0) {
-        newTop = 0;
-        bounceVelocityY *= -BOUNCE_DAMPING;
-      }
-      // Jeżeli dotrzemy do dolnej krawędzi – kończymy rzut
-      if (newTop + rect.height >= window.innerHeight) {
-        newTop = window.innerHeight - rect.height;
-        projectileCharacter.style.left = newLeft + 'px';
-        projectileCharacter.style.top = newTop + 'px';
-        stopProjectile();
-        return;
-      }
-      
-      // Aktualizacja prędkości – grawitacja
-      bounceVelocityY += GRAVITY;
-      
-      // Obrót – kąt na podstawie wektora prędkości (w stopniach)
-      const angle = Math.atan2(bounceVelocityY, bounceVelocityX) * 180 / Math.PI;
-      projectileCharacter.style.transform = `rotate(${angle}deg)`;
-      
-      projectileCharacter.style.left = newLeft + 'px';
-      projectileCharacter.style.top = newTop + 'px';
-      
-      requestAnimationFrame(updateProjectile);
-    }
-    
-    // Zakończenie rzutu – usuwamy klon i animujemy powrót oryginału do pozycji domyślnej
-    function stopProjectile() {
-      if (!isProjectileActive) return;
-      if (projectileCharacter) {
-        document.body.removeChild(projectileCharacter);
-        projectileCharacter = null;
-      }
-      isProjectileActive = false;
-      characterImg.style.visibility = 'visible';
-      character.style.transition = "all 0.5s ease-out";
-      character.style.left = "50%";
-      character.style.bottom = "20px";
-      character.style.top = "";
-      setTimeout(() => {
-        character.style.transition = "";
-      }, 500);
-    }
-    
-    // Standardowa animacja zmiany obrazka – wyłączona, gdy trwa przeciąganie lub rzut
+    // Standard animation for changing character image when not dragging
     function startCharacterAnimation() {
-      if (dragging || isProjectileActive) return;
+      if (dragging) return;
       isAnimating = true;
       let toggle = false;
       animationInterval = setInterval(() => {
@@ -502,35 +506,34 @@
       characterImg.src = '2.png';
     }
     
-    // Globalny listener – aktualizacja dla animacji, gdy nie przeciągamy ani nie jest aktywny rzut
+    // Global listener for mouse movement (update background and character target)
     document.addEventListener('mousemove', function(e) {
-      if (!dragging && !isProjectileActive) {
-        targetX = e.clientX;
-        lastMouseTime = Date.now();
-        if (!isAnimating) startCharacterAnimation();
-        const deltaX = (e.clientX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (e.clientY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating && !dragging) {
+        startCharacterAnimation();
       }
     });
     
     document.addEventListener('touchmove', function(e) {
-      if (!dragging && !isProjectileActive) {
+      if (!dragging) {
         const touch = e.touches[0];
         targetX = touch.clientX;
         lastMouseTime = Date.now();
-        if (!isAnimating) startCharacterAnimation();
-        const deltaX = (touch.clientX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (touch.clientY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
+        if (!isAnimating) {
+          startCharacterAnimation();
+        }
       }
     }, {passive: false});
     
-    // Hover overlay functionality for navigation buttons (bez zmian)
+    // Hover overlay functionality for navigation buttons
     const hoverImageDiv = document.getElementById('hoverImage');
     
     function showHoverImage(imageUrl) {
