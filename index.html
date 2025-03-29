@@ -150,7 +150,7 @@
       color: #000;
       z-index: 1001;
     }
-    /* Media query for mobile devices */
+    /* Media query for mobile devices – ensure buttons are visible */
     @media (max-width: 600px) {
       .nav-button {
         font-size: 3em;
@@ -269,7 +269,7 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Character animation (2.png) following cursor
+    // Character animation (2.png) following pointer/mouse position
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
@@ -302,20 +302,26 @@
       characterImg.src = '2.png';
     }
     
-    document.addEventListener('mousemove', function(e) {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
-      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      targetX = mouseX;
-      lastMouseTime = Date.now();
-      if (!isAnimating && !isDragging && !isBouncing) {
-        startCharacterAnimation();
+    // Update background movement using pointer/mouse position
+    function updateBackground(e) {
+      if (!isDragging) {
+        const pointerX = e.clientX;
+        const pointerY = e.clientY;
+        const deltaX = (pointerX - windowWidth / 2) / (windowWidth / 2);
+        const deltaY = (pointerY - windowHeight / 2) / (windowHeight / 2);
+        const maxSpeed = 20;
+        speedX = deltaX * maxSpeed;
+        speedY = deltaY * maxSpeed;
+        targetX = pointerX;
+        lastMouseTime = Date.now();
+        if (!isAnimating && !isBouncing) {
+           startCharacterAnimation();
+        }
       }
-    });
+    }
+    // Attach both pointermove and mousemove for background updates
+    document.addEventListener('pointermove', updateBackground);
+    document.addEventListener('mousemove', updateBackground);
     
     // --- Grabbable and Throwable Character ---
     let isDragging = false;
@@ -464,7 +470,7 @@
       isBouncing = false;
     }
     
-    // Use pointer events for unified input handling
+    // Use pointer events for unified input handling for dragging/throwing
     characterImg.addEventListener('pointerdown', startDrag);
     document.addEventListener('pointermove', function(e) {
       if (isDragging && bouncingCharacter) {
