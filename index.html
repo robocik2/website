@@ -2,10 +2,9 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maks Rz</title>
   <style>
-    /* Global settings – white background, custom cursor, disable default touch actions */
+    /* Global settings – white background, custom cursor */
     html, body {
       margin: 0;
       padding: 0;
@@ -14,7 +13,6 @@
       height: 100%;
       background-color: white;
       cursor: url('cursor1.png'), auto;
-      touch-action: none;
     }
     /* Ellipse mask – shows content only inside the ellipse */
     .mask {
@@ -234,7 +232,7 @@
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
     
-    // Toggle awards container – show/hide
+    // Toggle awards container – show/hide (display: flex when shown)
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       var awardsContainer = document.getElementById('awards-container');
@@ -318,27 +316,6 @@
       }
     });
     
-    function handleTouch(e) {
-      if (e.target.closest('.nav-button')) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const touchX = touch.clientX;
-      const touchY = touch.clientY;
-      const deltaX = (touchX - windowWidth / 2) / (windowWidth / 2);
-      const deltaY = (touchY - windowHeight / 2) / (windowHeight / 2);
-      const maxSpeed = 20;
-      speedX = deltaX * maxSpeed;
-      speedY = deltaY * maxSpeed;
-      targetX = touchX;
-      lastMouseTime = Date.now();
-      if (!isAnimating && !isDragging && !isBouncing) {
-        startCharacterAnimation();
-      }
-    }
-    
-    document.addEventListener('touchstart', handleTouch, {passive: false});
-    document.addEventListener('touchmove', handleTouch, {passive: false});
-    
     // --- Grabbable and Throwable Character ---
     let isDragging = false;
     let isBouncing = false;
@@ -372,7 +349,7 @@
       rotationAngle = 0;
       bouncingCharacter.style.position = 'absolute';
       bouncingCharacter.style.zIndex = '1000';
-      // Explicitly set size to match the original
+      // Explicitly set the size to match the original
       bouncingCharacter.style.width = thrownWidth + "px";
       bouncingCharacter.style.height = thrownHeight + "px";
       characterImg.style.visibility = 'hidden';
@@ -381,7 +358,7 @@
       document.body.appendChild(bouncingCharacter);
     }
     
-    // Start dragging on mousedown over the character
+    // Start dragging on pointer down over the character
     function startDrag(e) {
       if (!e.target.closest('#character')) return;
       e.preventDefault();
@@ -392,11 +369,9 @@
       lastDragX = e.clientX;
       lastDragY = e.clientY;
       lastDragTime = Date.now();
-      document.addEventListener('mousemove', duringDrag);
-      document.addEventListener('mouseup', endDrag);
     }
     
-    // Update clone's position during drag (without scaling changes)
+    // Update clone's position during drag
     function duringDrag(e) {
       if (!isDragging || !bouncingCharacter) return;
       const now = Date.now();
@@ -415,30 +390,20 @@
       lastDragTime = now;
     }
     
-    // End dragging and begin throw simulation
+    // End dragging and begin the throw simulation
     function endDrag(e) {
       if (!isDragging) return;
       isDragging = false;
-      document.removeEventListener('mousemove', duringDrag);
-      document.removeEventListener('mouseup', endDrag);
       thrownTime = Date.now();
       isBouncing = true;
       requestAnimationFrame(updateBounce);
     }
     
-    // Also handle touchcancel on mobile
-    document.addEventListener('touchcancel', function(e) {
-      if (isDragging) {
-        endDrag(e.changedTouches[0]);
-      }
-    }, {passive: false});
-    
     // Bounce simulation: update translation and rotation.
-    // When touching the bottom border, freeze rotation.
     function updateBounce() {
       if (!bouncingCharacter) return;
       
-      // Only update rotation if not touching the bottom border
+      // Update rotation if not in contact with bottom border
       if (thrownPosY + thrownHeight < window.innerHeight) {
         rotationAngle += ROTATION_SPEED;
       }
@@ -461,7 +426,7 @@
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
       
-      // Bounce off floor and freeze rotation when touching bottom
+      // Bounce off floor and freeze rotation
       if (newPosY + thrownHeight > window.innerHeight) {
         newPosY = window.innerHeight - thrownHeight;
         bounceVelocityY *= -BOUNCE_DAMPING;
@@ -470,7 +435,7 @@
       // Apply gravity
       bounceVelocityY += GRAVITY;
       
-      // Apply friction
+      // Apply friction to gradually slow the object
       bounceVelocityX *= 0.99;
       bounceVelocityY *= 0.99;
       
@@ -478,7 +443,7 @@
       thrownPosY = newPosY;
       bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(" + rotationAngle + "deg)";
       
-      // Stopping condition: after 4 seconds and when velocities are very low
+      // Stop after 4 seconds when velocities are very low
       if (Date.now() - thrownTime >= 4000 &&
           Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
         stopBouncing();
@@ -488,34 +453,33 @@
       requestAnimationFrame(updateBounce);
     }
     
-    // Remove clone and restore original character
+    // Remove the clone and restore the original character
     function stopBouncing() {
       if (bouncingCharacter) {
         document.body.removeChild(bouncingCharacter);
         bouncingCharacter = null;
       }
-      const characterImg = document.getElementById('characterImg');
       characterImg.style.visibility = 'visible';
       isBouncing = false;
     }
     
-    document.getElementById('characterImg').addEventListener('mousedown', startDrag);
-    document.getElementById('characterImg').addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      startDrag(e.touches[0]);
-    }, {passive: false});
-    
-    document.addEventListener('touchmove', function(e) {
+    // Use pointer events for unified input handling
+    characterImg.addEventListener('pointerdown', startDrag);
+    document.addEventListener('pointermove', function(e) {
       if (isDragging && bouncingCharacter) {
-        duringDrag(e.touches[0]);
+        duringDrag(e);
       }
-    }, {passive: false});
-    
-    document.addEventListener('touchend', function(e) {
+    });
+    document.addEventListener('pointerup', function(e) {
       if (isDragging) {
-        endDrag(e.changedTouches[0]);
+        endDrag(e);
       }
-    }, {passive: false});
+    });
+    document.addEventListener('pointercancel', function(e) {
+      if (isDragging) {
+        endDrag(e);
+      }
+    });
     
     // --- Hover overlay for navigation buttons ---
     const hoverImageDiv = document.getElementById('hoverImage');
@@ -577,7 +541,7 @@
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
       "Błażej", "Mieczysław", "Zbigniew", "Witold", "Bronisław", "Czesław", "Lech", "Stanisław", "Wacław", "Kazimierz",
       "Agnieszka", "Barbara", "Czesława", "Danuta", "Elżbieta", "Grażyna", "Halina", "Irena", "Jadwiga", "Krystyna", "Łucja", "Małgorzata", "Natalia", "Olga", "Patrycja",
-      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula", "Marek", "Mareczek", "Darek", "Kasia", "Dorota", "Chris", "Maddie", "Dżulson", "Maks", "Julia"
+      "Seraphina", "Isadora", "Eulalia", "Octavia", "Guinevere", "Rowena", "Imogen", "Selene", "Theodora", "Valentina", "Opalina", "Marigold", "Rosalind", "Cordula"
     ];
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
