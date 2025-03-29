@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Maks Rz - Box2D Physics</title>
+  <title>Maks Rz – Rewritten Throwing Part with Box2D</title>
   <style>
     /* Global settings – white background, custom cursor */
     html, body {
@@ -155,7 +155,7 @@
       }
     }
   </style>
-  <!-- External Box2D script from CDN (Box2DWeb by Erin Catto) -->
+  <!-- Load Box2DWeb from CDN (based on Erin Catto’s work) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/box2dweb/2.1.a.3/Box2dWeb-2.1.a.3.min.js"></script>
 </head>
 <body>
@@ -206,7 +206,7 @@
   </div>
   <!-- Character (2.png) with animation -->
   <div class="character" id="character">
-    <img src="2.png" id="characterImg" alt="Postać"
+    <img src="2.png" id="characterImg" alt="Character"
          draggable="false"
          ondragstart="return false;"
          oncontextmenu="return false;"
@@ -215,7 +215,7 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Prevent dragging and right-click context menu on character image
+    // Prevent default drag behavior on character image
     const characterImg = document.getElementById('characterImg');
     characterImg.addEventListener('dragstart', e => e.preventDefault());
     characterImg.addEventListener('contextmenu', e => e.preventDefault());
@@ -226,15 +226,14 @@
       const enemiesList = document.getElementById('enemies-list');
       enemiesList.style.display = (enemiesList.style.display === 'block') ? 'none' : 'block';
     });
-    
     // Toggle awards container
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       const awardsContainer = document.getElementById('awards-container');
       awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
     });
-    
-    // Background animation (1.png)
+
+    // Background animation (moves 1.png)
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -247,7 +246,6 @@
       const now = Date.now();
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
-      
       if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
@@ -255,7 +253,6 @@
         if (Math.abs(speedX) < 0.01) speedX = 0;
         if (Math.abs(speedY) < 0.01) speedY = 0;
       }
-      
       offsetX += speedX;
       offsetY += speedY;
       bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
@@ -263,7 +260,7 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Simple horizontal animation for the character when not dragged
+    // Simple horizontal animation for character when not dragged
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
@@ -278,7 +275,7 @@
     }
     requestAnimationFrame(animateCharacter);
     
-    // Variables for drag and throw velocity
+    // Variables for dragging and computing throw velocity
     let dragging = false;
     let dragOffsetX = 0, dragOffsetY = 0;
     let dragStartTime = 0, dragStartX = 0, dragStartY = 0;
@@ -294,13 +291,11 @@
       lastDragTime = dragStartTime;
       lastDragX = dragStartX;
       lastDragY = dragStartY;
-      // Calculate offset for smooth dragging
       const rect = characterImg.getBoundingClientRect();
       dragOffsetX = e.clientX - rect.left;
       dragOffsetY = e.clientY - rect.top;
       stopCharacterAnimation();
     });
-    
     document.addEventListener('mousemove', function(e) {
       if (dragging) {
         e.preventDefault();
@@ -312,12 +307,10 @@
         lastMouseTime = Date.now();
       }
     });
-    
     document.addEventListener('mouseup', function(e) {
       if (dragging) {
         dragging = false;
-        // Calculate throw velocity (using a scale of 30 pixels = 1 meter)
-        const scale = 30;
+        const scale = 30; // pixels per meter
         const deltaTime = (lastDragTime - dragStartTime) / 1000;
         let initialVx = 0, initialVy = 0;
         if (deltaTime > 0.001) {
@@ -330,7 +323,7 @@
       }
     });
     
-    // Touch drag support
+    // Touch support (similar to mouse)
     characterImg.addEventListener('touchstart', function(e) {
       e.preventDefault();
       dragging = true;
@@ -346,7 +339,6 @@
       dragOffsetY = touch.clientY - rect.top;
       stopCharacterAnimation();
     });
-    
     document.addEventListener('touchmove', function(e) {
       if (dragging) {
         e.preventDefault();
@@ -359,7 +351,6 @@
         lastMouseTime = Date.now();
       }
     }, {passive: false});
-    
     document.addEventListener('touchend', function(e) {
       if (dragging) {
         dragging = false;
@@ -376,23 +367,23 @@
       }
     });
     
-    // Physics simulation using Box2DWeb (based on Erin Catto's work)
+    // Rewritten throwing simulation using Box2DWeb
     function startPhysicsSimulation(initialVelocity) {
-      const scale = 30; // 30 pixels = 1 meter
+      const scale = 30; // pixels per meter
       const rect = characterImg.getBoundingClientRect();
       
-      // Create a clone for physics simulation
-      const bouncingCharacter = characterImg.cloneNode(true);
-      bouncingCharacter.id = 'bouncingCharacter';
-      bouncingCharacter.classList.add('bouncing');
-      bouncingCharacter.style.position = 'absolute';
-      bouncingCharacter.style.left = rect.left + 'px';
-      bouncingCharacter.style.top = rect.top + 'px';
-      bouncingCharacter.style.width = rect.width + 'px';
-      bouncingCharacter.style.height = rect.height + 'px';
-      bouncingCharacter.style.zIndex = '1000';
+      // Create a clone for the physics simulation
+      const simEl = characterImg.cloneNode(true);
+      simEl.id = 'simCharacter';
+      simEl.classList.add('bouncing');
+      simEl.style.position = 'absolute';
+      simEl.style.left = rect.left + 'px';
+      simEl.style.top = rect.top + 'px';
+      simEl.style.width = rect.width + 'px';
+      simEl.style.height = rect.height + 'px';
+      simEl.style.zIndex = '1000';
       characterImg.style.visibility = 'hidden';
-      document.body.appendChild(bouncingCharacter);
+      document.body.appendChild(simEl);
       
       // Box2D shortcuts
       const b2Vec2 = Box2D.Common.Math.b2Vec2;
@@ -402,46 +393,46 @@
       const b2World = Box2D.Dynamics.b2World;
       const b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
       
-      // Create Box2D world with gravity
+      // Create the Box2D world with gravity (10 m/s² downward)
       const world = new b2World(new b2Vec2(0, 10), true);
       
-      // Create ground (bottom edge)
+      // Create a ground body (centered horizontally)
       let groundBodyDef = new b2BodyDef();
-      groundBodyDef.position.Set(0, windowHeight / scale);
+      groundBodyDef.position.Set(windowWidth/(2*scale), windowHeight/scale);
       let groundBody = world.CreateBody(groundBodyDef);
       let groundFixDef = new b2FixtureDef();
       groundFixDef.density = 0;
       groundFixDef.friction = 0.5;
       groundFixDef.restitution = 0.2;
       groundFixDef.shape = new b2PolygonShape();
-      groundFixDef.shape.SetAsBox(windowWidth / scale, 0.1);
+      // Create ground as a box (half-width and a small half-height)
+      groundFixDef.shape.SetAsBox(windowWidth/(2*scale), 0.1);
       groundBody.CreateFixture(groundFixDef);
       
-      // Create left wall
+      // Create side walls
       let leftWallDef = new b2BodyDef();
-      leftWallDef.position.Set(0, 0);
+      leftWallDef.position.Set(0, windowHeight/(2*scale));
       let leftWall = world.CreateBody(leftWallDef);
-      let leftWallFixDef = new b2FixtureDef();
-      leftWallFixDef.shape = new b2PolygonShape();
-      leftWallFixDef.shape.SetAsBox(0.1, windowHeight / scale);
-      leftWall.CreateFixture(leftWallFixDef);
+      let leftWallFix = new b2FixtureDef();
+      leftWallFix.shape = new b2PolygonShape();
+      leftWallFix.shape.SetAsBox(0.1, windowHeight/(2*scale));
+      leftWall.CreateFixture(leftWallFix);
       
-      // Create right wall
       let rightWallDef = new b2BodyDef();
-      rightWallDef.position.Set(windowWidth / scale, 0);
+      rightWallDef.position.Set(windowWidth/scale, windowHeight/(2*scale));
       let rightWall = world.CreateBody(rightWallDef);
-      let rightWallFixDef = new b2FixtureDef();
-      rightWallFixDef.shape = new b2PolygonShape();
-      rightWallFixDef.shape.SetAsBox(0.1, windowHeight / scale);
-      rightWall.CreateFixture(rightWallFixDef);
+      let rightWallFix = new b2FixtureDef();
+      rightWallFix.shape = new b2PolygonShape();
+      rightWallFix.shape.SetAsBox(0.1, windowHeight/(2*scale));
+      rightWall.CreateFixture(rightWallFix);
       
-      // Create dynamic body for the character
+      // Create a dynamic body for the character
       let bodyDef = new b2BodyDef();
       bodyDef.type = b2Body.b2_dynamicBody;
-      // Convert position to meters (center of the image)
-      const initX = rect.left / scale;
-      const initY = rect.top / scale;
-      bodyDef.position.Set(initX + (rect.width / (2 * scale)), initY + (rect.height / (2 * scale)));
+      // Set position to the center of the image (convert to meters)
+      let startX = (rect.left + rect.width/2) / scale;
+      let startY = (rect.top + rect.height/2) / scale;
+      bodyDef.position.Set(startX, startY);
       let body = world.CreateBody(bodyDef);
       
       let fixDef = new b2FixtureDef();
@@ -449,43 +440,45 @@
       fixDef.friction = 0.5;
       fixDef.restitution = 0.7;
       fixDef.shape = new b2PolygonShape();
-      fixDef.shape.SetAsBox((rect.width / 2) / scale, (rect.height / 2) / scale);
+      fixDef.shape.SetAsBox((rect.width/2)/scale, (rect.height/2)/scale);
       body.CreateFixture(fixDef);
       
-      // Set initial velocity (in m/s)
-      body.SetLinearVelocity(new b2Vec2(initialVelocity.x, initialVelocity.y));
+      // Optionally apply a multiplier to the computed velocity if needed
+      const multiplier = 1.0;
+      body.SetLinearVelocity(new b2Vec2(initialVelocity.x * multiplier, initialVelocity.y * multiplier));
       
-      const timeStep = 1 / 60;
+      const timeStep = 1/60;
       const velocityIterations = 8;
       const positionIterations = 3;
       
-      function step() {
+      function update() {
         world.Step(timeStep, velocityIterations, positionIterations);
         world.ClearForces();
         const pos = body.GetPosition();
-        // Convert meters to pixels (centering the image)
-        const newLeft = (pos.x * scale) - rect.width / 2;
-        const newTop = (pos.y * scale) - rect.height / 2;
-        bouncingCharacter.style.left = newLeft + 'px';
-        bouncingCharacter.style.top = newTop + 'px';
+        const angle = body.GetAngle();
+        // Convert Box2D coordinates (meters) back to pixels
+        const newLeft = (pos.x * scale) - rect.width/2;
+        const newTop = (pos.y * scale) - rect.height/2;
+        simEl.style.left = newLeft + 'px';
+        simEl.style.top = newTop + 'px';
+        simEl.style.transform = "rotate(" + (angle * 180/Math.PI) + "deg)";
         
-        // If velocity is very low and near the ground, finish simulation
         const velocity = body.GetLinearVelocity();
+        // When velocity is very low and the object is near the ground, finish the simulation
         if (velocity.Length() < 0.1 && (newTop + rect.height >= windowHeight - 5)) {
-          bouncingCharacter.style.top = (windowHeight - rect.height) + 'px';
-          document.body.removeChild(bouncingCharacter);
+          simEl.style.top = (windowHeight - rect.height) + 'px';
+          document.body.removeChild(simEl);
           characterImg.style.visibility = 'visible';
-          character.style.left = bouncingCharacter.style.left;
-          character.style.top = bouncingCharacter.style.top;
+          character.style.left = simEl.style.left;
+          character.style.top = simEl.style.top;
           return;
         }
-        
-        requestAnimationFrame(step);
+        requestAnimationFrame(update);
       }
-      requestAnimationFrame(step);
+      requestAnimationFrame(update);
     }
     
-    // Standard animation for changing character image when not dragging
+    // Standard animation for changing the character image when not dragging
     function startCharacterAnimation() {
       if (dragging) return;
       isAnimating = true;
@@ -506,7 +499,7 @@
       characterImg.src = '2.png';
     }
     
-    // Global listener for mouse movement (update background and character target)
+    // Global listeners for mouse/touch movement (update background and character target)
     document.addEventListener('mousemove', function(e) {
       const mouseX = e.clientX;
       const mouseY = e.clientY;
@@ -521,7 +514,6 @@
         startCharacterAnimation();
       }
     });
-    
     document.addEventListener('touchmove', function(e) {
       if (!dragging) {
         const touch = e.touches[0];
@@ -533,24 +525,20 @@
       }
     }, {passive: false});
     
-    // Hover overlay functionality for navigation buttons
+    // Hover overlay functionality for navigation buttons (unchanged)
     const hoverImageDiv = document.getElementById('hoverImage');
-    
     function showHoverImage(imageUrl) {
       hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
       hoverImageDiv.style.display = "block";
     }
-    
     function hideHoverImage() {
       hoverImageDiv.style.display = "none";
     }
-    
     document.getElementById('maks-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('maksrz.png');
     });
     document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
-    
     document.getElementById('video-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "60% auto";
       showHoverImage('gifaniol.gif');
@@ -559,7 +547,6 @@
       hideHoverImage();
       hoverImageDiv.style.backgroundSize = "contain";
     });
-    
     document.getElementById('art-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "50% auto";
       showHoverImage('art.png');
@@ -568,26 +555,23 @@
       hideHoverImage();
       hoverImageDiv.style.backgroundSize = "contain";
     });
-    
     document.getElementById('contact-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('contact.png');
     });
     document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
-    
     document.getElementById('enemies-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('enemies.png');
     });
     document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
-    
     document.getElementById('awards-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('awards.png');
     });
     document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
     
-    // Random visitor name
+    // Set a random visitor name
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Yorick", "Zacharias",
       "Adelaide", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "Nerissa", "Ophelia",
