@@ -67,6 +67,7 @@
     .bouncing {
       position: absolute;
       transition: none;
+      transform-origin: center center;
     }
     /* Navigation container at the top */
     .nav-container {
@@ -348,7 +349,14 @@
     const GRAVITY = 0.5;
     const BOUNCE_DAMPING = 0.8;
     
-    // Variables for drag velocity calculation
+    // Rotation variables for thrown state
+    let rotationAngle = 0;
+    const ROTATION_SPEED = 5; // degrees per frame
+    
+    // To enforce a minimum thrown state duration (in ms)
+    let thrownTime = 0;
+    
+    // Variables for drag velocity calculation; multiplier reduced to tone down speed
     let lastDragTime = 0;
     let lastDragX = 0, lastDragY = 0;
     
@@ -365,6 +373,8 @@
       bouncingCharacter.style.width = rect.width + 'px';
       bouncingCharacter.style.height = rect.height + 'px';
       bouncingCharacter.style.zIndex = '1000';
+      // Ensure no previous transform (rotation) interferes
+      bouncingCharacter.style.transform = "rotate(0deg)";
       characterImg.style.visibility = 'hidden';
       document.body.appendChild(bouncingCharacter);
     }
@@ -394,8 +404,9 @@
       const now = Date.now();
       const deltaTime = now - lastDragTime;
       if (deltaTime > 0) {
-        bounceVelocityX = ((e.clientX - lastDragX) / deltaTime) * 16;
-        bounceVelocityY = ((e.clientY - lastDragY) / deltaTime) * 16;
+        // Multiplier reduced from 16 to 8 to tone down speed on hard throws
+        bounceVelocityX = ((e.clientX - lastDragX) / deltaTime) * 8;
+        bounceVelocityY = ((e.clientY - lastDragY) / deltaTime) * 8;
       }
       const rect = bouncingCharacter.getBoundingClientRect();
       bouncingCharacter.style.left = (e.clientX - rect.width / 2) + 'px';
@@ -413,14 +424,22 @@
       document.removeEventListener('mousemove', duringDrag);
       document.removeEventListener('mouseup', endDrag);
       
+      // Record throw start time to ensure a minimum thrown state duration
+      thrownTime = Date.now();
+      
       isBouncing = true;
       requestAnimationFrame(updateBounce);
     }
     
-    // Physics simulation for the thrown character
+    // Physics simulation for the thrown character with rotation
     function updateBounce() {
       if (!bouncingCharacter) return;
       const rect = bouncingCharacter.getBoundingClientRect();
+      
+      // Update rotation
+      rotationAngle += ROTATION_SPEED;
+      bouncingCharacter.style.transform = "rotate(" + rotationAngle + "deg)";
+      
       let newLeft = rect.left + bounceVelocityX;
       let newTop = rect.top + bounceVelocityY;
       
@@ -430,27 +449,28 @@
         newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - rect.width));
       }
       
-      // Bounce off floor
-      if (newTop + rect.height >= window.innerHeight) {
-        newTop = window.innerHeight - rect.height;
-        bouncingCharacter.style.left = newLeft + 'px';
-        bouncingCharacter.style.top = newTop + 'px';
-        stopBouncing();
-        return;
-      }
-      
       // Bounce off ceiling
       if (newTop <= 0) {
         bounceVelocityY *= -BOUNCE_DAMPING;
         newTop = 0;
       }
       
+      // Bounce off floor: instead of stopping immediately, invert velocity to simulate a bounce
+      if (newTop + rect.height >= window.innerHeight) {
+        newTop = window.innerHeight - rect.height;
+        bounceVelocityY *= -BOUNCE_DAMPING;
+      }
+      
+      // Apply gravity
       bounceVelocityY += GRAVITY;
       
+      // Update character position
       bouncingCharacter.style.left = newLeft + 'px';
       bouncingCharacter.style.top = newTop + 'px';
       
-      if (Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
+      // Only allow stopping if at least 4 seconds have passed and velocities are low
+      if (Date.now() - thrownTime >= 4000 &&
+          Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
         stopBouncing();
         return;
       }
