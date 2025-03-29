@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>Maks Rz</title>
+  <title>Maks Rz - fizyka z Box2D</title>
   <style>
     /* Global settings – white background, custom cursor */
     html, body {
@@ -63,12 +63,10 @@
       width: 150px;
       height: auto;
     }
-    /* Style dla rzucanego obiektu – klasa bouncing */
+    /* Bouncing character style */
     .bouncing {
       position: absolute;
       transition: none;
-      /* Ustawienie punktu obrotu na środku */
-      transform-origin: 50% 50%;
     }
     /* Navigation container at the top */
     .nav-container {
@@ -163,6 +161,8 @@
       }
     }
   </style>
+  <!-- Ładujemy planck.js z CDN (Box2D) -->
+  <script src="https://unpkg.com/planck-js@0.3.0/dist/planck.min.js"></script>
 </head>
 <body>
   <!-- Navigation -->
@@ -240,7 +240,7 @@
       awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
     });
     
-    // Background animation – ruch tła zależny od pozycji kursora
+    // Background animation with deceleration after 500ms of inactivity
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -253,6 +253,7 @@
       const now = Date.now();
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
+      
       if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
@@ -260,6 +261,7 @@
         if (Math.abs(speedX) < 0.01) speedX = 0;
         if (Math.abs(speedY) < 0.01) speedY = 0;
       }
+      
       offsetX += speedX;
       offsetY += speedY;
       bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
@@ -267,14 +269,14 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Standardowa animacja zmiany obrazka – aktywna, gdy nie przeciągamy i nie jest aktywny rzut
+    // Standardowa animacja postaci – gdy nie przeciągamy
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
     let animationInterval = null;
     let isAnimating = false;
     function animateCharacter() {
-      if (!dragging && !isProjectileActive) {
+      if (!dragging) {
         currentX += (targetX - currentX) * 0.1;
         character.style.left = currentX + 'px';
       }
@@ -282,208 +284,184 @@
     }
     requestAnimationFrame(animateCharacter);
     
-    // --- Logika przeciągania i rzutu ---
+    // Zmienne do obliczania prędkości rzutu
     let dragging = false;
-    // Do obliczania prędkości rzutu zapamiętujemy dwie ostatnie pozycje
-    let prevDragX = 0, prevDragY = 0, prevDragTime = 0;
-    let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
     let dragOffsetX = 0, dragOffsetY = 0;
+    let dragStartTime = 0, dragStartX = 0, dragStartY = 0;
+    let lastDragTime = 0, lastDragX = 0, lastDragY = 0;
     
-    // Ustawienia rzutu
-    let isProjectileActive = false;
-    let projectileCharacter = null;
-    let bounceVelocityX = 0;
-    let bounceVelocityY = 0;
-    const GRAVITY = 0.5;
-    const BOUNCE_DAMPING = 0.8;
-    const VELOCITY_SCALE = 0.5; // Dostosuj skalę prędkości
-    const MIN_DRAG_DELTA = 2;  // Minimalna zmiana pozycji, aby uznać, że był rzut
-    
-    // Rozpoczęcie przeciągania – mousedown / touchstart
+    // Rozpoczęcie przeciągania – mousedown/touchstart na obrazie postaci
     characterImg.addEventListener('mousedown', function(e) {
       e.preventDefault();
       dragging = true;
-      prevDragX = lastDragX = e.clientX;
-      prevDragY = lastDragY = e.clientY;
-      prevDragTime = lastDragTime = Date.now();
-      const rect = characterImg.getBoundingClientRect();
-      dragOffsetX = e.clientX - rect.left;
-      dragOffsetY = e.clientY - rect.top;
+      dragStartTime = Date.now();
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      lastDragTime = dragStartTime;
+      lastDragX = dragStartX;
+      lastDragY = dragStartY;
+      stopCharacterAnimation();
     });
-    
-    characterImg.addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      dragging = true;
-      const touch = e.touches[0];
-      prevDragX = lastDragX = touch.clientX;
-      prevDragY = lastDragY = touch.clientY;
-      prevDragTime = lastDragTime = Date.now();
-      const rect = characterImg.getBoundingClientRect();
-      dragOffsetX = touch.clientX - rect.left;
-      dragOffsetY = touch.clientY - rect.top;
-    });
-    
-    // Aktualizacja pozycji podczas przeciągania
-    function updateDrag(clientX, clientY) {
-      prevDragX = lastDragX;
-      prevDragY = lastDragY;
-      prevDragTime = lastDragTime;
-      lastDragX = clientX;
-      lastDragY = clientY;
-      lastDragTime = Date.now();
-      character.style.left = (clientX - dragOffsetX) + 'px';
-      character.style.top = (clientY - dragOffsetY) + 'px';
-      lastMouseTime = Date.now();
-    }
     
     document.addEventListener('mousemove', function(e) {
       if (dragging) {
         e.preventDefault();
-        updateDrag(e.clientX, e.clientY);
-      } else if (!isProjectileActive) {
-        targetX = e.clientX;
+        character.style.left = (e.clientX - dragOffsetX) + 'px';
+        character.style.top = (e.clientY - dragOffsetY) + 'px';
+        lastDragTime = Date.now();
+        lastDragX = e.clientX;
+        lastDragY = e.clientY;
         lastMouseTime = Date.now();
-        if (!isAnimating) startCharacterAnimation();
-        const deltaX = (e.clientX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (e.clientY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
       }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+      if (dragging) {
+        dragging = false;
+        // Obliczenie prędkości w m/s (konwersja pikseli -> metry przy scale)
+        const scale = 30;
+        const deltaTime = (lastDragTime - dragStartTime) / 1000;
+        let initialVx = 0, initialVy = 0;
+        if (deltaTime > 0.001) {
+          initialVx = (lastDragX - dragStartX) / (scale * deltaTime);
+          initialVy = (lastDragY - dragStartY) / (scale * deltaTime);
+        } else {
+          initialVy = -10; // domyślny impuls
+        }
+        startPhysicsSimulation({ x: initialVx, y: initialVy });
+      }
+    });
+    
+    // Obsługa dotyku – analogicznie do myszy
+    characterImg.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      dragging = true;
+      const touch = e.touches[0];
+      dragStartTime = Date.now();
+      dragStartX = touch.clientX;
+      dragStartY = touch.clientY;
+      lastDragTime = dragStartTime;
+      lastDragX = dragStartX;
+      lastDragY = dragStartY;
+      stopCharacterAnimation();
     });
     
     document.addEventListener('touchmove', function(e) {
       if (dragging) {
         e.preventDefault();
         const touch = e.touches[0];
-        updateDrag(touch.clientX, touch.clientY);
-      } else if (!isProjectileActive) {
-        const touch = e.touches[0];
-        targetX = touch.clientX;
+        character.style.left = (touch.clientX - dragOffsetX) + 'px';
+        character.style.top = (touch.clientY - dragOffsetY) + 'px';
+        lastDragTime = Date.now();
+        lastDragX = touch.clientX;
+        lastDragY = touch.clientY;
         lastMouseTime = Date.now();
-        if (!isAnimating) startCharacterAnimation();
-        const deltaX = (touch.clientX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (touch.clientY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
       }
     }, {passive: false});
     
-    function endDrag() {
-      if (!dragging) return;
-      dragging = false;
-      const dx = lastDragX - prevDragX;
-      const dy = lastDragY - prevDragY;
-      // Jeśli zmiana pozycji jest znikoma, nie inicjujemy rzutu – tylko powrót do pozycji domyślnej
-      if (Math.abs(dx) < MIN_DRAG_DELTA && Math.abs(dy) < MIN_DRAG_DELTA) {
-        character.style.transition = "all 0.5s ease-out";
-        character.style.left = "50%";
-        character.style.bottom = "20px";
-        character.style.top = "";
-        setTimeout(() => { character.style.transition = ""; }, 500);
-        return;
-      }
-      bounceVelocityX = dx * VELOCITY_SCALE;
-      bounceVelocityY = dy * VELOCITY_SCALE;
-      startProjectile();
-    }
-    
-    document.addEventListener('mouseup', function(e) {
-      endDrag();
-    });
-    
     document.addEventListener('touchend', function(e) {
-      endDrag();
+      if (dragging) {
+        dragging = false;
+        const scale = 30;
+        const deltaTime = (lastDragTime - dragStartTime) / 1000;
+        let initialVx = 0, initialVy = 0;
+        if (deltaTime > 0.001) {
+          initialVx = (lastDragX - dragStartX) / (scale * deltaTime);
+          initialVy = (lastDragY - dragStartY) / (scale * deltaTime);
+        } else {
+          initialVy = -10;
+        }
+        startPhysicsSimulation({ x: initialVx, y: initialVy });
+      }
     });
     
-    // Start rzutu – klonujemy obrazek, ustawiamy transform-origin oraz ukrywamy oryginał
-    function startProjectile() {
+    // Funkcja symulacji fizyki z wykorzystaniem planck.js (Box2D)
+    function startPhysicsSimulation(initialVelocity) {
+      const scale = 30; // 30 pikseli = 1 metr
       const rect = characterImg.getBoundingClientRect();
-      projectileCharacter = characterImg.cloneNode(true);
-      projectileCharacter.id = 'projectileCharacter';
-      projectileCharacter.classList.add('bouncing');
-      projectileCharacter.style.position = 'absolute';
-      projectileCharacter.style.left = rect.left + 'px';
-      projectileCharacter.style.top = rect.top + 'px';
-      projectileCharacter.style.width = rect.width + 'px';
-      projectileCharacter.style.height = rect.height + 'px';
-      projectileCharacter.style.zIndex = '1000';
-      // Ustawiamy punkt obrotu na środku
-      projectileCharacter.style.transformOrigin = "50% 50%";
-      // Resetujemy ewentualne transformacje
-      projectileCharacter.style.transform = '';
+      // Tworzymy klon obrazu do symulacji
+      const bouncingCharacter = characterImg.cloneNode(true);
+      bouncingCharacter.id = 'bouncingCharacter';
+      bouncingCharacter.classList.add('bouncing');
+      bouncingCharacter.style.position = 'absolute';
+      bouncingCharacter.style.left = rect.left + 'px';
+      bouncingCharacter.style.top = rect.top + 'px';
+      bouncingCharacter.style.width = rect.width + 'px';
+      bouncingCharacter.style.height = rect.height + 'px';
+      bouncingCharacter.style.zIndex = '1000';
+      // Ukrywamy oryginalny obrazek
       characterImg.style.visibility = 'hidden';
-      document.body.appendChild(projectileCharacter);
-      isProjectileActive = true;
-      requestAnimationFrame(updateProjectile);
+      document.body.appendChild(bouncingCharacter);
+      
+      // Przeliczamy pozycję i wymiary na metry
+      const initX = rect.left / scale;
+      const initY = rect.top / scale;
+      const widthM = rect.width / scale;
+      const heightM = rect.height / scale;
+      
+      // Tworzymy świat Box2D
+      const world = planck.World({ gravity: planck.Vec2(0, 10) });
+      
+      // Tworzymy podłogę (dolna krawędź okna)
+      world.createBody().createFixture(
+        planck.Edge(planck.Vec2(0, windowHeight/scale), planck.Vec2(windowWidth/scale, windowHeight/scale)),
+        { friction: 0.5 }
+      );
+      // Opcjonalnie: tworzymy boczne ściany
+      world.createBody().createFixture(
+        planck.Edge(planck.Vec2(0, 0), planck.Vec2(0, windowHeight/scale)),
+        { friction: 0.5 }
+      );
+      world.createBody().createFixture(
+        planck.Edge(planck.Vec2(windowWidth/scale, 0), planck.Vec2(windowWidth/scale, windowHeight/scale)),
+        { friction: 0.5 }
+      );
+      
+      // Tworzymy dynamiczny obiekt reprezentujący postać
+      const body = world.createDynamicBody({
+        position: planck.Vec2(initX + widthM/2, initY + heightM/2)
+      });
+      body.createFixture(planck.Box(widthM/2, heightM/2), {
+        density: 1.0,
+        friction: 0.5,
+        restitution: 0.7
+      });
+      
+      // Ustawiamy początkową prędkość (w metrach na sekundę)
+      body.setLinearVelocity(planck.Vec2(initialVelocity.x, initialVelocity.y));
+      
+      const timeStep = 1/60;
+      const velocityThreshold = 0.1; // m/s
+      function stepPhysics() {
+        world.step(timeStep);
+        const pos = body.getPosition();
+        // Konwertujemy pozycję z metrów na piksele (uwzględniamy przesunięcie, aby obraz był wyśrodkowany)
+        const newLeft = (pos.x - widthM/2) * scale;
+        const newTop = (pos.y - heightM/2) * scale;
+        bouncingCharacter.style.left = newLeft + 'px';
+        bouncingCharacter.style.top = newTop + 'px';
+        
+        // Warunek zakończenia symulacji: prędkość poniżej progu i obiekt blisko podłogi
+        if (body.getLinearVelocity().length() < velocityThreshold &&
+            newTop + rect.height >= windowHeight - 5) {
+          // Ustawiamy obrazek dokładnie przy podłodze
+          bouncingCharacter.style.top = (windowHeight - rect.height) + 'px';
+          // Kończymy symulację
+          document.body.removeChild(bouncingCharacter);
+          characterImg.style.visibility = 'visible';
+          // Aktualizujemy pozycję oryginalnego obrazka
+          character.style.left = bouncingCharacter.style.left;
+          character.style.top = bouncingCharacter.style.top;
+          return;
+        }
+        requestAnimationFrame(stepPhysics);
+      }
+      requestAnimationFrame(stepPhysics);
     }
     
-    // Aktualizacja trajektorii rzutu – ruch, obrót i odbicia od krawędzi
-    function updateProjectile() {
-      if (!projectileCharacter) return;
-      const rect = projectileCharacter.getBoundingClientRect();
-      let newLeft = rect.left + bounceVelocityX;
-      let newTop = rect.top + bounceVelocityY;
-      
-      // Odbicie od lewej krawędzi
-      if (newLeft <= 0) {
-        newLeft = 0;
-        bounceVelocityX *= -BOUNCE_DAMPING;
-      }
-      // Odbicie od prawej krawędzi
-      if (newLeft + rect.width >= window.innerWidth) {
-        newLeft = window.innerWidth - rect.width;
-        bounceVelocityX *= -BOUNCE_DAMPING;
-      }
-      // Odbicie od górnej krawędzi
-      if (newTop <= 0) {
-        newTop = 0;
-        bounceVelocityY *= -BOUNCE_DAMPING;
-      }
-      // Jeżeli dotrzemy do dolnej krawędzi – kończymy rzut
-      if (newTop + rect.height >= window.innerHeight) {
-        newTop = window.innerHeight - rect.height;
-        projectileCharacter.style.left = newLeft + 'px';
-        projectileCharacter.style.top = newTop + 'px';
-        stopProjectile();
-        return;
-      }
-      
-      // Aktualizacja prędkości – grawitacja
-      bounceVelocityY += GRAVITY;
-      
-      // Obrót – kąt na podstawie wektora prędkości (w stopniach)
-      const angle = Math.atan2(bounceVelocityY, bounceVelocityX) * 180 / Math.PI;
-      projectileCharacter.style.transform = `rotate(${angle}deg)`;
-      
-      projectileCharacter.style.left = newLeft + 'px';
-      projectileCharacter.style.top = newTop + 'px';
-      
-      requestAnimationFrame(updateProjectile);
-    }
-    
-    // Zakończenie rzutu – usuwamy klon i animujemy powrót oryginału do pozycji domyślnej
-    function stopProjectile() {
-      if (!isProjectileActive) return;
-      if (projectileCharacter) {
-        document.body.removeChild(projectileCharacter);
-        projectileCharacter = null;
-      }
-      isProjectileActive = false;
-      characterImg.style.visibility = 'visible';
-      character.style.transition = "all 0.5s ease-out";
-      character.style.left = "50%";
-      character.style.bottom = "20px";
-      character.style.top = "";
-      setTimeout(() => {
-        character.style.transition = "";
-      }, 500);
-    }
-    
-    // Standardowa animacja zmiany obrazka – wyłączona, gdy trwa przeciąganie lub rzut
+    // Standardowa animacja zmiany obrazka – wyłączana przy przeciąganiu
     function startCharacterAnimation() {
-      if (dragging || isProjectileActive) return;
+      if (dragging) return;
       isAnimating = true;
       let toggle = false;
       animationInterval = setInterval(() => {
@@ -502,35 +480,34 @@
       characterImg.src = '2.png';
     }
     
-    // Globalny listener – aktualizacja dla animacji, gdy nie przeciągamy ani nie jest aktywny rzut
+    // Globalny listener – aktualizacja dla tła i animacji, gdy nie przeciągamy
     document.addEventListener('mousemove', function(e) {
-      if (!dragging && !isProjectileActive) {
-        targetX = e.clientX;
-        lastMouseTime = Date.now();
-        if (!isAnimating) startCharacterAnimation();
-        const deltaX = (e.clientX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (e.clientY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = (mouseX - windowWidth / 2) / (windowWidth / 2);
+      const deltaY = (mouseY - windowHeight / 2) / (windowHeight / 2);
+      const maxSpeed = 20;
+      speedX = deltaX * maxSpeed;
+      speedY = deltaY * maxSpeed;
+      targetX = mouseX;
+      lastMouseTime = Date.now();
+      if (!isAnimating && !dragging) {
+        startCharacterAnimation();
       }
     });
     
     document.addEventListener('touchmove', function(e) {
-      if (!dragging && !isProjectileActive) {
+      if (!dragging) {
         const touch = e.touches[0];
         targetX = touch.clientX;
         lastMouseTime = Date.now();
-        if (!isAnimating) startCharacterAnimation();
-        const deltaX = (touch.clientX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (touch.clientY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
+        if (!isAnimating) {
+          startCharacterAnimation();
+        }
       }
     }, {passive: false});
     
-    // Hover overlay functionality for navigation buttons (bez zmian)
+    // Hover overlay functionality for navigation buttons
     const hoverImageDiv = document.getElementById('hoverImage');
     
     function showHoverImage(imageUrl) {
