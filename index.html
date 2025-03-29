@@ -126,7 +126,7 @@
     #awards-container {
       display: none;
     }
-    /* New container for animated messages, displayed below the ellipse */
+    /* Container for animated messages, displayed below the ellipse */
     #messageDisplay {
       position: absolute;
       top: 80%; /* poniżej elipsy */
@@ -181,7 +181,7 @@
       </ul>
     </div>
   </div>
-  <!-- Awards container (pozostaje ukryty) -->
+  <!-- Awards container (remains hidden) -->
   <div id="awards-container">
     <div class="festival-column left">
       <div class="festival">*Sundance Film Festival 2024 Official Selection*</div>
@@ -227,10 +227,10 @@
     characterImg.addEventListener('dragstart', e => e.preventDefault());
     characterImg.addEventListener('contextmenu', e => e.preventDefault());
     
-    // Zmienna globalna do obsługi interwału
+    // Global variable for message interval
     let messageIntervalId = null;
     
-    // Funkcja wyświetlająca komunikaty – po zakończeniu animacji usuwa tekst
+    // Function to display messages with automatic removal after finishing the list
     function displayMessages(messages) {
       const display = document.getElementById('messageDisplay');
       let index = 0;
@@ -248,7 +248,7 @@
       }, 1000);
     }
     
-    // Funkcja toggle – jeśli tekst jest widoczny, usuwa go, w przeciwnym razie uruchamia animację
+    // Toggle function – if text is visible, clear it; otherwise, start the animation
     function toggleMessages(messages) {
       const display = document.getElementById('messageDisplay');
       if(display.innerText.trim() !== "" || messageIntervalId !== null) {
@@ -260,7 +260,7 @@
       }
     }
     
-    // Tablice komunikatów – dla festiwali i listy wrogów
+    // Arrays of messages for different buttons
     const festivalMessages = [
       "*Sundance Film Festival 2024 Official Selection*",
       "*ANNECY International Animation Festival 2024 Official Selection*",
@@ -282,8 +282,13 @@
     const enemyMessages = [
       "1. damien"
     ];
+    // New array for maks rz button
+    const maksMessages = [
+      "Makes animated films, music, painting.",
+      "Crafts delicate stories with touch of sadness and awkwardness, flirting with obsession, and the subconscious."
+    ];
     
-    // Podmiana zachowania przycisków – toggle wyświetlania komunikatów
+    // Toggle message display for awards, enemies, and maks rz buttons
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       toggleMessages(festivalMessages);
@@ -292,8 +297,12 @@
       e.preventDefault();
       toggleMessages(enemyMessages);
     });
+    document.getElementById('maks-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      toggleMessages(maksMessages);
+    });
     
-    // --- Pozostały kod animacji tła i postaci ---
+    // --- Remaining code for background and character animation ---
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -582,12 +591,12 @@
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
     
-    // --- Modyfikacja kursora przy najechaniu ---
+    // --- Modify cursor on hover for interactive elements ---
     window.addEventListener('load', function() {
       const originalCursor = 'cursor1.png';
       let hoverCursor = null;
       const img = new Image();
-      img.crossOrigin = "Anonymous"; // Jeśli potrzebne
+      img.crossOrigin = "Anonymous"; // if needed
       img.src = originalCursor;
       img.onload = function() {
         const canvas = document.createElement('canvas');
@@ -598,7 +607,7 @@
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
-          // Jeśli piksel nie jest całkowicie przezroczysty, ustaw RGB na 0 (czarny)
+          // If pixel is not fully transparent, set RGB to black
           if(data[i+3] !== 0) {
             data[i] = 0;
             data[i+1] = 0;
@@ -609,7 +618,7 @@
         hoverCursor = canvas.toDataURL();
       };
       
-      // Dla wszystkich przycisków nawigacji – przy najechaniu zmieniamy kursor
+      // For all navigation buttons – change cursor on hover
       document.querySelectorAll('.nav-button').forEach(btn => {
         btn.addEventListener('mouseenter', function() {
           if(hoverCursor) {
