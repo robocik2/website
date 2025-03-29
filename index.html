@@ -63,10 +63,12 @@
       width: 150px;
       height: auto;
     }
-    /* Bouncing/Projectile character style */
+    /* Style dla rzucanego obiektu – klasa bouncing */
     .bouncing {
       position: absolute;
       transition: none;
+      /* Ustawienie punktu obrotu na środku */
+      transform-origin: 50% 50%;
     }
     /* Navigation container at the top */
     .nav-container {
@@ -238,7 +240,7 @@
       awardsContainer.style.display = (awardsContainer.style.display === 'flex') ? 'none' : 'flex';
     });
     
-    // Background animation (1.png) – ruch zależny od pozycji kursora
+    // Background animation – ruch tła zależny od pozycji kursora
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
     const bg = document.getElementById('bg');
@@ -265,7 +267,7 @@
     }
     requestAnimationFrame(animateBackground);
     
-    // Standardowa animacja postaci (zmiana obrazka) – tylko gdy nie przeciągamy i nie jest aktywna symulacja rzutu
+    // Standardowa animacja zmiany obrazka – aktywna, gdy nie przeciągamy i nie jest aktywny rzut
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
@@ -282,24 +284,25 @@
     
     // --- Logika przeciągania i rzutu ---
     let dragging = false;
-    // Do obliczania prędkości rzutu zapamiętujemy ostatnie dwie pozycje
+    // Do obliczania prędkości rzutu zapamiętujemy dwie ostatnie pozycje
     let prevDragX = 0, prevDragY = 0, prevDragTime = 0;
     let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
     let dragOffsetX = 0, dragOffsetY = 0;
     
-    // Symulacja rzutu (projektile)
+    // Ustawienia rzutu
     let isProjectileActive = false;
     let projectileCharacter = null;
     let bounceVelocityX = 0;
     let bounceVelocityY = 0;
     const GRAVITY = 0.5;
-    const VELOCITY_SCALE = 0.5; // Dostosuj, aby uzyskać odpowiednią prędkość
+    const BOUNCE_DAMPING = 0.8;
+    const VELOCITY_SCALE = 0.5; // Dostosuj skalę prędkości
+    const MIN_DRAG_DELTA = 2;  // Minimalna zmiana pozycji, aby uznać, że był rzut
     
-    // Rozpoczęcie przeciągania – mousedown/touchstart na obrazie
+    // Rozpoczęcie przeciągania – mousedown / touchstart
     characterImg.addEventListener('mousedown', function(e) {
       e.preventDefault();
       dragging = true;
-      // Inicjalizacja pozycji do obliczeń prędkości
       prevDragX = lastDragX = e.clientX;
       prevDragY = lastDragY = e.clientY;
       prevDragTime = lastDragTime = Date.now();
@@ -320,9 +323,8 @@
       dragOffsetY = touch.clientY - rect.top;
     });
     
-    // Aktualizacja pozycji podczas przeciągania i zapisywanie ruchu
+    // Aktualizacja pozycji podczas przeciągania
     function updateDrag(clientX, clientY) {
-      // Przed aktualizacją zapamiętujemy poprzednią pozycję
       prevDragX = lastDragX;
       prevDragY = lastDragY;
       prevDragTime = lastDragTime;
@@ -339,12 +341,9 @@
         e.preventDefault();
         updateDrag(e.clientX, e.clientY);
       } else if (!isProjectileActive) {
-        // Aktualizacja pozycji kursora dla animacji, gdy nie przeciągamy
         targetX = e.clientX;
         lastMouseTime = Date.now();
-        if (!isAnimating) {
-          startCharacterAnimation();
-        }
+        if (!isAnimating) startCharacterAnimation();
         const deltaX = (e.clientX - windowWidth / 2) / (windowWidth / 2);
         const deltaY = (e.clientY - windowHeight / 2) / (windowHeight / 2);
         const maxSpeed = 20;
@@ -362,9 +361,7 @@
         const touch = e.touches[0];
         targetX = touch.clientX;
         lastMouseTime = Date.now();
-        if (!isAnimating) {
-          startCharacterAnimation();
-        }
+        if (!isAnimating) startCharacterAnimation();
         const deltaX = (touch.clientX - windowWidth / 2) / (windowWidth / 2);
         const deltaY = (touch.clientY - windowHeight / 2) / (windowHeight / 2);
         const maxSpeed = 20;
@@ -376,16 +373,19 @@
     function endDrag() {
       if (!dragging) return;
       dragging = false;
-      // Obliczamy różnicę między ostatnimi pozycjami, aby uzyskać prędkość
-      const dt = lastDragTime - prevDragTime || 1;
       const dx = lastDragX - prevDragX;
       const dy = lastDragY - prevDragY;
+      // Jeśli zmiana pozycji jest znikoma, nie inicjujemy rzutu – tylko powrót do pozycji domyślnej
+      if (Math.abs(dx) < MIN_DRAG_DELTA && Math.abs(dy) < MIN_DRAG_DELTA) {
+        character.style.transition = "all 0.5s ease-out";
+        character.style.left = "50%";
+        character.style.bottom = "20px";
+        character.style.top = "";
+        setTimeout(() => { character.style.transition = ""; }, 500);
+        return;
+      }
       bounceVelocityX = dx * VELOCITY_SCALE;
       bounceVelocityY = dy * VELOCITY_SCALE;
-      // Jeśli prędkość jest bardzo mała, nadajemy domyślny impuls (można modyfikować)
-      if (Math.abs(bounceVelocityX) < 1 && Math.abs(bounceVelocityY) < 1) {
-        bounceVelocityY = -10;
-      }
       startProjectile();
     }
     
@@ -397,7 +397,7 @@
       endDrag();
     });
     
-    // Start symulacji rzutu – tworzymy klon postaci i ukrywamy oryginał
+    // Start rzutu – klonujemy obrazek, ustawiamy transform-origin oraz ukrywamy oryginał
     function startProjectile() {
       const rect = characterImg.getBoundingClientRect();
       projectileCharacter = characterImg.cloneNode(true);
@@ -409,7 +409,9 @@
       projectileCharacter.style.width = rect.width + 'px';
       projectileCharacter.style.height = rect.height + 'px';
       projectileCharacter.style.zIndex = '1000';
-      // Usuwamy ewentualne transformacje – będziemy ustawiać obrót dynamicznie
+      // Ustawiamy punkt obrotu na środku
+      projectileCharacter.style.transformOrigin = "50% 50%";
+      // Resetujemy ewentualne transformacje
       projectileCharacter.style.transform = '';
       characterImg.style.visibility = 'hidden';
       document.body.appendChild(projectileCharacter);
@@ -417,21 +419,29 @@
       requestAnimationFrame(updateProjectile);
     }
     
-    // Symulacja lotu z obrotem – modyfikujemy pozycję, prędkość i obrót
+    // Aktualizacja trajektorii rzutu – ruch, obrót i odbicia od krawędzi
     function updateProjectile() {
       if (!projectileCharacter) return;
       const rect = projectileCharacter.getBoundingClientRect();
       let newLeft = rect.left + bounceVelocityX;
       let newTop = rect.top + bounceVelocityY;
       
-      // Aktualizacja prędkości – grawitacja
-      bounceVelocityY += GRAVITY;
-      
-      // Obrót – kąt w stopniach (atan2 zwraca radiany)
-      const angle = Math.atan2(bounceVelocityY, bounceVelocityX) * 180 / Math.PI;
-      projectileCharacter.style.transform = `rotate(${angle}deg)`;
-      
-      // Sprawdzamy, czy dotarliśmy do "podłogi" (dolna krawędź okna)
+      // Odbicie od lewej krawędzi
+      if (newLeft <= 0) {
+        newLeft = 0;
+        bounceVelocityX *= -BOUNCE_DAMPING;
+      }
+      // Odbicie od prawej krawędzi
+      if (newLeft + rect.width >= window.innerWidth) {
+        newLeft = window.innerWidth - rect.width;
+        bounceVelocityX *= -BOUNCE_DAMPING;
+      }
+      // Odbicie od górnej krawędzi
+      if (newTop <= 0) {
+        newTop = 0;
+        bounceVelocityY *= -BOUNCE_DAMPING;
+      }
+      // Jeżeli dotrzemy do dolnej krawędzi – kończymy rzut
       if (newTop + rect.height >= window.innerHeight) {
         newTop = window.innerHeight - rect.height;
         projectileCharacter.style.left = newLeft + 'px';
@@ -440,13 +450,20 @@
         return;
       }
       
+      // Aktualizacja prędkości – grawitacja
+      bounceVelocityY += GRAVITY;
+      
+      // Obrót – kąt na podstawie wektora prędkości (w stopniach)
+      const angle = Math.atan2(bounceVelocityY, bounceVelocityX) * 180 / Math.PI;
+      projectileCharacter.style.transform = `rotate(${angle}deg)`;
+      
       projectileCharacter.style.left = newLeft + 'px';
       projectileCharacter.style.top = newTop + 'px';
       
       requestAnimationFrame(updateProjectile);
     }
     
-    // Zakończenie symulacji rzutu – usuwamy klon i animujemy powrót oryginału do pozycji domyślnej
+    // Zakończenie rzutu – usuwamy klon i animujemy powrót oryginału do pozycji domyślnej
     function stopProjectile() {
       if (!isProjectileActive) return;
       if (projectileCharacter) {
@@ -454,20 +471,17 @@
         projectileCharacter = null;
       }
       isProjectileActive = false;
-      // Przywracamy widoczność oryginalnego obrazka
       characterImg.style.visibility = 'visible';
-      // Animujemy powrót do pozycji domyślnej (środek, dolna krawędź)
       character.style.transition = "all 0.5s ease-out";
       character.style.left = "50%";
       character.style.bottom = "20px";
-      // Usuwamy ustawioną pozycję top, aby CSS (bottom) mogło zadziałać
       character.style.top = "";
       setTimeout(() => {
         character.style.transition = "";
       }, 500);
     }
     
-    // Standardowa animacja zmiany obrazka – uruchamiamy, gdy nie przeciągamy i nie jest aktywny rzut
+    // Standardowa animacja zmiany obrazka – wyłączona, gdy trwa przeciąganie lub rzut
     function startCharacterAnimation() {
       if (dragging || isProjectileActive) return;
       isAnimating = true;
@@ -488,7 +502,7 @@
       characterImg.src = '2.png';
     }
     
-    // Listener globalny dla kursora (gdy nie przeciągamy ani nie jest aktywny rzut)
+    // Globalny listener – aktualizacja dla animacji, gdy nie przeciągamy ani nie jest aktywny rzut
     document.addEventListener('mousemove', function(e) {
       if (!dragging && !isProjectileActive) {
         targetX = e.clientX;
