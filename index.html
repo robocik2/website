@@ -61,7 +61,7 @@
       transform: translateX(-50%);
       z-index: 3;
     }
-    .character img {
+    .character img, .character canvas {
       width: 150px;
       height: auto;
     }
@@ -161,6 +161,11 @@
         padding: 0 5%;
       }
     }
+    
+    /* Hide the original images */
+    .original-image {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -211,376 +216,554 @@
   </div>
   <!-- Container for animated messages -->
   <div id="messageDisplay"></div>
-  <!-- Character (2.png) with animation -->
+  
+  <!-- Character container with canvas elements -->
   <div class="character" id="character">
-    <img src="2.png" id="characterImg" alt="Postać"
-         draggable="false"
-         ondragstart="return false;"
-         oncontextmenu="return false;"
+    <!-- Original images (hidden) -->
+    <img src="2.png" id="characterImg" class="original-image" alt="Postać" 
+         draggable="false" 
+         ondragstart="return false;" 
+         oncontextmenu="return false;" 
          style="-webkit-user-drag: none;">
+    <img src="3.png" id="img3" class="original-image" alt="Postać 3" style="display:none;">
+    <img src="4.png" id="img4" class="original-image" alt="Postać 4" style="display:none;">
+    
+    <!-- Canvas elements for colored images -->
+    <canvas id="characterCanvas" width="150" height="150"></canvas>
   </div>
+  
   <!-- Visitor name -->
   <div id="visitorName"></div>
+  
   <script>
-    // Prevent dragging and context menu for character image (2.png)
-    const characterImg = document.getElementById('characterImg');
-    characterImg.addEventListener('dragstart', e => e.preventDefault());
-    characterImg.addEventListener('contextmenu', e => e.preventDefault());
-    
-    // Global variable for message interval
-    let messageIntervalId = null;
-    
-    // Function to display messages with automatic removal after finishing the list
-    function displayMessages(messages) {
-      const display = document.getElementById('messageDisplay');
-      let index = 0;
-      display.innerText = messages[index];
-      messageIntervalId = setInterval(() => {
-        index++;
-        if(index >= messages.length) {
+    // Load and process all images
+    window.onload = function() {
+      // Initialize canvas variables
+      let characterCanvas = document.getElementById('characterCanvas');
+      let characterCtx = characterCanvas.getContext('2d');
+      
+      // Store processed images data
+      let processedImages = {
+        '2': null,
+        '3': null,
+        '4': null
+      };
+      
+      // Generate pastel colors in the blue, brown, green spectrum
+      function generateRandomPastelColor() {
+        // Pastel colors palette focused on blues, browns, and greens
+        const colors = [
+          // Blues
+          'rgb(173, 216, 230)', // Light blue
+          'rgb(176, 224, 230)', // Powder blue
+          'rgb(175, 238, 238)', // Pale turquoise
+          'rgb(135, 206, 235)', // Sky blue
+          'rgb(135, 206, 250)', // Light sky blue
+          'rgb(176, 196, 222)', // Light steel blue
+          // Browns
+          'rgb(210, 180, 140)', // Tan
+          'rgb(222, 184, 135)', // Burlywood
+          'rgb(245, 222, 179)', // Wheat
+          'rgb(210, 105, 30)',  // Light brown
+          'rgb(188, 143, 143)', // Rosy brown
+          // Greens
+          'rgb(144, 238, 144)', // Light green
+          'rgb(152, 251, 152)', // Pale green
+          'rgb(143, 188, 143)', // Dark sea green
+          'rgb(60, 179, 113)',  // Medium sea green
+          'rgb(32, 178, 170)',  // Light sea green
+          'rgb(127, 255, 212)'  // Aquamarine
+        ];
+        
+        // Return a random color from the palette
+        return colors[Math.floor(Math.random() * colors.length)];
+      }
+      
+      // Function to process an image and return colored version
+      function processImage(img, canvasEl, ctx) {
+        // Set canvas dimensions to match the image
+        canvasEl.width = img.naturalWidth;
+        canvasEl.height = img.naturalHeight;
+        
+        // Draw the original image
+        ctx.drawImage(img, 0, 0);
+        
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+        const data = imageData.data;
+        
+        // Select random color for non-black pixels
+        let randomColor = generateRandomPastelColor();
+        let rgbColor = randomColor.match(/\d+/g);
+        let r = parseInt(rgbColor[0]);
+        let g = parseInt(rgbColor[1]);
+        let b = parseInt(rgbColor[2]);
+        
+        // Process each pixel
+        for (let i = 0; i < data.length; i += 4) {
+          // If pixel is not black (and not transparent)
+          if (data[i+3] > 0 && (data[i] > 10 || data[i+1] > 10 || data[i+2] > 10)) {
+            // Replace with our random pastel color
+            data[i] = r;
+            data[i+1] = g;
+            data[i+2] = b;
+          }
+        }
+        
+        // Put the modified image data back
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Return the data URL of the processed image
+        return canvasEl.toDataURL();
+      }
+      
+      // Function to load and process images
+      function loadAndProcessImages() {
+        const characterImg = document.getElementById('characterImg');
+        const img3 = document.getElementById('img3');
+        const img4 = document.getElementById('img4');
+        
+        // Function to handle image load
+        const handleImageLoad = function(imgElement, imgNumber) {
+          const tempCanvas = document.createElement('canvas');
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          // Process the image
+          const processedDataUrl = processImage(imgElement, tempCanvas, tempCtx);
+          
+          // Store the processed image data
+          processedImages[imgNumber] = processedDataUrl;
+          
+          // If this is image 2, display it immediately
+          if (imgNumber === '2') {
+            const img = new Image();
+            img.onload = function() {
+              characterCtx.clearRect(0, 0, characterCanvas.width, characterCanvas.height);
+              characterCanvas.width = img.width;
+              characterCanvas.height = img.height;
+              characterCtx.drawImage(img, 0, 0);
+            };
+            img.src = processedDataUrl;
+          }
+        };
+        
+        // Load image 2
+        if (characterImg.complete) {
+          handleImageLoad(characterImg, '2');
+        } else {
+          characterImg.onload = function() {
+            handleImageLoad(characterImg, '2');
+          };
+        }
+        
+        // Load image 3
+        if (img3.complete) {
+          handleImageLoad(img3, '3');
+        } else {
+          img3.onload = function() {
+            handleImageLoad(img3, '3');
+          };
+        }
+        
+        // Load image 4
+        if (img4.complete) {
+          handleImageLoad(img4, '4');
+        } else {
+          img4.onload = function() {
+            handleImageLoad(img4, '4');
+          };
+        }
+      }
+      
+      // Initialize by loading and processing images
+      loadAndProcessImages();
+      
+      // --- Global variable for message interval ---
+      let messageIntervalId = null;
+      
+      // Function to display messages with automatic removal after finishing the list
+      function displayMessages(messages) {
+        const display = document.getElementById('messageDisplay');
+        let index = 0;
+        display.innerText = messages[index];
+        messageIntervalId = setInterval(() => {
+          index++;
+          if(index >= messages.length) {
+            clearInterval(messageIntervalId);
+            messageIntervalId = null;
+            display.innerText = "";
+            return;
+          } else {
+            display.innerText = messages[index];
+          }
+        }, 1000);
+      }
+      
+      // Toggle function – if text is visible, clear it; otherwise, start the animation
+      function toggleMessages(messages) {
+        const display = document.getElementById('messageDisplay');
+        if(display.innerText.trim() !== "" || messageIntervalId !== null) {
           clearInterval(messageIntervalId);
           messageIntervalId = null;
           display.innerText = "";
-          return;
         } else {
-          display.innerText = messages[index];
+          displayMessages(messages);
         }
-      }, 1000);
-    }
-    
-    // Toggle function – if text is visible, clear it; otherwise, start the animation
-    function toggleMessages(messages) {
-      const display = document.getElementById('messageDisplay');
-      if(display.innerText.trim() !== "" || messageIntervalId !== null) {
-        clearInterval(messageIntervalId);
-        messageIntervalId = null;
-        display.innerText = "";
-      } else {
-        displayMessages(messages);
-      }
-    }
-    
-    // Arrays of messages for different buttons
-    const festivalMessages = [
-      "*Sundance Film Festival 2024 Official Selection*",
-      "*ANNECY International Animation Festival 2024 Official Selection*",
-      "*OTTAWA Animation Festival AWARD WINNER*",
-      "*SPEKTRUM 2024 GRAND PRIZE*",
-      "*New Horizons Festival 2024 Official Selection*",
-      "*PICTOPLASMA 2024 Official Selection*",
-      "*FEST New Directors 2024 Official Selection*",
-      "*Rooftop Films 2024 Official Selection*",
-      "*Animator Festival 2024: AWARD WINNER*",
-      "*SFP Best Animated Films 2023, AWARD WINNER*",
-      "*Kaboom Animation Festival 2024: Special Mention*",
-      "*ŻUBROFFKA 2024: AWARD WINNER*",
-      "*Salute Your Shorts Festival 2024 Official Selection*",
-      "*Fest Anca 2024 Official Selection*",
-      "*HELSINKI INTERNATIONAL FILM FESTIVAL*",
-      "*TOHORROR 2024 GRAND PRIZE*"
-    ];
-    const enemyMessages = [
-      "1. damien"
-    ];
-    // New array for maks rz button
-    const maksMessages = [
-      "Makes animated films, music, painting.",
-      "Crafts delicate stories with touch of sadness and awkwardness"
-    ];
-    
-    // Toggle message display for awards, enemies, and maks rz buttons
-    document.getElementById('awards-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      toggleMessages(festivalMessages);
-    });
-    document.getElementById('enemies-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      toggleMessages(enemyMessages);
-    });
-    document.getElementById('maks-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      toggleMessages(maksMessages);
-    });
-    
-    // --- Remaining code for background and character animation ---
-    let windowWidth = window.innerWidth;
-    let windowHeight = window.innerHeight;
-    const bg = document.getElementById('bg');
-    let offsetX = 0, offsetY = 0;
-    let speedX = 0, speedY = 0;
-    let lastFrameTime = Date.now();
-    let lastMouseTime = Date.now();
-    
-    function animateBackground() {
-      const now = Date.now();
-      const deltaTime = now - lastFrameTime;
-      lastFrameTime = now;
-      
-      if (now - lastMouseTime > 500) {
-        const decayFactor = Math.pow(0.5, deltaTime / 1000);
-        speedX *= decayFactor;
-        speedY *= decayFactor;
-        if (Math.abs(speedX) < 0.01) speedX = 0;
-        if (Math.abs(speedY) < 0.01) speedY = 0;
       }
       
-      offsetX += speedX;
-      offsetY += speedY;
-      bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
+      // Arrays of messages for different buttons
+      const festivalMessages = [
+        "*Sundance Film Festival 2024 Official Selection*",
+        "*ANNECY International Animation Festival 2024 Official Selection*",
+        "*OTTAWA Animation Festival AWARD WINNER*",
+        "*SPEKTRUM 2024 GRAND PRIZE*",
+        "*New Horizons Festival 2024 Official Selection*",
+        "*PICTOPLASMA 2024 Official Selection*",
+        "*FEST New Directors 2024 Official Selection*",
+        "*Rooftop Films 2024 Official Selection*",
+        "*Animator Festival 2024: AWARD WINNER*",
+        "*SFP Best Animated Films 2023, AWARD WINNER*",
+        "*Kaboom Animation Festival 2024: Special Mention*",
+        "*ŻUBROFFKA 2024: AWARD WINNER*",
+        "*Salute Your Shorts Festival 2024 Official Selection*",
+        "*Fest Anca 2024 Official Selection*",
+        "*HELSINKI INTERNATIONAL FILM FESTIVAL*",
+        "*TOHORROR 2024 GRAND PRIZE*"
+      ];
+      const enemyMessages = [
+        "1. damien"
+      ];
+      // New array for maks rz button
+      const maksMessages = [
+        "Makes animated films, music, painting.",
+        "Crafts delicate stories with touch of sadness and awkwardness"
+      ];
+      
+      // Toggle message display for awards, enemies, and maks rz buttons
+      document.getElementById('awards-button').addEventListener('click', function(e) {
+        e.preventDefault();
+        toggleMessages(festivalMessages);
+      });
+      document.getElementById('enemies-button').addEventListener('click', function(e) {
+        e.preventDefault();
+        toggleMessages(enemyMessages);
+      });
+      document.getElementById('maks-button').addEventListener('click', function(e) {
+        e.preventDefault();
+        toggleMessages(maksMessages);
+      });
+      
+      // --- Background and character animation ---
+      let windowWidth = window.innerWidth;
+      let windowHeight = window.innerHeight;
+      const bg = document.getElementById('bg');
+      let offsetX = 0, offsetY = 0;
+      let speedX = 0, speedY = 0;
+      let lastFrameTime = Date.now();
+      let lastMouseTime = Date.now();
+      
+      function animateBackground() {
+        const now = Date.now();
+        const deltaTime = now - lastFrameTime;
+        lastFrameTime = now;
+        
+        if (now - lastMouseTime > 500) {
+          const decayFactor = Math.pow(0.5, deltaTime / 1000);
+          speedX *= decayFactor;
+          speedY *= decayFactor;
+          if (Math.abs(speedX) < 0.01) speedX = 0;
+          if (Math.abs(speedY) < 0.01) speedY = 0;
+        }
+        
+        offsetX += speedX;
+        offsetY += speedY;
+        bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
+        requestAnimationFrame(animateBackground);
+      }
       requestAnimationFrame(animateBackground);
-    }
-    requestAnimationFrame(animateBackground);
-    
-    // Character animation (2.png) following pointer/mouse position
-    const character = document.getElementById('character');
-    let targetX = windowWidth / 2;
-    let currentX = windowWidth / 2;
-    let animationInterval = null;
-    let isAnimating = false;
-    
-    function animateCharacter() {
-      currentX += (targetX - currentX) * 0.1;
-      character.style.left = currentX + 'px';
+      
+      // Character animation following pointer/mouse position
+      const character = document.getElementById('character');
+      let targetX = windowWidth / 2;
+      let currentX = windowWidth / 2;
+      let animationInterval = null;
+      let isAnimating = false;
+      
+      function animateCharacter() {
+        currentX += (targetX - currentX) * 0.1;
+        character.style.left = currentX + 'px';
+        requestAnimationFrame(animateCharacter);
+      }
       requestAnimationFrame(animateCharacter);
-    }
-    requestAnimationFrame(animateCharacter);
-    
-    function startCharacterAnimation() {
-      isAnimating = true;
-      let toggle = false;
-      animationInterval = setInterval(() => {
-        toggle = !toggle;
-        characterImg.src = toggle ? '3.png' : '4.png';
-        if (Date.now() - lastMouseTime > 200) {
-          stopCharacterAnimation();
+      
+      function startCharacterAnimation() {
+        isAnimating = true;
+        let toggle = false;
+        animationInterval = setInterval(() => {
+          toggle = !toggle;
+          
+          // Use the processed images
+          const img = new Image();
+          img.onload = function() {
+            characterCtx.clearRect(0, 0, characterCanvas.width, characterCanvas.height);
+            characterCanvas.width = img.width;
+            characterCanvas.height = img.height;
+            characterCtx.drawImage(img, 0, 0);
+          };
+          img.src = toggle ? processedImages['3'] : processedImages['4'];
+          
+          if (Date.now() - lastMouseTime > 200) {
+            stopCharacterAnimation();
+          }
+        }, 70);
+      }
+      
+      function stopCharacterAnimation() {
+        clearInterval(animationInterval);
+        animationInterval = null;
+        isAnimating = false;
+        
+        // Use the processed image 2
+        const img = new Image();
+        img.onload = function() {
+          characterCtx.clearRect(0, 0, characterCanvas.width, characterCanvas.height);
+          characterCanvas.width = img.width;
+          characterCanvas.height = img.height;
+          characterCtx.drawImage(img, 0, 0);
+        };
+        img.src = processedImages['2'];
+      }
+      
+      // Update background movement using pointer/mouse position
+      function updateBackground(e) {
+        if (!isDragging) {
+          const pointerX = e.clientX;
+          const pointerY = e.clientY;
+          const deltaX = (pointerX - windowWidth / 2) / (windowWidth / 2);
+          const deltaY = (pointerY - windowHeight / 2) / (windowHeight / 2);
+          const maxSpeed = 20;
+          speedX = deltaX * maxSpeed;
+          speedY = deltaY * maxSpeed;
+          targetX = pointerX;
+          lastMouseTime = Date.now();
+          if (!isAnimating && !isBouncing) {
+            startCharacterAnimation();
+          }
         }
-      }, 70);
-    }
-    
-    function stopCharacterAnimation() {
-      clearInterval(animationInterval);
-      animationInterval = null;
-      isAnimating = false;
-      characterImg.src = '2.png';
-    }
-    
-    // Update background movement using pointer/mouse position
-    function updateBackground(e) {
-      if (!isDragging) {
-        const pointerX = e.clientX;
-        const pointerY = e.clientY;
-        const deltaX = (pointerX - windowWidth / 2) / (windowWidth / 2);
-        const deltaY = (pointerY - windowHeight / 2) / (windowHeight / 2);
-        const maxSpeed = 20;
-        speedX = deltaX * maxSpeed;
-        speedY = deltaY * maxSpeed;
-        targetX = pointerX;
-        lastMouseTime = Date.now();
-        if (!isAnimating && !isBouncing) {
-           startCharacterAnimation();
+      }
+      document.addEventListener('pointermove', updateBackground);
+      document.addEventListener('mousemove', updateBackground);
+      
+      // --- Grabbable and Throwable Character ---
+      let isDragging = false;
+      let isBouncing = false;
+      let bouncingCharacter = null;
+      let bounceVelocityX = 0;
+      let bounceVelocityY = 0;
+      const GRAVITY = 0.5;
+      const BOUNCE_DAMPING = 0.95;
+      let rotationAngle = 0;
+      const ROTATION_SPEED = 5;
+      let thrownTime = 0;
+      let thrownPosX = 0, thrownPosY = 0, thrownWidth = 0, thrownHeight = 0;
+      let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
+      
+      function createBouncingCharacter() {
+        // Create a new canvas for the bouncing character
+        bouncingCharacter = document.createElement('canvas');
+        bouncingCharacter.id = 'bouncingCharacter';
+        bouncingCharacter.classList.add('bouncing');
+        
+        const rect = characterCanvas.getBoundingClientRect();
+        thrownPosX = rect.left;
+        thrownPosY = rect.top;
+        thrownWidth = rect.width;
+        thrownHeight = rect.height;
+        
+        rotationAngle = 0;
+        bouncingCharacter.style.position = 'absolute';
+        bouncingCharacter.style.zIndex = '1000';
+        bouncingCharacter.width = characterCanvas.width;
+        bouncingCharacter.height = characterCanvas.height;
+        bouncingCharacter.style.width = thrownWidth + "px";
+        bouncingCharacter.style.height = thrownHeight + "px";
+        
+        characterCanvas.style.visibility = 'hidden';
+        bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
+        
+        // Draw the current character image to the bouncing canvas
+        const bouncingCtx = bouncingCharacter.getContext('2d');
+        bouncingCtx.drawImage(characterCanvas, 0, 0);
+        
+        document.body.appendChild(bouncingCharacter);
+      }
+      
+      function startDrag(e) {
+        if (!e.target.closest('#character')) return;
+        e.preventDefault();
+        if (isBouncing) return;
+        
+        stopCharacterAnimation();
+        createBouncingCharacter();
+        
+        isDragging = true;
+        lastDragX = e.clientX;
+        lastDragY = e.clientY;
+        lastDragTime = Date.now();
+      }
+      
+      function duringDrag(e) {
+        if (!isDragging || !bouncingCharacter) return;
+        const now = Date.now();
+        const deltaTime = now - lastDragTime;
+        if (deltaTime > 0) {
+          bounceVelocityX = ((e.clientX - lastDragX) / deltaTime) * 8;
+          bounceVelocityY = ((e.clientY - lastDragY) / deltaTime) * 8;
         }
-      }
-    }
-    document.addEventListener('pointermove', updateBackground);
-    document.addEventListener('mousemove', updateBackground);
-    
-    // --- Grabbable and Throwable Character ---
-    let isDragging = false;
-    let isBouncing = false;
-    let bouncingCharacter = null;
-    let bounceVelocityX = 0;
-    let bounceVelocityY = 0;
-    const GRAVITY = 0.5;
-    const BOUNCE_DAMPING = 0.95;
-    let rotationAngle = 0;
-    const ROTATION_SPEED = 5;
-    let thrownTime = 0;
-    let thrownPosX = 0, thrownPosY = 0, thrownWidth = 0, thrownHeight = 0;
-    
-    function createBouncingCharacter(e) {
-      const characterImg = document.getElementById('characterImg');
-      bouncingCharacter = characterImg.cloneNode(true);
-      bouncingCharacter.id = 'bouncingCharacter';
-      bouncingCharacter.classList.add('bouncing');
-      const rect = characterImg.getBoundingClientRect();
-      thrownPosX = rect.left;
-      thrownPosY = rect.top;
-      thrownWidth = rect.width;
-      thrownHeight = rect.height;
-      rotationAngle = 0;
-      bouncingCharacter.style.position = 'absolute';
-      bouncingCharacter.style.zIndex = '1000';
-      bouncingCharacter.style.width = thrownWidth + "px";
-      bouncingCharacter.style.height = thrownHeight + "px";
-      characterImg.style.visibility = 'hidden';
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
-      document.body.appendChild(bouncingCharacter);
-    }
-    
-    function startDrag(e) {
-      if (!e.target.closest('#character')) return;
-      e.preventDefault();
-      if (isBouncing) return;
-      stopCharacterAnimation();
-      createBouncingCharacter(e);
-      isDragging = true;
-      lastDragX = e.clientX;
-      lastDragY = e.clientY;
-      lastDragTime = Date.now();
-    }
-    
-    function duringDrag(e) {
-      if (!isDragging || !bouncingCharacter) return;
-      const now = Date.now();
-      const deltaTime = now - lastDragTime;
-      if (deltaTime > 0) {
-        bounceVelocityX = ((e.clientX - lastDragX) / deltaTime) * 8;
-        bounceVelocityY = ((e.clientY - lastDragY) / deltaTime) * 8;
-      }
-      const rect = bouncingCharacter.getBoundingClientRect();
-      thrownPosX = e.clientX - rect.width / 2;
-      thrownPosY = e.clientY - rect.height / 2;
-      rotationAngle = 0;
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
-      lastDragX = e.clientX;
-      lastDragY = e.clientY;
-      lastDragTime = now;
-    }
-    
-    function endDrag(e) {
-      if (!isDragging) return;
-      isDragging = false;
-      thrownTime = Date.now();
-      isBouncing = true;
-      requestAnimationFrame(updateBounce);
-    }
-    
-    function updateBounce() {
-      if (!bouncingCharacter) return;
-      
-      if (thrownPosY + thrownHeight < window.innerHeight) {
-        rotationAngle += ROTATION_SPEED;
+        const rect = bouncingCharacter.getBoundingClientRect();
+        thrownPosX = e.clientX - rect.width / 2;
+        thrownPosY = e.clientY - rect.height / 2;
+        rotationAngle = 0;
+        bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
+        lastDragX = e.clientX;
+        lastDragY = e.clientY;
+        lastDragTime = now;
       }
       
-      let newPosX = thrownPosX + bounceVelocityX;
-      let newPosY = thrownPosY + bounceVelocityY;
-      
-      if (newPosX < 0) {
-        newPosX = 0;
-        bounceVelocityX *= -BOUNCE_DAMPING;
-      } else if (newPosX + thrownWidth > window.innerWidth) {
-        newPosX = window.innerWidth - thrownWidth;
-        bounceVelocityX *= -BOUNCE_DAMPING;
+      function endDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        thrownTime = Date.now();
+        isBouncing = true;
+        requestAnimationFrame(updateBounce);
       }
       
-      if (newPosY < 0) {
-        newPosY = 0;
-        bounceVelocityY *= -BOUNCE_DAMPING;
+      function updateBounce() {
+        if (!bouncingCharacter) return;
+        
+        if (thrownPosY + thrownHeight < window.innerHeight) {
+          rotationAngle += ROTATION_SPEED;
+        }
+        
+        let newPosX = thrownPosX + bounceVelocityX;
+        let newPosY = thrownPosY + bounceVelocityY;
+        
+        if (newPosX < 0) {
+          newPosX = 0;
+          bounceVelocityX *= -BOUNCE_DAMPING;
+        } else if (newPosX + thrownWidth > window.innerWidth) {
+          newPosX = window.innerWidth - thrownWidth;
+          bounceVelocityX *= -BOUNCE_DAMPING;
+        }
+        
+        if (newPosY < 0) {
+          newPosY = 0;
+          bounceVelocityY *= -BOUNCE_DAMPING;
+        }
+        
+        if (newPosY + thrownHeight > window.innerHeight) {
+          newPosY = window.innerHeight - thrownHeight;
+          bounceVelocityY *= -BOUNCE_DAMPING;
+        }
+        
+        bounceVelocityY += GRAVITY;
+        bounceVelocityX *= 0.99;
+        bounceVelocityY *= 0.99;
+        
+        thrownPosX = newPosX;
+        thrownPosY = newPosY;
+        bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(" + rotationAngle + "deg)";
+        
+        if (Date.now() - thrownTime >= 4000 &&
+            Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
+          stopBouncing();
+          return;
+        }
+        
+        requestAnimationFrame(updateBounce);
       }
       
-      if (newPosY + thrownHeight > window.innerHeight) {
-        newPosY = window.innerHeight - thrownHeight;
-        bounceVelocityY *= -BOUNCE_DAMPING;
+      function stopBouncing() {
+        if (bouncingCharacter) {
+          document.body.removeChild(bouncingCharacter);
+          bouncingCharacter = null;
+        }
+        characterCanvas.style.visibility = 'visible';
+        isBouncing = false;
       }
       
-      bounceVelocityY += GRAVITY;
-      bounceVelocityX *= 0.99;
-      bounceVelocityY *= 0.99;
+      characterCanvas.addEventListener('pointerdown', startDrag);
+      document.addEventListener('pointermove', function(e) {
+        if (isDragging && bouncingCharacter) {
+          duringDrag(e);
+        }
+      });
+      document.addEventListener('pointerup', function() {
+        if (isDragging) {
+          endDrag();
+        }
+      });
+      document.addEventListener('pointercancel', function() {
+        if (isDragging) {
+          endDrag();
+        }
+      });
       
-      thrownPosX = newPosX;
-      thrownPosY = newPosY;
-      bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(" + rotationAngle + "deg)";
+      // --- Hover overlay for navigation buttons ---
+      const hoverImageDiv = document.getElementById('hoverImage');
       
-      if (Date.now() - thrownTime >= 4000 &&
-          Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
-        stopBouncing();
-        return;
+      function showHoverImage(imageUrl) {
+        hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
+        hoverImageDiv.style.display = "block";
       }
       
-      requestAnimationFrame(updateBounce);
-    }
-    
-    function stopBouncing() {
-      if (bouncingCharacter) {
-        document.body.removeChild(bouncingCharacter);
-        bouncingCharacter = null;
+      function hideHoverImage() {
+        hoverImageDiv.style.display = "none";
       }
-      characterImg.style.visibility = 'visible';
-      isBouncing = false;
-    }
-    
-    characterImg.addEventListener('pointerdown', startDrag);
-    document.addEventListener('pointermove', function(e) {
-      if (isDragging && bouncingCharacter) {
-        duringDrag(e);
-      }
-    });
-    document.addEventListener('pointerup', function(e) {
-      if (isDragging) {
-        endDrag(e);
-      }
-    });
-    document.addEventListener('pointercancel', function(e) {
-      if (isDragging) {
-        endDrag(e);
-      }
-    });
-    
-    // --- Hover overlay for navigation buttons ---
-    const hoverImageDiv = document.getElementById('hoverImage');
-    
-    function showHoverImage(imageUrl) {
-      hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
-      hoverImageDiv.style.display = "block";
-    }
-    
-    function hideHoverImage() {
-      hoverImageDiv.style.display = "none";
-    }
-    
-    document.getElementById('maks-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "contain";
-      showHoverImage('maksrz.png');
-    });
-    document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
-    
-    document.getElementById('video-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "60% auto";
-      showHoverImage('gifaniol.gif');
-    });
-    document.getElementById('video-button').addEventListener('mouseleave', function() {
-      hideHoverImage();
-      hoverImageDiv.style.backgroundSize = "contain";
-    });
-    
-    document.getElementById('art-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "50% auto";
-      showHoverImage('art.png');
-    });
-    document.getElementById('art-button').addEventListener('mouseleave', function() {
-      hideHoverImage();
-      hoverImageDiv.style.backgroundSize = "contain";
-    });
-    
-    document.getElementById('contact-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "contain";
-      showHoverImage('contact.png');
-    });
-    document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
-    
-    document.getElementById('enemies-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "contain";
-      showHoverImage('enemies.png');
-    });
-    document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
-    
-    document.getElementById('awards-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "contain";
-      showHoverImage('awards.png');
-    });
-    document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
-    
-    // --- Random Visitor Name ---
+      
+      document.getElementById('maks-button').addEventListener('mouseenter', function() {
+        hoverImageDiv.style.backgroundSize = "contain";
+        showHoverImage('maksrz.png');
+      });
+      document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
+      
+      document.getElementById('video-button').addEventListener('mouseenter', function() {
+        hoverImageDiv.style.backgroundSize = "60% auto";
+        showHoverImage('gifaniol.gif');
+      });
+      document.getElementById('video-button').addEventListener('mouseleave', function() {
+        hideHoverImage();
+        hoverImageDiv.style.backgroundSize = "contain";
+      });
+      
+      document.getElementById('art-button').addEventListener('mouseenter', function() {
+        hoverImageDiv.style.backgroundSize = "50% auto";
+        showHoverImage('art.png');
+      });
+      document.getElementById('art-button').addEventListener('mouseleave', function() {
+        hideHoverImage();
+        hoverImageDiv.style.backgroundSize = "contain";
+      });
+      
+      document.getElementById('contact-button').addEventListener('mouseenter', function() {
+        hoverImageDiv.style.backgroundSize = "contain";
+        showHoverImage('contact.png');
+      });
+      document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
+      
+      document.getElementById('enemies-button').addEventListener('mouseenter', function() {
+        hoverImageDiv.style.backgroundSize = "contain";
+        showHoverImage('enemies.png');
+      });
+      document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
+      
+      document.getElementById('awards-button').addEventListener('mouseenter', function() {
+        hoverImageDiv.style.backgroundSize = "contain";
+        showHoverImage('awards.png');
+      });
+      document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
+      
+      // --- Random Visitor Name ---
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Michael", "Zacharias",
       "Nathan", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "John", "Ophelia",
