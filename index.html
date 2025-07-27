@@ -53,6 +53,49 @@
       background-position: center;
       z-index: 2;
     }
+    /* Gallery styles */
+    .gallery {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 80vw;
+      height: 70vh;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.95);
+      border: 2px solid #000;
+      overflow-y: auto;
+      z-index: 10;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      justify-items: center;
+    }
+    .gallery-item {
+      max-width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .gallery-item:hover {
+      transform: scale(1.05);
+    }
+    .gallery-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 30px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #000;
+    }
     /* Character container (2.png) with animation */
     .character {
       position: absolute;
@@ -160,6 +203,15 @@
         font-size: 2em;
         padding: 0 5%;
       }
+      .gallery {
+        width: 95vw;
+        height: 80vh;
+        padding: 10px;
+      }
+      .gallery-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+      }
     }
   </style>
 </head>
@@ -169,7 +221,7 @@
     <div class="nav-buttons">
       <a href="#" class="nav-button" id="maks-button">maks rz</a>
       <a href="https://vimeo.com/maksrz" class="nav-button" id="video-button" target="_blank">video</a>
-      <a href="https://instagram.com/robocik.2" class="nav-button" id="art-button" target="_blank">art</a>
+      <a href="#" class="nav-button" id="art-button">art</a>
       <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">ig</a>
       <a href="mailto:maksrzontkowski@gmail.com" class="nav-button" id="contact-button">contact</a>
       <a href="#" class="nav-button" id="enemies-button">list of my enemies</a>
@@ -181,6 +233,19 @@
       </ul>
     </div>
   </div>
+  
+  <!-- Gallery -->
+  <div class="gallery" id="gallery">
+    <button class="gallery-close" id="gallery-close">&times;</button>
+    <div class="gallery-grid">
+      <img src="spiderman.jpg" alt="Spiderman" class="gallery-item">
+      <img src="waintingforclothes.png" alt="Waiting for clothes" class="gallery-item">
+      <img src="24 x 30 cm_instruktorze" alt="Instruktorze" class="gallery-item">
+      <img src="jeziorko.png" alt="Jeziorko" class="gallery-item">
+      <img src="car.jpg" alt="Car" class="gallery-item">
+    </div>
+  </div>
+  
   <!-- Awards container (remains hidden) -->
   <div id="awards-container">
     <div class="festival-column left">
@@ -205,7 +270,7 @@
     </div>
   </div>
   <!-- Ellipse mask with background and hover overlay -->
-  <div class="mask">
+  <div class="mask" id="mask">
     <div class="bg" id="bg"></div>
     <div id="hoverImage"></div>
   </div>
@@ -222,6 +287,45 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
+    // Gallery functionality
+    let isGalleryOpen = false;
+    
+    function showGallery() {
+      document.getElementById('gallery').style.display = 'block';
+      document.getElementById('mask').style.display = 'none';
+      document.getElementById('character').style.display = 'none';
+      isGalleryOpen = true;
+    }
+    
+    function hideGallery() {
+      document.getElementById('gallery').style.display = 'none';
+      document.getElementById('mask').style.display = 'block';
+      document.getElementById('character').style.display = 'block';
+      isGalleryOpen = false;
+    }
+    
+    // Art button click handler
+    document.getElementById('art-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      if (isGalleryOpen) {
+        hideGallery();
+      } else {
+        showGallery();
+      }
+    });
+    
+    // Gallery close button
+    document.getElementById('gallery-close').addEventListener('click', hideGallery);
+    
+    // Close gallery when clicking other nav buttons
+    document.querySelectorAll('.nav-button:not(#art-button)').forEach(button => {
+      button.addEventListener('click', function() {
+        if (isGalleryOpen) {
+          hideGallery();
+        }
+      });
+    });
+    
     // Prevent dragging and context menu for character image (2.png)
     const characterImg = document.getElementById('characterImg');
     characterImg.addEventListener('dragstart', e => e.preventDefault());
@@ -339,13 +443,16 @@
     let isAnimating = false;
     
     function animateCharacter() {
-      currentX += (targetX - currentX) * 0.1;
-      character.style.left = currentX + 'px';
+      if (!isGalleryOpen) {
+        currentX += (targetX - currentX) * 0.1;
+        character.style.left = currentX + 'px';
+      }
       requestAnimationFrame(animateCharacter);
     }
     requestAnimationFrame(animateCharacter);
     
     function startCharacterAnimation() {
+      if (isGalleryOpen) return;
       isAnimating = true;
       let toggle = false;
       animationInterval = setInterval(() => {
@@ -366,7 +473,7 @@
     
     // Update background movement using pointer/mouse position
     function updateBackground(e) {
-      if (!isDragging) {
+      if (!isDragging && !isGalleryOpen) {
         const pointerX = e.clientX;
         const pointerY = e.clientY;
         const deltaX = (pointerX - windowWidth / 2) / (windowWidth / 2);
@@ -418,7 +525,7 @@
     }
     
     function startDrag(e) {
-      if (!e.target.closest('#character')) return;
+      if (!e.target.closest('#character') || isGalleryOpen) return;
       e.preventDefault();
       if (isBouncing) return;
       stopCharacterAnimation();
@@ -530,8 +637,10 @@
     const hoverImageDiv = document.getElementById('hoverImage');
     
     function showHoverImage(imageUrl) {
-      hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
-      hoverImageDiv.style.display = "block";
+      if (!isGalleryOpen) {
+        hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
+        hoverImageDiv.style.display = "block";
+      }
     }
     
     function hideHoverImage() {
@@ -549,15 +658,6 @@
       showHoverImage('gifaniol.gif');
     });
     document.getElementById('video-button').addEventListener('mouseleave', function() {
-      hideHoverImage();
-      hoverImageDiv.style.backgroundSize = "contain";
-    });
-    
-    document.getElementById('art-button').addEventListener('mouseenter', function() {
-      hoverImageDiv.style.backgroundSize = "50% auto";
-      showHoverImage('art.png');
-    });
-    document.getElementById('art-button').addEventListener('mouseleave', function() {
       hideHoverImage();
       hoverImageDiv.style.backgroundSize = "contain";
     });
