@@ -56,45 +56,72 @@
     /* Gallery styles */
     .gallery {
       display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .gallery-container {
+      position: relative;
+      width: 90vw;
+      height: 90vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .gallery-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border: 2px solid white;
+    }
+    .gallery-nav {
       position: absolute;
       top: 50%;
-      left: 50%;
-      width: 80vw;
-      height: 70vh;
-      transform: translate(-50%, -50%);
-      background-color: rgba(255, 255, 255, 0.95);
-      border: 2px solid #000;
-      overflow-y: auto;
-      z-index: 10;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      justify-items: center;
-    }
-    .gallery-item {
-      max-width: 100%;
-      max-height: 300px;
-      object-fit: contain;
-      border: 1px solid #ccc;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      font-size: 30px;
+      padding: 10px 15px;
       cursor: pointer;
-      transition: transform 0.3s ease;
+      border-radius: 50%;
+      transition: background-color 0.3s ease;
     }
-    .gallery-item:hover {
-      transform: scale(1.05);
+    .gallery-nav:hover {
+      background: rgba(255, 255, 255, 1);
+    }
+    .gallery-prev {
+      left: 20px;
+    }
+    .gallery-next {
+      right: 20px;
     }
     .gallery-close {
       position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 30px;
+      top: 20px;
+      right: 30px;
+      font-size: 40px;
       cursor: pointer;
       background: none;
       border: none;
-      color: #000;
+      color: white;
+      z-index: 1001;
+    }
+    .gallery-counter {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 18px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 15px;
+      border-radius: 20px;
     }
     /* Character container (2.png) with animation */
     .character {
@@ -204,13 +231,27 @@
         padding: 0 5%;
       }
       .gallery {
-        width: 95vw;
-        height: 80vh;
-        padding: 10px;
+        width: 100vw;
+        height: 100vh;
       }
-      .gallery-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
+      .gallery-container {
+        width: 95vw;
+        height: 85vh;
+      }
+      .gallery-nav {
+        font-size: 25px;
+        padding: 8px 12px;
+      }
+      .gallery-prev {
+        left: 10px;
+      }
+      .gallery-next {
+        right: 10px;
+      }
+      .gallery-close {
+        top: 15px;
+        right: 20px;
+        font-size: 35px;
       }
     }
   </style>
@@ -237,13 +278,12 @@
   <!-- Gallery -->
   <div class="gallery" id="gallery">
     <button class="gallery-close" id="gallery-close">&times;</button>
-    <div class="gallery-grid">
-      <img src="spiderman.jpg" alt="Spiderman" class="gallery-item">
-      <img src="waintingforclothes.png" alt="Waiting for clothes" class="gallery-item">
-      <img src="24 x 30 cm_instruktorze" alt="Instruktorze" class="gallery-item">
-      <img src="jeziorko.png" alt="Jeziorko" class="gallery-item">
-      <img src="car.jpg" alt="Car" class="gallery-item">
+    <div class="gallery-container">
+      <button class="gallery-nav gallery-prev" id="gallery-prev">‹</button>
+      <img id="gallery-image" class="gallery-image" src="" alt="">
+      <button class="gallery-nav gallery-next" id="gallery-next">›</button>
     </div>
+    <div class="gallery-counter" id="gallery-counter">1 / 5</div>
   </div>
   
   <!-- Awards container (remains hidden) -->
@@ -289,11 +329,30 @@
   <script>
     // Gallery functionality
     let isGalleryOpen = false;
+    let currentImageIndex = 0;
+    const galleryImages = [
+      { src: 'spiderman.jpg', alt: 'Spiderman' },
+      { src: 'waintingforclothes.png', alt: 'Waiting for clothes' },
+      { src: '24 x 30 cm_instruktorze', alt: 'Instruktorze' },
+      { src: 'jeziorko.png', alt: 'Jeziorko' },
+      { src: 'car.jpg', alt: 'Car' }
+    ];
+    
+    function updateGalleryImage() {
+      const galleryImg = document.getElementById('gallery-image');
+      const counter = document.getElementById('gallery-counter');
+      
+      galleryImg.src = galleryImages[currentImageIndex].src;
+      galleryImg.alt = galleryImages[currentImageIndex].alt;
+      counter.textContent = `${currentImageIndex + 1} / ${galleryImages.length}`;
+    }
     
     function showGallery() {
-      document.getElementById('gallery').style.display = 'block';
+      document.getElementById('gallery').style.display = 'flex';
       document.getElementById('mask').style.display = 'none';
       document.getElementById('character').style.display = 'none';
+      currentImageIndex = 0;
+      updateGalleryImage();
       isGalleryOpen = true;
     }
     
@@ -302,6 +361,16 @@
       document.getElementById('mask').style.display = 'block';
       document.getElementById('character').style.display = 'block';
       isGalleryOpen = false;
+    }
+    
+    function nextImage() {
+      currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+      updateGalleryImage();
+    }
+    
+    function prevImage() {
+      currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+      updateGalleryImage();
     }
     
     // Art button click handler
@@ -314,8 +383,30 @@
       }
     });
     
-    // Gallery close button
+    // Gallery close button and navigation
     document.getElementById('gallery-close').addEventListener('click', hideGallery);
+    document.getElementById('gallery-next').addEventListener('click', nextImage);
+    document.getElementById('gallery-prev').addEventListener('click', prevImage);
+    
+    // Keyboard navigation for gallery
+    document.addEventListener('keydown', function(e) {
+      if (isGalleryOpen) {
+        switch(e.key) {
+          case 'ArrowLeft':
+            e.preventDefault();
+            prevImage();
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            nextImage();
+            break;
+          case 'Escape':
+            e.preventDefault();
+            hideGallery();
+            break;
+        }
+      }
+    });
     
     // Close gallery when clicking other nav buttons
     document.querySelectorAll('.nav-button:not(#art-button)').forEach(button => {
