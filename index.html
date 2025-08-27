@@ -53,65 +53,39 @@
       background-position: center;
       z-index: 2;
     }
-    /* Gallery styles */
-    .gallery {
+    /* Iframe container for Cargo site */
+    .iframe-container {
       display: none;
       position: absolute;
-      top: 50%;
-      left: 50%;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100vh;
-      transform: translate(-50%, -50%);
-      overflow: hidden;
-      z-index: 1;
-      justify-content: center;
-      align-items: center;
+      z-index: 1000;
       background-color: white;
     }
-    .gallery-container {
-      position: relative;
+    .cargo-iframe {
       width: 100%;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .gallery-image {
-      max-width: 80%;
-      max-height: 80%;
-      object-fit: contain;
-    }
-    .gallery-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
       border: none;
-      font-size: 40px;
-      cursor: pointer;
-      color: #000;
-      font-family: "Apple Garamond", serif;
-      transition: opacity 0.3s ease;
-      z-index: 2;
+      background-color: white;
     }
-    .gallery-nav:hover {
-      opacity: 0.7;
-    }
-    .gallery-prev {
-      left: 10%;
-    }
-    .gallery-next {
-      right: 10%;
-    }
-    .gallery-counter {
+    .iframe-close {
       position: absolute;
-      bottom: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #000;
-      font-size: 1.5em;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #000;
+      padding: 10px 20px;
+      cursor: pointer;
       font-family: "Apple Garamond", serif;
-      z-index: 2;
+      font-size: 1.5em;
+      z-index: 1001;
+      transition: background-color 0.3s ease;
+    }
+    .iframe-close:hover {
+      background-color: #000;
+      color: #fff;
     }
     /* Character container (2.png) with animation */
     .character {
@@ -220,18 +194,11 @@
         font-size: 2em;
         padding: 0 5%;
       }
-      .gallery-nav {
-        font-size: 30px;
-      }
-      .gallery-prev {
-        left: 5%;
-      }
-      .gallery-next {
-        right: 5%;
-      }
-      .gallery-counter {
+      .iframe-close {
         font-size: 1.2em;
-        bottom: 15%;
+        padding: 8px 15px;
+        top: 10px;
+        right: 10px;
       }
     }
   </style>
@@ -255,14 +222,10 @@
     </div>
   </div>
   
-  <!-- Gallery -->
-  <div class="gallery" id="gallery">
-    <div class="gallery-container">
-      <button class="gallery-nav gallery-prev" id="gallery-prev">‹</button>
-      <img id="gallery-image" class="gallery-image" src="" alt="">
-      <button class="gallery-nav gallery-next" id="gallery-next">›</button>
-    </div>
-    <div class="gallery-counter" id="gallery-counter">1 / 5</div>
+  <!-- Iframe container for Cargo site -->
+  <div class="iframe-container" id="iframe-container">
+    <button class="iframe-close" id="iframe-close">×</button>
+    <iframe id="cargo-iframe" class="cargo-iframe" src="" title="Maks RZ Art Portfolio"></iframe>
   </div>
   
   <!-- Awards container (remains hidden) -->
@@ -306,91 +269,67 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Gallery functionality
-    let isGalleryOpen = false;
-    let currentImageIndex = 0;
-    const galleryImages = [
-      { src: 'spiderman.jpg', alt: 'Spiderman' },
-      { src: 'waintingforclothes.jpg', alt: 'Waiting for clothes' },
-      { src: '24 x 30 cm_instruktorze.jpg', alt: 'Instruktorze' },
-      { src: 'jeziorko.jpg', alt: 'Jeziorko' },
-      { src: 'car.jpg', alt: 'Car' }
-    ];
+    // Iframe functionality
+    let isIframeOpen = false;
     
-    function updateGalleryImage() {
-      const galleryImg = document.getElementById('gallery-image');
-      const counter = document.getElementById('gallery-counter');
+    function showIframe() {
+      const iframeContainer = document.getElementById('iframe-container');
+      const cargoIframe = document.getElementById('cargo-iframe');
       
-      galleryImg.src = galleryImages[currentImageIndex].src;
-      galleryImg.alt = galleryImages[currentImageIndex].alt;
-      counter.textContent = `${currentImageIndex + 1} / ${galleryImages.length}`;
-    }
-    
-    function showGallery() {
-      document.getElementById('gallery').style.display = 'flex';
+      // Set the iframe source
+      cargoIframe.src = 'https://maksrz.cargo.site/';
+      
+      // Show iframe and hide other elements
+      iframeContainer.style.display = 'block';
       document.getElementById('mask').style.display = 'none';
       document.getElementById('character').style.display = 'none';
-      currentImageIndex = 0;
-      updateGalleryImage();
-      isGalleryOpen = true;
+      
+      isIframeOpen = true;
     }
     
-    function hideGallery() {
-      document.getElementById('gallery').style.display = 'none';
+    function hideIframe() {
+      const iframeContainer = document.getElementById('iframe-container');
+      const cargoIframe = document.getElementById('cargo-iframe');
+      
+      // Hide iframe and show other elements
+      iframeContainer.style.display = 'none';
       document.getElementById('mask').style.display = 'block';
       document.getElementById('character').style.display = 'block';
-      isGalleryOpen = false;
-    }
-    
-    function nextImage() {
-      currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
-      updateGalleryImage();
-    }
-    
-    function prevImage() {
-      currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
-      updateGalleryImage();
+      
+      // Clear iframe source to stop loading
+      cargoIframe.src = '';
+      
+      isIframeOpen = false;
     }
     
     // Art button click handler
     document.getElementById('art-button').addEventListener('click', function(e) {
       e.preventDefault();
-      if (isGalleryOpen) {
-        hideGallery();
+      if (isIframeOpen) {
+        hideIframe();
       } else {
-        showGallery();
+        showIframe();
       }
     });
     
-    // Gallery close button and navigation
-    document.getElementById('gallery-next').addEventListener('click', nextImage);
-    document.getElementById('gallery-prev').addEventListener('click', prevImage);
+    // Iframe close button
+    document.getElementById('iframe-close').addEventListener('click', function() {
+      hideIframe();
+    });
     
-    // Keyboard navigation for gallery
+    // Close iframe when pressing Escape key
     document.addEventListener('keydown', function(e) {
-      if (isGalleryOpen) {
-        switch(e.key) {
-          case 'ArrowLeft':
-            e.preventDefault();
-            prevImage();
-            break;
-          case 'ArrowRight':
-            e.preventDefault();
-            nextImage();
-            break;
-          case 'Escape':
-            e.preventDefault();
-            hideGallery();
-            break;
-        }
+      if (isIframeOpen && e.key === 'Escape') {
+        e.preventDefault();
+        hideIframe();
       }
     });
     
-    // Close gallery when clicking other nav buttons
+    // Close iframe when clicking other nav buttons
     document.querySelectorAll('.nav-button:not(#art-button)').forEach(button => {
       button.addEventListener('click', function() {
-        if (isGalleryOpen) {
-          hideGallery();
+        if (isIframeOpen) {
+          hideIframe();
         }
       });
     });
@@ -512,7 +451,7 @@
     let isAnimating = false;
     
     function animateCharacter() {
-      if (!isGalleryOpen) {
+      if (!isIframeOpen) {
         currentX += (targetX - currentX) * 0.1;
         character.style.left = currentX + 'px';
       }
@@ -521,7 +460,7 @@
     requestAnimationFrame(animateCharacter);
     
     function startCharacterAnimation() {
-      if (isGalleryOpen) return;
+      if (isIframeOpen) return;
       isAnimating = true;
       let toggle = false;
       animationInterval = setInterval(() => {
@@ -542,7 +481,7 @@
     
     // Update background movement using pointer/mouse position
     function updateBackground(e) {
-      if (!isDragging && !isGalleryOpen) {
+      if (!isDragging && !isIframeOpen) {
         const pointerX = e.clientX;
         const pointerY = e.clientY;
         const deltaX = (pointerX - windowWidth / 2) / (windowWidth / 2);
@@ -594,7 +533,7 @@
     }
     
     function startDrag(e) {
-      if (!e.target.closest('#character') || isGalleryOpen) return;
+      if (!e.target.closest('#character') || isIframeOpen) return;
       e.preventDefault();
       if (isBouncing) return;
       stopCharacterAnimation();
@@ -706,7 +645,7 @@
     const hoverImageDiv = document.getElementById('hoverImage');
     
     function showHoverImage(imageUrl) {
-      if (!isGalleryOpen) {
+      if (!isIframeOpen) {
         hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
         hoverImageDiv.style.display = "block";
       }
