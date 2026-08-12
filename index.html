@@ -53,8 +53,8 @@
       background-position: center;
       z-index: 2;
     }
-    /* Iframe container for Cargo site */
-    .iframe-container {
+    /* Art slideshow container – replaces ellipse system while art tab is open */
+    .art-slideshow {
       display: none;
       position: absolute;
       top: 0;
@@ -64,13 +64,17 @@
       z-index: 1000;
       background-color: white;
     }
-    .cargo-iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background-color: white;
+    .art-slideshow-img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      -webkit-user-drag: none;
     }
-    .iframe-close {
+    .art-close {
       position: absolute;
       top: 20px;
       right: 20px;
@@ -83,7 +87,7 @@
       z-index: 1001;
       transition: background-color 0.3s ease;
     }
-    .iframe-close:hover {
+    .art-close:hover {
       background-color: #000;
       color: #fff;
     }
@@ -194,7 +198,7 @@
         font-size: 2em;
         padding: 0 5%;
       }
-      .iframe-close {
+      .art-close {
         font-size: 1.2em;
         padding: 8px 15px;
         top: 10px;
@@ -221,13 +225,16 @@
       </ul>
     </div>
   </div>
-  
-  <!-- Iframe container for Cargo site -->
-  <div class="iframe-container" id="iframe-container">
-    <button class="iframe-close" id="iframe-close">×</button>
-    <iframe id="cargo-iframe" class="cargo-iframe" src="" title="Maks RZ Art Portfolio"></iframe>
+
+  <!-- Art slideshow container (replaces the ellipse while the art tab is open) -->
+  <div class="art-slideshow" id="art-slideshow">
+    <button class="art-close" id="art-close">×</button>
+    <img id="art-slideshow-img" class="art-slideshow-img" src="" alt="Art"
+         draggable="false"
+         ondragstart="return false;"
+         oncontextmenu="return false;">
   </div>
-  
+
   <!-- Awards container (remains hidden) -->
   <div id="awards-container">
     <div class="festival-column left">
@@ -269,79 +276,99 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Iframe functionality
-    let isIframeOpen = false;
-    
-    function showIframe() {
-      const iframeContainer = document.getElementById('iframe-container');
-      const cargoIframe = document.getElementById('cargo-iframe');
-      
-      // Set the iframe source
-      cargoIframe.src = 'https://maksrz.cargo.site/';
-      
-      // Show iframe and hide other elements
-      iframeContainer.style.display = 'block';
+    // Art slideshow functionality (replaces the old Cargo iframe system)
+    let isIframeOpen = false; // true while the art overlay is open (name kept so the rest of the logic below still works unchanged)
+    let artSlideshowInterval = null;
+    const artImages = Array.from({ length: 10 }, (_, i) => (i + 1) + "a.png"); // 1a.png ... 10a.png
+
+    function getRandomArtImage(exclude) {
+      if (artImages.length === 1) return artImages[0];
+      let img;
+      do {
+        img = artImages[Math.floor(Math.random() * artImages.length)];
+      } while (img === exclude);
+      return img;
+    }
+
+    function showArtSlideshow() {
+      const container = document.getElementById('art-slideshow');
+      const imgEl = document.getElementById('art-slideshow-img');
+
+      let current = getRandomArtImage(null);
+      imgEl.src = current;
+
+      // Show slideshow, hide the ellipse system and character
+      container.style.display = 'block';
       document.getElementById('mask').style.display = 'none';
       document.getElementById('character').style.display = 'none';
-      
+
+      if (artSlideshowInterval) clearInterval(artSlideshowInterval);
+      artSlideshowInterval = setInterval(() => {
+        current = getRandomArtImage(current);
+        imgEl.src = current;
+      }, 2500);
+
       isIframeOpen = true;
     }
-    
-    function hideIframe() {
-      const iframeContainer = document.getElementById('iframe-container');
-      const cargoIframe = document.getElementById('cargo-iframe');
-      
-      // Hide iframe and show other elements
-      iframeContainer.style.display = 'none';
+
+    function hideArtSlideshow() {
+      const container = document.getElementById('art-slideshow');
+      const imgEl = document.getElementById('art-slideshow-img');
+
+      // Hide slideshow, bring back the ellipse system and character
+      container.style.display = 'none';
       document.getElementById('mask').style.display = 'block';
       document.getElementById('character').style.display = 'block';
-      
-      // Clear iframe source to stop loading
-      cargoIframe.src = '';
-      
+
+      if (artSlideshowInterval) {
+        clearInterval(artSlideshowInterval);
+        artSlideshowInterval = null;
+      }
+      imgEl.src = '';
+
       isIframeOpen = false;
     }
-    
+
     // Art button click handler
     document.getElementById('art-button').addEventListener('click', function(e) {
       e.preventDefault();
       if (isIframeOpen) {
-        hideIframe();
+        hideArtSlideshow();
       } else {
-        showIframe();
+        showArtSlideshow();
       }
     });
-    
-    // Iframe close button
-    document.getElementById('iframe-close').addEventListener('click', function() {
-      hideIframe();
+
+    // Slideshow close button
+    document.getElementById('art-close').addEventListener('click', function() {
+      hideArtSlideshow();
     });
-    
-    // Close iframe when pressing Escape key
+
+    // Close slideshow when pressing Escape key
     document.addEventListener('keydown', function(e) {
       if (isIframeOpen && e.key === 'Escape') {
         e.preventDefault();
-        hideIframe();
+        hideArtSlideshow();
       }
     });
-    
-    // Close iframe when clicking other nav buttons
+
+    // Close slideshow when clicking other nav buttons
     document.querySelectorAll('.nav-button:not(#art-button)').forEach(button => {
       button.addEventListener('click', function() {
         if (isIframeOpen) {
-          hideIframe();
+          hideArtSlideshow();
         }
       });
     });
-    
+
     // Prevent dragging and context menu for character image (2.png)
     const characterImg = document.getElementById('characterImg');
     characterImg.addEventListener('dragstart', e => e.preventDefault());
     characterImg.addEventListener('contextmenu', e => e.preventDefault());
-    
+
     // Global variable for message interval
     let messageIntervalId = null;
-    
+
     // Function to display messages with automatic removal after finishing the list
     function displayMessages(messages) {
       const display = document.getElementById('messageDisplay');
@@ -359,7 +386,7 @@
         }
       }, 1000);
     }
-    
+
     // Toggle function – if text is visible, clear it; otherwise, start the animation
     function toggleMessages(messages) {
       const display = document.getElementById('messageDisplay');
@@ -371,7 +398,7 @@
         displayMessages(messages);
       }
     }
-    
+
     // Arrays of messages for different buttons
     const festivalMessages = [
       "*Sundance Film Festival 2024 Official Selection*",
@@ -399,7 +426,7 @@
       "Makes animated films, music, painting.",
       "hello"
     ];
-    
+
     // Toggle message display for awards, enemies, and maks rz buttons
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
@@ -413,7 +440,7 @@
       e.preventDefault();
       toggleMessages(maksMessages);
     });
-    
+
     // --- Remaining code for background and character animation ---
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
@@ -422,12 +449,12 @@
     let speedX = 0, speedY = 0;
     let lastFrameTime = Date.now();
     let lastMouseTime = Date.now();
-    
+
     function animateBackground() {
       const now = Date.now();
       const deltaTime = now - lastFrameTime;
       lastFrameTime = now;
-      
+
       if (now - lastMouseTime > 500) {
         const decayFactor = Math.pow(0.5, deltaTime / 1000);
         speedX *= decayFactor;
@@ -435,21 +462,21 @@
         if (Math.abs(speedX) < 0.01) speedX = 0;
         if (Math.abs(speedY) < 0.01) speedY = 0;
       }
-      
+
       offsetX += speedX;
       offsetY += speedY;
       bg.style.backgroundPosition = offsetX + 'px ' + offsetY + 'px';
       requestAnimationFrame(animateBackground);
     }
     requestAnimationFrame(animateBackground);
-    
+
     // Character animation (2.png) following pointer/mouse position
     const character = document.getElementById('character');
     let targetX = windowWidth / 2;
     let currentX = windowWidth / 2;
     let animationInterval = null;
     let isAnimating = false;
-    
+
     function animateCharacter() {
       if (!isIframeOpen) {
         currentX += (targetX - currentX) * 0.1;
@@ -458,7 +485,7 @@
       requestAnimationFrame(animateCharacter);
     }
     requestAnimationFrame(animateCharacter);
-    
+
     function startCharacterAnimation() {
       if (isIframeOpen) return;
       isAnimating = true;
@@ -471,14 +498,14 @@
         }
       }, 70);
     }
-    
+
     function stopCharacterAnimation() {
       clearInterval(animationInterval);
       animationInterval = null;
       isAnimating = false;
       characterImg.src = '2.png';
     }
-    
+
     // Update background movement using pointer/mouse position
     function updateBackground(e) {
       if (!isDragging && !isIframeOpen) {
@@ -498,7 +525,7 @@
     }
     document.addEventListener('pointermove', updateBackground);
     document.addEventListener('mousemove', updateBackground);
-    
+
     // --- Grabbable and Throwable Character ---
     let isDragging = false;
     let isBouncing = false;
@@ -511,7 +538,7 @@
     const ROTATION_SPEED = 5;
     let thrownTime = 0;
     let thrownPosX = 0, thrownPosY = 0, thrownWidth = 0, thrownHeight = 0;
-    
+
     function createBouncingCharacter(e) {
       const characterImg = document.getElementById('characterImg');
       bouncingCharacter = characterImg.cloneNode(true);
@@ -531,7 +558,7 @@
       bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(0deg)";
       document.body.appendChild(bouncingCharacter);
     }
-    
+
     function startDrag(e) {
       if (!e.target.closest('#character') || isIframeOpen) return;
       e.preventDefault();
@@ -543,7 +570,7 @@
       lastDragY = e.clientY;
       lastDragTime = Date.now();
     }
-    
+
     function duringDrag(e) {
       if (!isDragging || !bouncingCharacter) return;
       const now = Date.now();
@@ -561,7 +588,7 @@
       lastDragY = e.clientY;
       lastDragTime = now;
     }
-    
+
     function endDrag(e) {
       if (!isDragging) return;
       isDragging = false;
@@ -569,17 +596,17 @@
       isBouncing = true;
       requestAnimationFrame(updateBounce);
     }
-    
+
     function updateBounce() {
       if (!bouncingCharacter) return;
-      
+
       if (thrownPosY + thrownHeight < window.innerHeight) {
         rotationAngle += ROTATION_SPEED;
       }
-      
+
       let newPosX = thrownPosX + bounceVelocityX;
       let newPosY = thrownPosY + bounceVelocityY;
-      
+
       if (newPosX < 0) {
         newPosX = 0;
         bounceVelocityX *= -BOUNCE_DAMPING;
@@ -587,34 +614,34 @@
         newPosX = window.innerWidth - thrownWidth;
         bounceVelocityX *= -BOUNCE_DAMPING;
       }
-      
+
       if (newPosY < 0) {
         newPosY = 0;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
-      
+
       if (newPosY + thrownHeight > window.innerHeight) {
         newPosY = window.innerHeight - thrownHeight;
         bounceVelocityY *= -BOUNCE_DAMPING;
       }
-      
+
       bounceVelocityY += GRAVITY;
       bounceVelocityX *= 0.99;
       bounceVelocityY *= 0.99;
-      
+
       thrownPosX = newPosX;
       thrownPosY = newPosY;
       bouncingCharacter.style.transform = "translate(" + thrownPosX + "px, " + thrownPosY + "px) rotate(" + rotationAngle + "deg)";
-      
+
       if (Date.now() - thrownTime >= 4000 &&
           Math.abs(bounceVelocityX) < 0.5 && Math.abs(bounceVelocityY) < 0.5) {
         stopBouncing();
         return;
       }
-      
+
       requestAnimationFrame(updateBounce);
     }
-    
+
     function stopBouncing() {
       if (bouncingCharacter) {
         document.body.removeChild(bouncingCharacter);
@@ -623,7 +650,7 @@
       characterImg.style.visibility = 'visible';
       isBouncing = false;
     }
-    
+
     characterImg.addEventListener('pointerdown', startDrag);
     document.addEventListener('pointermove', function(e) {
       if (isDragging && bouncingCharacter) {
@@ -640,27 +667,27 @@
         endDrag(e);
       }
     });
-    
+
     // --- Hover overlay for navigation buttons ---
     const hoverImageDiv = document.getElementById('hoverImage');
-    
+
     function showHoverImage(imageUrl) {
       if (!isIframeOpen) {
         hoverImageDiv.style.backgroundImage = "url('" + imageUrl + "')";
         hoverImageDiv.style.display = "block";
       }
     }
-    
+
     function hideHoverImage() {
       hoverImageDiv.style.display = "none";
     }
-    
+
     document.getElementById('maks-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('maksrz.png');
     });
     document.getElementById('maks-button').addEventListener('mouseleave', hideHoverImage);
-    
+
     document.getElementById('video-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "60% auto";
       showHoverImage('gifaniol.gif');
@@ -669,25 +696,25 @@
       hideHoverImage();
       hoverImageDiv.style.backgroundSize = "contain";
     });
-    
+
     document.getElementById('contact-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('contact.png');
     });
     document.getElementById('contact-button').addEventListener('mouseleave', hideHoverImage);
-    
+
     document.getElementById('enemies-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('enemies.png');
     });
     document.getElementById('enemies-button').addEventListener('mouseleave', hideHoverImage);
-    
+
     document.getElementById('awards-button').addEventListener('mouseenter', function() {
       hoverImageDiv.style.backgroundSize = "contain";
       showHoverImage('awards.png');
     });
     document.getElementById('awards-button').addEventListener('mouseleave', hideHoverImage);
-    
+
     // --- Random Visitor Name ---
     const names = [
       "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Michael", "Zacharias",
@@ -698,7 +725,7 @@
     ];
     const randomName = names[Math.floor(Math.random() * names.length)];
     document.getElementById("visitorName").innerText = "potential visitor name: " + randomName;
-    
+
     // --- Modify cursor on hover for interactive elements ---
     window.addEventListener('load', function() {
       const originalCursor = 'cursor1.png';
@@ -725,7 +752,7 @@
         ctx.putImageData(imageData, 0, 0);
         hoverCursor = canvas.toDataURL();
       };
-      
+
       // For all navigation buttons – change cursor on hover
       document.querySelectorAll('.nav-button').forEach(btn => {
         btn.addEventListener('mouseenter', function() {
