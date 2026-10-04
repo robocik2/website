@@ -12,7 +12,6 @@
       width: 100%;
       height: 100%;
       background-color: white;
-      /* Domyślny kursor */
       cursor: url('cursor1.png'), auto;
       touch-action: none;
     }
@@ -70,9 +69,27 @@
       left: 50%;
       transform: translate(-50%, -50%);
       max-width: 90vw;
-      max-height: 90vh;
+      max-height: 78vh;
       object-fit: contain;
       -webkit-user-drag: none;
+    }
+    .art-inquiries {
+      position: absolute;
+      bottom: 3vh;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-family: "Apple Garamond", serif;
+      font-size: 1.5em;
+      color: #000;
+      z-index: 1001;
+    }
+    .art-inquiries a {
+      color: #000;
+      text-decoration: none;
+    }
+    .art-inquiries a:hover {
+      text-decoration: underline;
     }
     .art-close {
       position: absolute;
@@ -90,6 +107,65 @@
     .art-close:hover {
       background-color: #000;
       color: #fff;
+    }
+    /* Bio overlay – opens on "maks rz" */
+    .bio-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1000;
+      background-color: white;
+      overflow-y: auto;
+      touch-action: pan-y;
+    }
+    .bio-inner {
+      min-height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5vw;
+      padding: 80px 8vw;
+      font-family: "Apple Garamond", serif;
+    }
+    .bio-photo {
+      flex: 0 0 auto;
+      max-width: 38vw;
+      max-height: 80vh;
+      object-fit: contain;
+      -webkit-user-drag: none;
+    }
+    .bio-text {
+      flex: 0 1 34em;
+      color: #000;
+      font-size: 1.35em;
+      line-height: 1.55;
+      text-align: left;
+      hyphens: auto;
+    }
+    .bio-text p {
+      margin: 0 0 1.4em 0;
+    }
+    .bio-text p:last-child {
+      margin-bottom: 0;
+    }
+    @media (max-width: 800px) {
+      .bio-inner {
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 70px 6vw 40px;
+        gap: 24px;
+      }
+      .bio-photo {
+        max-width: 80vw;
+        max-height: 50vh;
+      }
+      .bio-text {
+        font-size: 1.1em;
+      }
     }
     /* Character container (2.png) with animation */
     .character {
@@ -153,29 +229,29 @@
       word-wrap: break-word;
       z-index: 1000;
       position: absolute;
-      top: 100%; /* position below nav buttons */
+      top: 100%;
       left: 0;
       width: 100%;
     }
     .enemies-list li {
       font-size: 2em;
     }
-    /* Awards container – oryginalnie ukryty */
+    /* Awards container – originally hidden */
     #awards-container {
       display: none;
     }
     /* Container for animated messages, displayed below the ellipse */
     #messageDisplay {
       position: absolute;
-      top: 80%; /* poniżej elipsy */
+      top: 80%;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 3em; /* większa czcionka */
+      font-size: 3em;
       text-align: center;
       color: #000;
       z-index: 5;
       white-space: nowrap;
-      padding: 0 10px; /* marginesy */
+      padding: 0 10px;
     }
     /* Visitor name – bottom right corner */
     #visitorName {
@@ -203,6 +279,11 @@
         padding: 8px 15px;
         top: 10px;
         right: 10px;
+      }
+      .art-inquiries {
+        font-size: 1.1em;
+        padding: 0 5%;
+        box-sizing: border-box;
       }
     }
   </style>
@@ -233,6 +314,20 @@
          draggable="false"
          ondragstart="return false;"
          oncontextmenu="return false;">
+    <div class="art-inquiries">for art inquiries please contact: <a href="mailto:u47e56m@gmail.com">u47e56m@gmail.com</a></div>
+  </div>
+
+  <!-- Bio overlay (opens on "maks rz") -->
+  <div class="bio-overlay" id="bio-overlay">
+    <button class="art-close" id="bio-close">×</button>
+    <div class="bio-inner">
+      <img src="profileartist.png" class="bio-photo" alt="maks rz"
+           draggable="false" ondragstart="return false;" oncontextmenu="return false;">
+      <div class="bio-text">
+        <p>maks rz is a Polish artist and animator whose works focus on figures destined for ridiculousness, elevating the trivial while trying to find the point at which failure turns into catastrophe. Drawing on the cultural legacy of a Polish upbringing, the artist explores shame as a desire to be taken seriously and the humor in fragile heroism that emerges when dignity slowly slips away.</p>
+        <p>His debut animated film, <em>Martyr's Guidebook</em>, screened and received awards at international film festivals including Sundance, Annecy International Animation Festival, Ottawa International Animation Festival and New Horizons. Currently he is working on his sophomore short film <em>'dogname'</em>.</p>
+      </div>
+    </div>
   </div>
 
   <!-- Awards container (remains hidden) -->
@@ -276,8 +371,8 @@
   <!-- Visitor name -->
   <div id="visitorName"></div>
   <script>
-    // Art slideshow functionality (replaces the old Cargo iframe system)
-    let isIframeOpen = false; // true while the art overlay is open (name kept so the rest of the logic below still works unchanged)
+    // Art slideshow functionality
+    let isIframeOpen = false; // true while any overlay (art or bio) is open
     let artSlideshowInterval = null;
     const artImages = Array.from({ length: 6 }, (_, i) => (i + 1) + "a.png"); // 1a.png ... 6a.png
 
@@ -297,7 +392,6 @@
       let current = getRandomArtImage(null);
       imgEl.src = current;
 
-      // Show slideshow, hide the ellipse system and character
       container.style.display = 'block';
       document.getElementById('mask').style.display = 'none';
       document.getElementById('character').style.display = 'none';
@@ -315,7 +409,6 @@
       const container = document.getElementById('art-slideshow');
       const imgEl = document.getElementById('art-slideshow-img');
 
-      // Hide slideshow, bring back the ellipse system and character
       container.style.display = 'none';
       document.getElementById('mask').style.display = 'block';
       document.getElementById('character').style.display = 'block';
@@ -329,10 +422,38 @@
       isIframeOpen = false;
     }
 
-    // Art button click handler
+    // Bio overlay (maks rz)
+    function showBio() {
+      if (isIframeOpen) hideArtSlideshow();
+      document.getElementById('bio-overlay').style.display = 'block';
+      document.getElementById('mask').style.display = 'none';
+      document.getElementById('character').style.display = 'none';
+      document.getElementById('messageDisplay').innerText = '';
+      isIframeOpen = true;
+    }
+
+    function hideBio() {
+      document.getElementById('bio-overlay').style.display = 'none';
+      document.getElementById('mask').style.display = 'block';
+      document.getElementById('character').style.display = 'block';
+      isIframeOpen = false;
+    }
+
+    function isBioOpen() {
+      return document.getElementById('bio-overlay').style.display === 'block';
+    }
+
+    document.getElementById('maks-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      isBioOpen() ? hideBio() : showBio();
+    });
+    document.getElementById('bio-close').addEventListener('click', hideBio);
+
+    // Art button click handler (closes bio if open)
     document.getElementById('art-button').addEventListener('click', function(e) {
       e.preventDefault();
-      if (isIframeOpen) {
+      if (isBioOpen()) hideBio();
+      if (artSlideshowInterval) {
         hideArtSlideshow();
       } else {
         showArtSlideshow();
@@ -344,20 +465,19 @@
       hideArtSlideshow();
     });
 
-    // Close slideshow when pressing Escape key
+    // Close overlays when pressing Escape key
     document.addEventListener('keydown', function(e) {
       if (isIframeOpen && e.key === 'Escape') {
         e.preventDefault();
-        hideArtSlideshow();
+        isBioOpen() ? hideBio() : hideArtSlideshow();
       }
     });
 
-    // Close slideshow when clicking other nav buttons
-    document.querySelectorAll('.nav-button:not(#art-button)').forEach(button => {
+    // Close overlays when clicking other nav buttons
+    document.querySelectorAll('.nav-button:not(#art-button):not(#maks-button)').forEach(button => {
       button.addEventListener('click', function() {
-        if (isIframeOpen) {
-          hideArtSlideshow();
-        }
+        if (isBioOpen()) hideBio();
+        else if (isIframeOpen) hideArtSlideshow();
       });
     });
 
@@ -421,13 +541,8 @@
     const enemyMessages = [
       "1. damien"
     ];
-    // New array for maks rz button
-    const maksMessages = [
-      "Makes animated films, music, painting.",
-      "hello"
-    ];
 
-    // Toggle message display for awards, enemies, and maks rz buttons
+    // Toggle message display for awards and enemies buttons
     document.getElementById('awards-button').addEventListener('click', function(e) {
       e.preventDefault();
       toggleMessages(festivalMessages);
@@ -435,10 +550,6 @@
     document.getElementById('enemies-button').addEventListener('click', function(e) {
       e.preventDefault();
       toggleMessages(enemyMessages);
-    });
-    document.getElementById('maks-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      toggleMessages(maksMessages);
     });
 
     // --- Remaining code for background and character animation ---
@@ -538,6 +649,7 @@
     const ROTATION_SPEED = 5;
     let thrownTime = 0;
     let thrownPosX = 0, thrownPosY = 0, thrownWidth = 0, thrownHeight = 0;
+    let lastDragX = 0, lastDragY = 0, lastDragTime = 0;
 
     function createBouncingCharacter(e) {
       const characterImg = document.getElementById('characterImg');
@@ -731,7 +843,7 @@
       const originalCursor = 'cursor1.png';
       let hoverCursor = null;
       const img = new Image();
-      img.crossOrigin = "Anonymous"; // if needed
+      img.crossOrigin = "Anonymous";
       img.src = originalCursor;
       img.onload = function() {
         const canvas = document.createElement('canvas');
@@ -742,7 +854,6 @@
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
-          // If pixel is not fully transparent, set RGB to black
           if(data[i+3] !== 0) {
             data[i] = 0;
             data[i+1] = 0;
@@ -753,7 +864,6 @@
         hoverCursor = canvas.toDataURL();
       };
 
-      // For all navigation buttons – change cursor on hover
       document.querySelectorAll('.nav-button').forEach(btn => {
         btn.addEventListener('mouseenter', function() {
           if(hoverCursor) {
