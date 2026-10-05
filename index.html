@@ -492,7 +492,7 @@
     // Art slideshow functionality
     let isIframeOpen = false; // true while any overlay (art or bio) is open
     let artSlideshowInterval = null;
-    const artImages = Array.from({ length: 1 }, (_, i) => (i + 1) + "a.png"); // 1a.png ... 6a.png
+    const artImages = Array.from({ length: 1 }, (_, i) => (i + 1) + "a.jpg"); // 1a.jpg ... 6a.jpg
 
     function getRandomArtImage(exclude) {
       if (artImages.length === 1) return artImages[0];
