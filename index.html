@@ -2,9 +2,10 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>maks rz/robocik.2</title>
   <style>
-    /* Global settings – white background, custom cursor, disable touch scrolling */
+    /* Global settings – white background, custom cursor, scrolling disabled in main menu */
     html, body {
       margin: 0;
       padding: 0;
@@ -14,15 +15,16 @@
       background-color: white;
       cursor: url('cursor1.png'), auto;
       touch-action: none;
+      overscroll-behavior: none;
+      -webkit-text-size-adjust: 100%;
     }
     /* Ellipse mask – shows content only inside the ellipse */
     .mask {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 100vw;
-      height: 100vh;
-      transform: translate(-50%, -50%);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       clip-path: ellipse(25% 25% at 50% 50%);
       overflow: hidden;
       z-index: 1;
@@ -39,49 +41,63 @@
       background-size: 100vw 100vh;
       background-position: 0 0;
     }
-    /* Art slideshow container – replaces ellipse system while art tab is open */
+    /* Art overlay – scrollable, replaces ellipse system while art tab is open */
     .art-slideshow {
       display: none;
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      right: 0;
+      bottom: 0;
       z-index: 1000;
       background-color: white;
+      overflow-x: hidden;
+      overflow-y: auto;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+    .art-inner {
+      min-height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 5vw 40px;
+      font-family: "Apple Garamond", serif;
     }
     .art-slideshow-img {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      max-width: 90vw;
-      max-height: 78vh;
+      display: block;
+      width: 90vw;
+      max-width: 100%;
+      height: 72vh;
+      height: 72dvh;
       object-fit: contain;
       -webkit-user-drag: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
     .art-inquiries {
-      position: absolute;
-      bottom: 3vh;
-      left: 0;
-      width: 100%;
+      margin-top: 20px;
       text-align: center;
-      font-family: "Apple Garamond", serif;
       font-size: 1.5em;
+      line-height: 1.3;
       color: #000;
-      z-index: 1001;
     }
     .art-inquiries a {
       color: #000;
       text-decoration: none;
+      word-break: break-all;
     }
     .art-inquiries a:hover {
       text-decoration: underline;
     }
     .art-close {
-      position: absolute;
+      position: fixed;
       top: 20px;
       right: 20px;
+      top: max(20px, env(safe-area-inset-top));
+      right: max(20px, env(safe-area-inset-right));
       background: rgba(255, 255, 255, 0.9);
       border: 2px solid #000;
       padding: 10px 20px;
@@ -95,18 +111,20 @@
       background-color: #000;
       color: #fff;
     }
-    /* Bio overlay – opens on "maks rz" */
+    /* Bio overlay – opens on "maks rz", scrollable */
     .bio-overlay {
       display: none;
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      right: 0;
+      bottom: 0;
       z-index: 1000;
       background-color: white;
+      overflow-x: hidden;
       overflow-y: auto;
       touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
     }
     .bio-inner {
       min-height: 100%;
@@ -132,27 +150,13 @@
       line-height: 1.55;
       text-align: left;
       hyphens: auto;
+      -webkit-hyphens: auto;
     }
     .bio-text p {
       margin: 0 0 1.4em 0;
     }
     .bio-text p:last-child {
       margin-bottom: 0;
-    }
-    @media (max-width: 800px) {
-      .bio-inner {
-        flex-direction: column;
-        justify-content: flex-start;
-        padding: 70px 6vw 40px;
-        gap: 24px;
-      }
-      .bio-photo {
-        max-width: 80vw;
-        max-height: 50vh;
-      }
-      .bio-text {
-        font-size: 1.1em;
-      }
     }
     /* Character container (2.png) with animation */
     .character {
@@ -165,6 +169,7 @@
     .character img {
       width: 150px;
       height: auto;
+      display: block;
     }
     /* Bouncing character style */
     .bouncing {
@@ -204,11 +209,9 @@
       color: #000;
       font-size: 5em;
     }
-    /* Underline on hover */
     .nav-button:hover {
       text-decoration: underline;
     }
-    /* Dropdown – elements remain above buttons */
     .nav-dropdowns {
       max-width: 100%;
       text-align: center;
@@ -223,7 +226,6 @@
     .enemies-list li {
       font-size: 2em;
     }
-    /* Awards container – originally hidden */
     #awards-container {
       display: none;
     }
@@ -249,28 +251,156 @@
       color: #000;
       z-index: 1001;
     }
-    /* Mobile adjustments */
+
+    /* ===== MOBILE (portrait phones) ===== */
     @media (max-width: 600px) {
-      .nav-button {
-        font-size: 3em;
+      .mask {
+        clip-path: ellipse(44% 24% at 50% 50%);
       }
-      #visitorName {
-        font-size: 1.2em;
+      .nav-container {
+        padding: 8px 0 0;
+        padding-top: max(8px, env(safe-area-inset-top));
+        line-height: 1.05;
+      }
+      .nav-buttons {
+        gap: 0 2px;
+        padding: 0 3vw;
+      }
+      .nav-button {
+        font-size: 8.5vw;
+        padding: 4px 5px;
+      }
+      .character {
+        bottom: 36px;
+        bottom: calc(36px + env(safe-area-inset-bottom));
+      }
+      .character img {
+        width: 100px;
       }
       #messageDisplay {
-        font-size: 2em;
-        padding: 0 5%;
+        top: 68%;
+        width: 90%;
+        font-size: 1.6em;
+        line-height: 1.2;
+        white-space: normal;
+        padding: 0;
+      }
+      #visitorName {
+        left: 0;
+        right: 0;
+        bottom: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom));
+        text-align: center;
+        font-size: 0.85em;
+        z-index: 1; /* sits below the art / bio overlays on mobile */
       }
       .art-close {
-        font-size: 1.2em;
-        padding: 8px 15px;
-        top: 10px;
-        right: 10px;
+        font-size: 1.4em;
+        padding: 6px 16px;
+        top: 12px;
+        right: 12px;
+        top: max(12px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+      }
+      .art-inner {
+        padding: 64px 4vw 32px;
+        padding-bottom: max(32px, env(safe-area-inset-bottom));
+      }
+      .art-slideshow-img {
+        width: 100%;
+        height: 62vh;
+        height: 62dvh;
+      }
+      .art-inquiries {
+        font-size: 1.05em;
+        margin-top: 14px;
+      }
+      .bio-inner {
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 64px 6vw 40px;
+        padding-bottom: max(40px, env(safe-area-inset-bottom));
+        gap: 22px;
+      }
+      .bio-photo {
+        max-width: 78vw;
+        max-height: 45vh;
+        max-height: 45dvh;
+      }
+      .bio-text {
+        font-size: 1.08em;
+        line-height: 1.5;
+      }
+    }
+
+    /* ===== Tablets / narrow windows – stacked bio ===== */
+    @media (max-width: 800px) {
+      .bio-inner {
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 24px;
+      }
+      .bio-photo {
+        max-width: 80vw;
+        max-height: 50vh;
+      }
+      .bio-text {
+        font-size: 1.1em;
+      }
+    }
+
+    /* ===== Phones in landscape (short screens) ===== */
+    @media (max-height: 520px) and (orientation: landscape) {
+      .nav-container {
+        padding-top: 4px;
+        line-height: 1;
+      }
+      .nav-button {
+        font-size: 2.1rem;
+        padding: 2px 6px;
+      }
+      .mask {
+        clip-path: ellipse(30% 30% at 50% 55%);
+      }
+      .character {
+        bottom: 8px;
+      }
+      .character img {
+        width: 80px;
+      }
+      #messageDisplay {
+        top: 72%;
+        font-size: 1.4em;
+        width: 90%;
+        white-space: normal;
+        padding: 0;
+      }
+      #visitorName {
+        font-size: 0.9em;
+        z-index: 1;
+      }
+      .art-inner {
+        padding: 56px 4vw 24px;
+      }
+      .art-slideshow-img {
+        height: 80vh;
+        height: 80dvh;
       }
       .art-inquiries {
         font-size: 1.1em;
-        padding: 0 5%;
-        box-sizing: border-box;
+      }
+      .bio-inner {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 56px 6vw 24px;
+        gap: 4vw;
+      }
+      .bio-photo {
+        max-width: 30vw;
+        max-height: 75vh;
+      }
+      .bio-text {
+        font-size: 0.95em;
       }
     }
   </style>
@@ -297,11 +427,13 @@
   <!-- Art slideshow container (replaces the ellipse while the art tab is open) -->
   <div class="art-slideshow" id="art-slideshow">
     <button class="art-close" id="art-close">×</button>
-    <img id="art-slideshow-img" class="art-slideshow-img" src="" alt="Art"
-         draggable="false"
-         ondragstart="return false;"
-         oncontextmenu="return false;">
-    <div class="art-inquiries">for art inquiries please contact: <a href="mailto:u47e56m@gmail.com">u47e56m@gmail.com</a></div>
+    <div class="art-inner">
+      <img id="art-slideshow-img" class="art-slideshow-img" src="" alt="Art"
+           draggable="false"
+           ondragstart="return false;"
+           oncontextmenu="return false;">
+      <div class="art-inquiries">for art inquiries please contact: <a href="mailto:u47e56m@gmail.com">u47e56m@gmail.com</a></div>
+    </div>
   </div>
 
   <!-- Bio overlay (opens on "maks rz") -->
@@ -310,7 +442,7 @@
     <div class="bio-inner">
       <img src="profileartist.png" class="bio-photo" alt="maks rz"
            draggable="false" ondragstart="return false;" oncontextmenu="return false;">
-      <div class="bio-text">
+      <div class="bio-text" lang="en">
         <p>maks rz is a Polish artist and animator whose works focus on figures destined for ridiculousness, elevating the trivial while trying to find the point at which failure turns into catastrophe. Drawing on the cultural legacy of a Polish upbringing, the artist explores shame as a desire to be taken seriously and the humor in fragile heroism that emerges when dignity slowly slips away.</p>
         <p>His debut animated film, <em>Martyr's Guidebook</em>, screened and received awards at international film festivals including Sundance, Annecy International Animation Festival, Ottawa International Animation Festival and New Horizons. Currently he is working on his sophomore short film <em>'dogname'</em>.</p>
       </div>
@@ -541,6 +673,10 @@
     // --- Remaining code for background and character animation ---
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
+    window.addEventListener('resize', function() {
+      windowWidth = window.innerWidth;
+      windowHeight = window.innerHeight;
+    });
     const bg = document.getElementById('bg');
     let offsetX = 0, offsetY = 0;
     let speedX = 0, speedY = 0;
@@ -766,9 +902,14 @@
       }
     });
 
+    // Main menu: no scrolling (keeps the walking character stable). Overlays (art / bio) can scroll.
+    document.addEventListener('touchmove', function(e) {
+      if (!isIframeOpen) e.preventDefault();
+    }, { passive: false });
+
     // --- Random Visitor Name ---
     const names = [
-      "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Katarzyna", "Reginald", "Thaddeus", "Dariusz", "Vesper", "Winston", "Xavier", "Michael", "Zacharias",
+      "Aldous", "Basil", "Crispin", "Lysander", "Octavian", "Percival", "Quentin", "Reginald", "Thaddeus", "Ulysses", "Vesper", "Winston", "Xavier", "Michael", "Zacharias",
       "Nathan", "Beatrice", "Cordelia", "Delphine", "Evangeline", "Felicity", "Gwendolyn", "Harriet", "Isolde", "Jacqueline", "Katrina", "Lucinda", "Mirabelle", "John", "Ophelia",
       "Błażej", "Mieczysław", "Zbigniew", "Witold", "Bronisław", "Czesław", "Lech", "Stanisław", "Wacław", "Kazimierz",
       "Agnieszka", "Barbara", "Czesława", "Danuta", "Elżbieta", "Grażyna", "Halina", "Irena", "Jadwiga", "Krystyna", "Łucja", "Małgorzata", "Natalia", "Olga", "Patrycja",
