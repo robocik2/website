@@ -56,7 +56,7 @@
       touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
     }
-    .-inner {
+    .art-inner {
       min-height: 100%;
       box-sizing: border-box;
       display: flex;
@@ -157,6 +157,53 @@
     }
     .bio-text p:last-child {
       margin-bottom: 0;
+    }
+    /* Exhibitions overlay – opens on "exhibitions", scrollable, italic text */
+    .exhibitions-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      background-color: white;
+      overflow-x: hidden;
+      overflow-y: auto;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+    .exhibitions-inner {
+      min-height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 8vw 40px;
+      font-family: "Apple Garamond", serif;
+    }
+    .exhibitions-content {
+      max-width: 44em;
+      color: #000;
+      font-style: italic;
+      font-size: 1.5em;
+      line-height: 1.5;
+      text-align: left;
+    }
+    .exhibitions-content h2 {
+      font-size: 1em;
+      font-weight: normal;
+      font-style: italic;
+      margin: 0 0 1em 0;
+    }
+    .exhibitions-content ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .exhibitions-content li {
+      margin: 0 0 0.7em 0;
     }
     /* Character container (2.png) with animation */
     .character {
@@ -292,7 +339,7 @@
         bottom: max(8px, env(safe-area-inset-bottom));
         text-align: center;
         font-size: 0.85em;
-        z-index: 1; /* sits below the art / bio overlays on mobile */
+        z-index: 1; /* sits below the art / bio / exhibitions overlays on mobile */
       }
       .art-close {
         font-size: 1.4em;
@@ -328,6 +375,15 @@
         max-height: 45dvh;
       }
       .bio-text {
+        font-size: 1.08em;
+        line-height: 1.5;
+      }
+      .exhibitions-inner {
+        justify-content: flex-start;
+        padding: 64px 6vw 40px;
+        padding-bottom: max(40px, env(safe-area-inset-bottom));
+      }
+      .exhibitions-content {
         font-size: 1.08em;
         line-height: 1.5;
       }
@@ -402,6 +458,13 @@
       .bio-text {
         font-size: 0.95em;
       }
+      .exhibitions-inner {
+        justify-content: flex-start;
+        padding: 56px 6vw 24px;
+      }
+      .exhibitions-content {
+        font-size: 1em;
+      }
     }
   </style>
 </head>
@@ -412,6 +475,7 @@
       <a href="#" class="nav-button" id="maks-button">maks rz</a>
       <a href="https://vimeo.com/maksrz" class="nav-button" id="video-button" target="_blank">video</a>
       <a href="#" class="nav-button" id="art-button">art</a>
+      <a href="#" class="nav-button" id="exhibitions-button">exhibitions</a>
       <a href="https://instagram.com/robocik.2" class="nav-button" target="_blank">ig</a>
       <a href="mailto:maksrzontkowski@gmail.com" class="nav-button" id="contact-button">contact</a>
       <a href="#" class="nav-button" id="enemies-button">list of my enemies</a>
@@ -445,6 +509,26 @@
       <div class="bio-text" lang="en">
         <p>maks rz is a Polish artist and animator whose works focus on figures destined for ridiculousness, elevating the trivial while trying to find the point at which failure turns into catastrophe. Drawing on the cultural legacy of a Polish upbringing, the artist explores shame as a desire to be taken seriously and the humor in fragile heroism that emerges when dignity slowly slips away.</p>
         <p>His debut animated film, <em>Martyr's Guidebook</em>, screened and received awards at international film festivals including Sundance, Annecy International Animation Festival, Ottawa International Animation Festival and New Horizons. Currently he is working on his sophomore short film <em>'dogname'</em>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exhibitions overlay (opens on "exhibitions") -->
+  <div class="exhibitions-overlay" id="exhibitions-overlay">
+    <button class="art-close" id="exhibitions-close">×</button>
+    <div class="exhibitions-inner">
+      <div class="exhibitions-content" lang="en">
+        <h2>Selected Group Exhibitions:</h2>
+        <ul>
+          <li>2026 - Krupa Art Foundation - KAF Young Art Prize 2026: No-Clip Dwelling</li>
+          <li>2026 - Turnus - WIDEO TV</li>
+          <li>2026 - Crash Club Projects: Cinema</li>
+          <li>2026 - Tuman Atelier „Victoria Normal”</li>
+          <li>2026 - AG18 Gallery Part of „Will-o-the-wisp”, Vienna, Austria</li>
+          <li>2025 - „WEŁNOGŁOWE” MOS Art Centre, Gorzów Wielkopolski, Poland</li>
+          <li>2023 - „PODWÓRKO” Galeria Skala, Poznań, Poland</li>
+          <li>2023 - „BUJNOŚĆ” in Sopot National Art Gallery, Sopot, Poland</li>
+        </ul>
       </div>
     </div>
   </div>
@@ -490,7 +574,7 @@
   <div id="visitorName"></div>
   <script>
     // Art slideshow functionality
-    let isIframeOpen = false; // true while any overlay (art or bio) is open
+    let isIframeOpen = false; // true while any overlay (art, bio or exhibitions) is open
     let artSlideshowInterval = null;
     const artImages = Array.from({ length: 1 }, (_, i) => (i + 1) + "a.jpg"); // 1a.jpg ... 6a.jpg
 
@@ -504,6 +588,7 @@
     }
 
     function showArtSlideshow() {
+      if (isExhibitionsOpen()) hideExhibitions();
       const container = document.getElementById('art-slideshow');
       const imgEl = document.getElementById('art-slideshow-img');
 
@@ -513,6 +598,7 @@
       container.style.display = 'block';
       document.getElementById('mask').style.display = 'none';
       document.getElementById('character').style.display = 'none';
+      document.getElementById('messageDisplay').innerText = '';
 
       if (artSlideshowInterval) clearInterval(artSlideshowInterval);
       artSlideshowInterval = setInterval(() => {
@@ -542,6 +628,7 @@
 
     // Bio overlay (maks rz)
     function showBio() {
+      if (isExhibitionsOpen()) hideExhibitions();
       if (isIframeOpen) hideArtSlideshow();
       document.getElementById('bio-overlay').style.display = 'block';
       document.getElementById('mask').style.display = 'none';
@@ -561,16 +648,49 @@
       return document.getElementById('bio-overlay').style.display === 'block';
     }
 
+    // Exhibitions overlay
+    function showExhibitions() {
+      if (isBioOpen()) hideBio();
+      if (artSlideshowInterval) hideArtSlideshow();
+      if (messageIntervalId) {
+        clearInterval(messageIntervalId);
+        messageIntervalId = null;
+      }
+      document.getElementById('exhibitions-overlay').style.display = 'block';
+      document.getElementById('mask').style.display = 'none';
+      document.getElementById('character').style.display = 'none';
+      document.getElementById('messageDisplay').innerText = '';
+      isIframeOpen = true;
+    }
+
+    function hideExhibitions() {
+      document.getElementById('exhibitions-overlay').style.display = 'none';
+      document.getElementById('mask').style.display = 'block';
+      document.getElementById('character').style.display = 'block';
+      isIframeOpen = false;
+    }
+
+    function isExhibitionsOpen() {
+      return document.getElementById('exhibitions-overlay').style.display === 'block';
+    }
+
     document.getElementById('maks-button').addEventListener('click', function(e) {
       e.preventDefault();
       isBioOpen() ? hideBio() : showBio();
     });
     document.getElementById('bio-close').addEventListener('click', hideBio);
 
-    // Art button click handler (closes bio if open)
+    document.getElementById('exhibitions-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      isExhibitionsOpen() ? hideExhibitions() : showExhibitions();
+    });
+    document.getElementById('exhibitions-close').addEventListener('click', hideExhibitions);
+
+    // Art button click handler (closes bio / exhibitions if open)
     document.getElementById('art-button').addEventListener('click', function(e) {
       e.preventDefault();
       if (isBioOpen()) hideBio();
+      if (isExhibitionsOpen()) hideExhibitions();
       if (artSlideshowInterval) {
         hideArtSlideshow();
       } else {
@@ -587,14 +707,17 @@
     document.addEventListener('keydown', function(e) {
       if (isIframeOpen && e.key === 'Escape') {
         e.preventDefault();
-        isBioOpen() ? hideBio() : hideArtSlideshow();
+        if (isBioOpen()) hideBio();
+        else if (isExhibitionsOpen()) hideExhibitions();
+        else hideArtSlideshow();
       }
     });
 
     // Close overlays when clicking other nav buttons
-    document.querySelectorAll('.nav-button:not(#art-button):not(#maks-button)').forEach(button => {
+    document.querySelectorAll('.nav-button:not(#art-button):not(#maks-button):not(#exhibitions-button)').forEach(button => {
       button.addEventListener('click', function() {
         if (isBioOpen()) hideBio();
+        else if (isExhibitionsOpen()) hideExhibitions();
         else if (isIframeOpen) hideArtSlideshow();
       });
     });
@@ -902,7 +1025,7 @@
       }
     });
 
-    // Main menu: no scrolling (keeps the walking character stable). Overlays (art / bio) can scroll.
+    // Main menu: no scrolling (keeps the walking character stable). Overlays (art / bio / exhibitions) can scroll.
     document.addEventListener('touchmove', function(e) {
       if (!isIframeOpen) e.preventDefault();
     }, { passive: false });
